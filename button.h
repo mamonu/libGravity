@@ -15,6 +15,8 @@
 
 #include <Arduino.h>
 
+const uint8_t DEBOUNCE_MS = 10;
+
 class Button {
    protected:
     typedef void (*CallbackFunction)(void);

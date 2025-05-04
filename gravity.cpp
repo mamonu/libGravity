@@ -57,8 +57,6 @@ void Gravity::InitDisplay() {
     display.display();
 }
 
-
-
 void Gravity::Process() {
     // Read peripherials for changes.
     shift_button.Process();
