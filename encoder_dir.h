@@ -106,6 +106,7 @@ class EncoderDir {
     // Return the number of ticks change since last polled.
     int _rotate_change() {
         int position = encoder_.getPosition();
+        unsigned long ms = encoder_.getMillisBetweenRotations();
 
         // Validation (TODO: add debounce check).
         if (previous_pos_ == position) {
@@ -115,6 +116,13 @@ class EncoderDir {
         // Update state variables.
         change = position - previous_pos_;
         previous_pos_ = position;
+
+        // Encoder rotate acceleration.
+        if (ms < 16) {
+            change *= 3;
+        } else if (ms < 32) {
+            change *= 2;
+        }
 
         return change;
     }
