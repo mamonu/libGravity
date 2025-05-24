@@ -63,14 +63,6 @@ void Gravity::Process() {
     play_button.Process();
     encoder.Process();
 
-    // Call button state change handlers.
-    if (play_button.Change() == Button::CHANGE_PRESSED) {
-        play_button.OnPress();
-    }
-    if (shift_button.Change() == Button::CHANGE_PRESSED) {
-        shift_button.OnPress();
-    }
-
     // Update Output states.
     for (int i; i < OUTPUT_COUNT; i++) {
         outputs[i].Process();
