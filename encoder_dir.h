@@ -30,6 +30,7 @@ class EncoderDir {
     RotateCallbackFunction on_press_rotate;
     RotateCallbackFunction on_rotate;
     int change;
+    Direction dir;
 
    public:
     EncoderDir() : encoder_(ENCODER_PIN1, ENCODER_PIN2, RotaryEncoder::LatchMode::FOUR3),
@@ -41,7 +42,7 @@ class EncoderDir {
         reversed_ = reversed;
     }
     void AttachPressHandler(CallbackFunction f) {
-        button_.AttachPressHandler(f);
+        on_press = f;
     }
 
     void AttachRotateHandler(RotateCallbackFunction f) {
@@ -52,18 +53,6 @@ class EncoderDir {
         on_press_rotate = f;
     }
 
-    void OnRotate() {
-        if (on_rotate != NULL) {
-            on_rotate(RotateDirection(), change);
-        }
-    }
-
-    void OnPressRotate() {
-        if (on_press_rotate != NULL) {
-            on_press_rotate(RotateDirection(), change);
-        }
-    }
-
     // Parse EncoderButton increment direction.
     Direction RotateDirection() {
         int dir = (int)(encoder_.getDirection());
@@ -71,23 +60,24 @@ class EncoderDir {
     }
 
     void Process() {
+        // Get encoder position change amount.
+        int encoder_rotated = _rotate_change() != 0;
+        bool button_pressed = button_.On();
         button_.Process();
-        int change = _rotate_change();
 
         // Handle encoder position change and button press.
-        if (button_.On() && change != 0) {
-            OnPressRotate();
-            rotated_while_held = true;
-        } else if (button_.Change() == Button::CHANGE_RELEASED && !rotated_while_held) {
-            button_.OnPress();
+        if (button_pressed && encoder_rotated) {
+            rotated_while_held_ = true;
+            if (on_press_rotate != NULL) on_press_rotate(dir, change);
+        } else if (!button_pressed && encoder_rotated) {
+            if (on_rotate != NULL) on_rotate(dir, change);
+        } else if (button_.Change() == Button::CHANGE_RELEASED && !rotated_while_held_) {
+            if (on_press != NULL) on_press();
         }
 
-        if (button_.Change() == Button::CHANGE_RELEASED) {
-            rotated_while_held = false;
-        }
-
-        if (change != 0 && !button_.On()) {
-            OnRotate();
+        // Reset rotate while held state.
+        if (button_.Change() == Button::CHANGE_RELEASED && rotated_while_held_) {
+            rotated_while_held_ = false;
         }
     }
 
@@ -98,10 +88,10 @@ class EncoderDir {
 
    private:
     int previous_pos_;
+    bool rotated_while_held_;
     bool reversed_ = true;
     RotaryEncoder encoder_;
     Button button_;
-    bool rotated_while_held;
 
     // Return the number of ticks change since last polled.
     int _rotate_change() {
@@ -116,6 +106,7 @@ class EncoderDir {
         // Update state variables.
         change = position - previous_pos_;
         previous_pos_ = position;
+        dir = RotateDirection();
 
         // Encoder rotate acceleration.
         if (ms < 16) {
