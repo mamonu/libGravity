@@ -26,6 +26,9 @@ void Gravity::InitInputs() {
     shift_button.Init(SHIFT_BTN_PIN);
     play_button.Init(PLAY_BTN_PIN);
 
+    cv1.Init(CV1_PIN);
+    cv2.Init(CV2_PIN);
+
     // Pin Change Interrupts for Encoder.
     // Thanks to https://dronebotworkshop.com/interrupts/
 
@@ -62,6 +65,8 @@ void Gravity::Process() {
     shift_button.Process();
     play_button.Process();
     encoder.Process();
+    cv1.Process();
+    cv2.Process();
 
     // Update Output states.
     for (int i; i < OUTPUT_COUNT; i++) {

@@ -5,6 +5,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Arduino.h>
 
+#include "analog_input.h"
 #include "button.h"
 #include "clock.h"
 #include "digital_output.h"
@@ -33,6 +34,8 @@ class Gravity {
     EncoderDir encoder;                   // Rotary encoder with button instance
     Button shift_button;
     Button play_button;
+    AnalogInput cv1;
+    AnalogInput cv2;
 
    private:
     void InitClock();
