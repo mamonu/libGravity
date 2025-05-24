@@ -16,11 +16,11 @@
 #include <Arduino.h>
 
 const uint8_t DEBOUNCE_MS = 10;
+const uint16_t LONG_PRESS_DURATION_MS = 750;
 
 class Button {
    protected:
     typedef void (*CallbackFunction)(void);
-    CallbackFunction on_press;
 
    public:
     // Enum constants for active change in button state.
@@ -28,6 +28,7 @@ class Button {
         CHANGE_UNCHANGED,
         CHANGE_PRESSED,
         CHANGE_RELEASED,
+        CHANGE_RELEASED_LONG,
     };
 
     Button() {}
@@ -42,22 +43,24 @@ class Button {
     void Init(uint8_t pin) {
         pinMode(pin, INPUT_PULLUP);
         pin_ = pin;
+        old_read_ = digitalRead(pin_);
     }
 
     /**
      * Provide a handler function for executing when button is pressed.
-     * 
+     *
      * @param f Callback function to attach push behavior to this button.
      */
     void AttachPressHandler(CallbackFunction f) {
-        on_press = f;
+        on_press_ = f;
     }
-
-    // Execute the press callback.
-    void OnPress() {
-        if (on_press != NULL) {
-            on_press();
-        }
+    /**
+     * Provide a handler function for executing when button is pressed.
+     *
+     * @param f Callback function to attach push behavior to this button.
+     */
+    void AttachLongPressHandler(CallbackFunction f) {
+        on_long_press_ = f;
     }
 
     /**
@@ -65,10 +68,10 @@ class Button {
      */
     void Process() {
         int read = digitalRead(pin_);
-
         bool debounced = (millis() - last_press_) > DEBOUNCE_MS;
         bool pressed = read == 0 && old_read_ == 1 && debounced;
         bool released = read == 1 && old_read_ == 0 && debounced;
+
         // Update variables for next loop
         last_press_ = (pressed || released) ? millis() : last_press_;
 
@@ -76,10 +79,15 @@ class Button {
         change_ = CHANGE_UNCHANGED;
         if (pressed) {
             change_ = CHANGE_PRESSED;
-            on_ = true;
         } else if (released) {
-            change_ = CHANGE_RELEASED;
-            on_ = false;
+            // Call appropriate button press handler upon release.
+            if (last_press_ + LONG_PRESS_DURATION_MS > millis()) {
+                change_ = CHANGE_RELEASED;
+                if (on_press_ != NULL) on_press_();
+            } else {
+                change_ = CHANGE_RELEASED_LONG;
+                if (on_long_press_ != NULL) on_long_press_();
+            }
         }
         old_read_ = read;
     }
@@ -96,14 +104,15 @@ class Button {
      *
      * @return true if cv signal is high, false if cv signal is low
      */
-    inline bool On() { return on_; }
+    inline bool On() { return digitalRead(pin_) == 0; }
 
    private:
     uint8_t pin_;
-    uint8_t old_read_;
+    uint8_t old_read_ = 1;
     unsigned long last_press_;
     ButtonChange change_ = CHANGE_UNCHANGED;
-    bool on_;
+    CallbackFunction on_press_;
+    CallbackFunction on_long_press_;
 };
 
 #endif
