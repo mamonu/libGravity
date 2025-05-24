@@ -72,9 +72,6 @@ class Button {
         bool pressed = read == 0 && old_read_ == 1 && debounced;
         bool released = read == 1 && old_read_ == 0 && debounced;
 
-        // Update variables for next loop
-        last_press_ = (pressed || released) ? millis() : last_press_;
-
         // Determine current clock input state.
         change_ = CHANGE_UNCHANGED;
         if (pressed) {
@@ -89,6 +86,9 @@ class Button {
                 if (on_long_press_ != NULL) on_long_press_();
             }
         }
+        
+        // Update variables for next loop
+        last_press_ = (pressed || released) ? millis() : last_press_;
         old_read_ = read;
     }
 
