@@ -129,7 +129,7 @@ void HandlePlayPressed() {
 
 void HandleEncoderPressed() {
     // TODO: make this more generic/dynamic
-    
+
     // Main Global Settings Page.
     if (app.selected_channel == 0) {
         app.selected_param = (app.selected_param + 1) % 2;
@@ -188,8 +188,9 @@ void HandleRotate(Direction dir, int val) {
                 break;
         }
         uint32_t mod_pulses = clock_mod_pulses[ch->clock_mod_index];
-        ch->duty_cycle_pulses = max(int(float(mod_pulses) * (1.0 - (float(ch->duty_cycle) / 100.0))), 1);
-        ch->offset_pulses = int(float(mod_pulses) * (float(ch->offset) / 100.0));
+        ch->duty_cycle_pulses = max( (int)( (mod_pulses * (100L - ch->duty_cycle)) / 100L ), 1 );
+        ch->offset_pulses = (int)(mod_pulses * (100L - ch->offset) / 100L);
+
         app.refresh_screen = true;
     }
 }
