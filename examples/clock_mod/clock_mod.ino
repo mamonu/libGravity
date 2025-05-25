@@ -188,7 +188,7 @@ void HandleRotate(Direction dir, int val) {
                 break;
         }
         uint32_t mod_pulses = clock_mod_pulses[ch->clock_mod_index];
-        ch->duty_cycle_pulses = max( (int)( (mod_pulses * (100L - ch->duty_cycle)) / 100L ), 1 );
+        ch->duty_cycle_pulses = max((int)((mod_pulses * (100L - ch->duty_cycle)) / 100L), 1);
         ch->offset_pulses = (int)(mod_pulses * (100L - ch->offset) / 100L);
 
         app.refresh_screen = true;
