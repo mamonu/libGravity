@@ -1,19 +1,19 @@
 /**
  * Analog Input Calibration Script
- * 
+ *
  * Provide each CV input with a constant voltage of -5v, 0v, and 5v. For
  * each config point, provide the appropriate voltage value and then adjust
  * the encoder until you have the correct calibration value set.
- * 
+ *
  * With the arrow on the left side of the bar, provide a -5v signal and adjust
  * the encoder until you read -512.
- * 
- * With the arrow in the center of the bar, provide a 0v signal and adjust the 
+ *
+ * With the arrow in the center of the bar, provide a 0v signal and adjust the
  * encoder until you read 0.
- * 
+ *
  * With the arrow on the right side of the bar, provide a 5v signal and adjust
  * the encoder until you read 512.
- * 
+ *
  * TODO: store the calibration value in EEPROM.
  */
 
@@ -56,44 +56,50 @@ void CalibrateCV(Direction dir, int val) {
 
 void UpdateDisplay() {
     gravity.display.clearDisplay();
+    DisplayCalibration(&gravity.cv1, "CV1: ", 0);
+    DisplayCalibration(&gravity.cv2, "CV2: ", 1);
+    gravity.display.display();
+}
 
-    int cv1 = gravity.cv1.Read();
-    int cv2 = gravity.cv2.Read();
+void DisplayCalibration(AnalogInput* cv, String title, int index) {
+    int barWidth = 100;
+    int barHeight = 10;
+    int textHeight = 10;
+    int half = barWidth / 2;
+    int offsetX = 16;
+    int offsetY = (32 * index);
+    int color = 1;
 
-    // CV1 Value
-    gravity.display.setCursor(10, 2);
-    gravity.display.print(F("CV1: "));
-    gravity.display.print(cv1);
+    // CV value reading.
+    int value = constrain(cv->Read(), -512, 512);
 
-    gravity.display.drawRect(10, 12, 100, 10, 1);
-    if (cv1 > 0) {
+    gravity.display.setCursor(0, offsetY);
+    gravity.display.print(title);
+    gravity.display.print(value >= 0 ? " " : "");
+    gravity.display.print(value);
+
+    gravity.display.setCursor(92, offsetY);
+    gravity.display.print(value >= 0 ? " " : "");
+    gravity.display.print(cv->Voltage());
+    gravity.display.print(F("V"));
+
+    gravity.display.drawRect(offsetX, textHeight + offsetY, barWidth, barHeight, color);
+    if (value > 0) {
         // 0 to 512
-        int x = (float(cv1) / 512.0) * 50;
-        gravity.display.fillRect(60, 12, x, 10, 1);
+        int x = (float(value) / 512.0) * half;
+        int fill = min(x, 512);
+        gravity.display.fillRect(half + offsetX, textHeight + offsetY, fill, barHeight, color);
     } else {
         // -512 to 0
-        int x = (float(abs(cv1)) / 512.0) * 50;
-        gravity.display.fillRect(60 - x, 12, x, 10, 1);
+        int x = (float(abs(value)) / 512.0) * half;
+        int fill = min(half, x);
+        gravity.display.fillRect((half + offsetX) - x, textHeight + offsetY, fill, barHeight, color);
     }
 
-    // CV2 Value
-    gravity.display.setCursor(10, 32);
-    gravity.display.print(F("CV2: "));
-    gravity.display.print(cv2);
-
-    gravity.display.drawRect(10, 42, 100, 10, 1);
-    if (cv2 >= 0) {
-        int x = (float(cv2) / 512.0) * 50;
-        gravity.display.fillRect(60, 42, x, 10, 1);
-    } else {
-        int x = (float(abs(cv2)) / 512.0) * 50;
-        gravity.display.fillRect(60 - x, 42, x, 10, 1);
+    // Display selected calibration point if selected calibration point belongs to current cv input.
+    if (selected_param / 3 == index) {
+        int left = offsetX + ((half - 2) * (selected_param % 3));
+        int top = barHeight + textHeight + offsetY + 2;
+        gravity.display.drawChar(left, top, 0x1E, 1, 0, 1);
     }
-
-    // Selected calibration point.
-    int left = 10 + (48 * (selected_param % 3));
-    int top = 22 + (selected_param > 2 ? 32 : 0);
-    gravity.display.drawChar(left, top, 0x1E, 1, 0, 1);
-
-    gravity.display.display();
 }

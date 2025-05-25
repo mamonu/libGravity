@@ -19,7 +19,7 @@ class AnalogInput {
     ~AnalogInput() {}
 
     /**
-    * @brief Initializes a analog input object.
+    * Initializes a analog input object.
     * 
     * @param pin gpio pin for the analog input.
     */
@@ -29,7 +29,7 @@ class AnalogInput {
     }
 
     /**
-     * @brief Read the value of the analog input.
+     * Read the value of the analog input and set instance state.
      * 
      */
     void Process() {
@@ -41,15 +41,24 @@ class AnalogInput {
     // Set calibration values.
 
     void AdjustCalibrationLow(int amount) { low_ += amount; }
-    void AdjustCalibrationOffset(int amount) { offset_ += amount; }
+    void AdjustCalibrationOffset(int amount) { offset_ -= amount; }
     void AdjustCalibrationHigh(int amount) { high_ += amount; }
 
     /**
-     * @brief Get the current value of the analog input within a range of +/-512.
+     * Get the current value of the analog input within a range of +/-512.
      * 
      * @return read value within a range of +/-512.
+     * 
      */
     inline int16_t Read() { return read_; }
+
+    /**
+     * Return the analog read value as voltage.
+     * 
+     * @return A float representing the voltage (-5.0 to +5.0).
+     * 
+     */
+    inline float Voltage() { return ((read_ / 512.0) * 5.0); }
 
    private:
     uint8_t pin_;
