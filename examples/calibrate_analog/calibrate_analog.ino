@@ -6,15 +6,15 @@
  * the encoder until you have the correct calibration value set.
  *
  * With the arrow on the left side of the bar, provide a -5v signal and adjust
- * the encoder until you read -512.
+ * the encoder until the display shows a matching -5v reading.
  *
  * With the arrow in the center of the bar, provide a 0v signal and adjust the
- * encoder until you read 0.
+ * encoder until the display shows a matching 0v reading.
  *
  * With the arrow on the right side of the bar, provide a 5v signal and adjust
- * the encoder until you read 512.
+ * the encoder until the display shows a matching 5v reading.
  *
- * TODO: store the calibration value in EEPROM.
+ * TODO: Store the calibration value in EEPROM.
  */
 
 #include "gravity.h"
