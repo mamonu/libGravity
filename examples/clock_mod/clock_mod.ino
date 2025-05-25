@@ -24,7 +24,8 @@ struct Channel {
     byte clock_mod_index = 7;  // x1
     byte probability = 100;
     byte duty_cycle = 50;
-    int duty_cycle_pulses = 12;  // 120 x1 24 PPQN
+    // int duty_cycle_pulses = 12;  // 120 x1 24 PPQN
+    int duty_cycle_pulses = 48;  // 120 x1 96 PPQN
     byte offset = 0;
     int offset_pulses = 0;
 };
@@ -36,13 +37,16 @@ struct AppState {
 };
 AppState app;
 
-// Clock Mod settings assuming 24 PPQN clock.
+// The number of clock mod options, hepls validate choices and pulses arrays are the same size.
 const int MOD_CHOICE_SIZE = 21;
 // negative=multiply, positive=divide
 const int clock_mod[MOD_CHOICE_SIZE] = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
+
 // This represents the number of clock pulses for a 24 PPQN clock source that match the above div/mult mods.
-const int clock_mod_pulses[MOD_CHOICE_SIZE] = {1, 2, 3, 4, 6, 8, 12, 24, 48, 72, 96, 120, 144, 288, 168, 192, 384, 576, 768, 1536, 3072};  // LCM(322560)
-// const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
+// const int clock_mod_pulses[MOD_CHOICE_SIZE] = {1, 2, 3, 4, 6, 8, 12, 24, 48, 72, 96, 120, 144, 288, 168, 192, 384, 576, 768, 1536, 3072};  // LCM(322560)
+
+// This represents the number of clock pulses for a 96 PPQN clock source that match the above div/mult mods.
+const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
 
 const byte CHAR_PLAY = 0x10;
 const byte CHAR_PAUSE = 0xB9;
@@ -92,7 +96,7 @@ void ExtClock() {
 void IntClock(uint32_t tick) {
     for (int i = 0; i < OUTPUT_COUNT; i++) {
         // Hack: fastest clock multipliers should go low right away.
-        if (app.channel[i].clock_mod_index <= 2) {
+        if (app.channel[i].clock_mod_index == 0) {
             gravity.outputs[i].Low();
         }
 
@@ -125,6 +129,7 @@ void HandlePlayPressed() {
 
 void HandleEncoderPressed() {
     // TODO: make this more generic/dynamic
+    
     // Main Global Settings Page.
     if (app.selected_channel == 0) {
         app.selected_param = (app.selected_param + 1) % 2;
