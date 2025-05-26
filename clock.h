@@ -22,6 +22,8 @@ enum Source {
     SOURCE_INTERNAL,
     SOURCE_EXTERNAL_PPQN_24,
     SOURCE_EXTERNAL_PPQN_4,
+    // SOURCE_MIDI,
+    SOURCE_LAST,
 };
 
 class Clock {
@@ -53,8 +55,10 @@ class Clock {
                 break;
             case SOURCE_EXTERNAL_PPQN_24:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
+                uClock.setInputPPQN(uClock.PPQN_24);
             case SOURCE_EXTERNAL_PPQN_4:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
+                uClock.setInputPPQN(uClock.PPQN_4);
             default:
                 break;
         }
