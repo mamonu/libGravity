@@ -95,24 +95,24 @@ void ExtClock() {
 
 void IntClock(uint32_t tick) {
     for (int i = 0; i < OUTPUT_COUNT; i++) {
-        // Hack: fastest clock multipliers should go low right away.
-        if (app.channel[i].clock_mod_index == 0) {
-            gravity.outputs[i].Low();
-        }
-
-        uint32_t mod_pulses = clock_mod_pulses[app.channel[i].clock_mod_index];
+        const auto& channel = app.channel[i];
+        auto& output = gravity.outputs[i];
+        
+        const uint32_t mod_pulses = clock_mod_pulses[channel.clock_mod_index];
+        const uint32_t current_tick_offset = tick + channel.offset_pulses;
 
         // Duty cycle high check.
-        if ((tick + app.channel[i].offset_pulses) % mod_pulses == 0) {
-            if (app.channel[i].probability > random(0, 100)) {
-                gravity.outputs[i].High();
+        if (current_tick_offset % mod_pulses == 0) {
+            if (channel.probability > random(0, 100)) {
+                output.High();
             }
         }
 
         // Duty cycle low check.
-        int duty_cycle = app.channel[i].duty_cycle_pulses + app.channel[i].offset_pulses;
-        if (app.channel[i].clock_mod_index > 0 && (tick + duty_cycle) % mod_pulses == 0) {
-            gravity.outputs[i].Low();
+        const uint32_t duty_cycle_end_tick = tick + channel.duty_cycle_pulses + channel.offset_pulses;
+
+        if (duty_cycle_end_tick % mod_pulses == 0) {
+            output.Low();
         }
     }
 }
@@ -134,7 +134,7 @@ void HandleEncoderPressed() {
     if (app.selected_channel == 0) {
         app.selected_param = (app.selected_param + 1) % 2;
     }
-    // Selected Output Channel Settings.
+    // Selected Output Channels 1-6 Settings.
     else {
         app.selected_param = (app.selected_param + 1) % 4;
     }
@@ -167,29 +167,29 @@ void HandleRotate(Direction dir, int val) {
     }
     // Selected Output Channel Settings.
     else {
-        Channel* ch = GetSelectedChannel();
+        auto& ch = GetSelectedChannel();
 
         switch (app.selected_param) {
             case 0:
-                if (dir == DIRECTION_INCREMENT && ch->clock_mod_index < MOD_CHOICE_SIZE - 1) {
-                    ch->clock_mod_index += 1;
-                } else if (dir == DIRECTION_DECREMENT && ch->clock_mod_index > 0) {
-                    ch->clock_mod_index -= 1;
+                if (dir == DIRECTION_INCREMENT && ch.clock_mod_index < MOD_CHOICE_SIZE - 1) {
+                    ch.clock_mod_index += 1;
+                } else if (dir == DIRECTION_DECREMENT && ch.clock_mod_index > 0) {
+                    ch.clock_mod_index -= 1;
                 }
                 break;
             case 1:
-                ch->probability = constrain(ch->probability + val, 0, 100);
+                ch.probability = constrain(ch.probability + val, 0, 100);
                 break;
             case 2:
-                ch->duty_cycle = constrain(ch->duty_cycle + val, 0, 100);
+                ch.duty_cycle = constrain(ch.duty_cycle + val, 0, 100);
                 break;
             case 3:
-                ch->offset = constrain(ch->offset + val, 0, 100);
+                ch.offset = constrain(ch.offset + val, 0, 100);
                 break;
         }
-        uint32_t mod_pulses = clock_mod_pulses[ch->clock_mod_index];
-        ch->duty_cycle_pulses = max((int)((mod_pulses * (100L - ch->duty_cycle)) / 100L), 1);
-        ch->offset_pulses = (int)(mod_pulses * (100L - ch->offset) / 100L);
+        uint32_t mod_pulses = clock_mod_pulses[ch.clock_mod_index];
+        ch.duty_cycle_pulses = max((int)((mod_pulses * (100L - ch.duty_cycle)) / 100L), 1);
+        ch.offset_pulses = (int)(mod_pulses * (100L - ch.offset) / 100L);
 
         app.refresh_screen = true;
     }
@@ -209,8 +209,8 @@ void HandlePressedRotate(Direction dir, int val) {
 // Helper functions.
 //
 
-Channel* GetSelectedChannel() {
-    return &app.channel[app.selected_channel - 1];
+Channel& GetSelectedChannel() {
+    return app.channel[app.selected_channel - 1];
 }
 
 //
@@ -265,30 +265,30 @@ void DisplayMainPage() {
 }
 
 void DisplayChannelPage() {
-    Channel* ch = GetSelectedChannel();
+    auto& ch = GetSelectedChannel();
 
     gravity.display.setCursor(10, 0);
     gravity.display.print(F("Mod: "));
-    if (clock_mod[ch->clock_mod_index] > 1) {
+    if (clock_mod[ch.clock_mod_index] > 1) {
         gravity.display.print(F("/ "));
-        gravity.display.print(clock_mod[ch->clock_mod_index]);
+        gravity.display.print(clock_mod[ch.clock_mod_index]);
     } else {
         gravity.display.print(F("X "));
-        gravity.display.print(abs(clock_mod[ch->clock_mod_index]));
+        gravity.display.print(abs(clock_mod[ch.clock_mod_index]));
     }
 
     gravity.display.setCursor(10, 10);
     gravity.display.print(F("Probability: "));
-    gravity.display.print(ch->probability);
+    gravity.display.print(ch.probability);
     gravity.display.print(F("%"));
 
     gravity.display.setCursor(10, 20);
     gravity.display.print(F("Duty Cycle: "));
-    gravity.display.print(ch->duty_cycle);
+    gravity.display.print(ch.duty_cycle);
     gravity.display.print(F("%"));
 
     gravity.display.setCursor(10, 30);
     gravity.display.print(F("Offset: "));
-    gravity.display.print(ch->offset);
+    gravity.display.print(ch.offset);
     gravity.display.print(F("%"));
 }
