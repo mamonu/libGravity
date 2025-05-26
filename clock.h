@@ -29,8 +29,8 @@ class Clock {
     void Init() {
         // Initialize the clock library
         uClock.init();
-        uClock.setMode(uClock.INTERNAL_CLOCK);
-        uClock.setPPQN(uClock.PPQN_96);
+        uClock.setClockMode(uClock.INTERNAL_CLOCK);
+        uClock.setOutputPPQN(uClock.PPQN_96);
         uClock.setTempo(DEFAULT_TEMPO);
         uClock.start();
     }
@@ -42,30 +42,30 @@ class Clock {
 
     // Internal PPQN96 callback for all clock timer operations.
     void AttachIntHandler(void (*callback)(uint32_t)) {
-        uClock.setOnPPQN(callback);
+        uClock.setOnOutputPPQN(callback);
     }
 
     // Set the source of the clock mode.
     void SetSource(Source source) {
         switch (source) {
             case SOURCE_INTERNAL:
-                uClock.setMode(uClock.INTERNAL_CLOCK);
+                uClock.setClockMode(uClock.INTERNAL_CLOCK);
                 break;
             case SOURCE_EXTERNAL_PPQN_24:
-                uClock.setMode(uClock.EXTERNAL_CLOCK);
+                uClock.setClockMode(uClock.EXTERNAL_CLOCK);
             case SOURCE_EXTERNAL_PPQN_4:
-                uClock.setMode(uClock.EXTERNAL_CLOCK);
+                uClock.setClockMode(uClock.EXTERNAL_CLOCK);
             default:
                 break;
         }
     }
 
     bool ExternalSource() {
-        return uClock.getMode() == uClock.EXTERNAL_CLOCK;
+        return uClock.getClockMode() == uClock.EXTERNAL_CLOCK;
     }
 
     bool InternalSource() {
-        return uClock.getMode() == uClock.INTERNAL_CLOCK;
+        return uClock.getClockMode() == uClock.INTERNAL_CLOCK;
     }
 
     int Tempo() {
@@ -85,7 +85,7 @@ class Clock {
     }
 
     bool IsPaused() {
-        return uClock.state == uClock.PAUSED;
+        return uClock.clock_state == uClock.PAUSED;
     }
 };
 
