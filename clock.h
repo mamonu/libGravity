@@ -49,6 +49,7 @@ class Clock {
 
     // Set the source of the clock mode.
     void SetSource(Source source) {
+        uClock.stop();
         switch (source) {
             case SOURCE_INTERNAL:
                 uClock.setClockMode(uClock.INTERNAL_CLOCK);
@@ -56,12 +57,13 @@ class Clock {
             case SOURCE_EXTERNAL_PPQN_24:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
                 uClock.setInputPPQN(uClock.PPQN_24);
+                break;
             case SOURCE_EXTERNAL_PPQN_4:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
                 uClock.setInputPPQN(uClock.PPQN_4);
-            default:
                 break;
         }
+        uClock.start();
     }
 
     bool ExternalSource() {

@@ -157,7 +157,12 @@ void HandleRotate(Direction dir, int val) {
                 break;
 
             case 1:        
-                app.selected_source = static_cast<Source>((app.selected_source + 1) % SOURCE_LAST);
+                if (static_cast<Source>(app.selected_source) == 0 && val < 0) {
+                    app.selected_source = static_cast<Source>(SOURCE_LAST - 1);
+                } else {
+                    app.selected_source = static_cast<Source>((app.selected_source + val) % SOURCE_LAST);
+                }
+
                 gravity.clock.SetSource(app.selected_source);
                 app.refresh_screen = true;
                 break;
