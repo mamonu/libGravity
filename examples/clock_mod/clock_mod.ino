@@ -33,6 +33,7 @@ struct AppState {
     bool refresh_screen = true;
     byte selected_param = 0;
     byte selected_channel = 0;  // 0=tempo, 1-6=output channel
+    Source selected_source = SOURCE_INTERNAL;
     Channel channel[OUTPUT_COUNT];
 };
 AppState app;
@@ -155,12 +156,14 @@ void HandleRotate(Direction dir, int val) {
                 app.refresh_screen = true;
                 break;
 
-            case 1:
-                if (gravity.clock.ExternalSource()) {
-                    gravity.clock.SetSource(SOURCE_INTERNAL);
+            case 1:        
+                if (static_cast<Source>(app.selected_source) == 0 && val < 0) {
+                    app.selected_source = static_cast<Source>(SOURCE_LAST - 1);
                 } else {
-                    gravity.clock.SetSource(SOURCE_EXTERNAL_PPQN_24);
+                    app.selected_source = static_cast<Source>((app.selected_source + val) % SOURCE_LAST);
                 }
+
+                gravity.clock.SetSource(app.selected_source);
                 app.refresh_screen = true;
                 break;
         }
@@ -261,7 +264,23 @@ void DisplayMainPage() {
 
     gravity.display.setCursor(10, 10);
     gravity.display.print(F("Source: "));
-    gravity.display.print((gravity.clock.InternalSource()) ? F("INT") : F("EXT"));
+    switch (app.selected_source)
+    {
+    case SOURCE_INTERNAL:
+        gravity.display.print(F("INT"));
+        break;
+    case SOURCE_EXTERNAL_PPQN_24:
+        gravity.display.print(F("EXT 24 PPQN"));
+        break;
+    case SOURCE_EXTERNAL_PPQN_4:
+        gravity.display.print(F("EXT 4 PPQN"));
+        break;
+    // case SOURCE_EXTERNAL_MIDI:
+    //     gravity.display.print(F("EXT MIDI"));
+    //     break;
+    default:
+        break;
+    }
 }
 
 void DisplayChannelPage() {
