@@ -19,17 +19,6 @@ Common directory locations:
 * [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library) [BSD] - Graphics helper library.
 * [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [BSD] - Library for interacting with the SSD1306 OLED display.
 
-> **NOTE:**
-> The uClock library needs an additional build parameter passed in order to reduce the amount of dynamic memory it allocates. This can be done by modifying your `arduino.json` file and adding the following:
-
- ```json
- "buildPreferences": [
-    ["build.extra_flags" "-DEXT_INTERVAL_BUFFER_SIZE=1"]
-]
-```
-For additional details, see: https://github.com/midilab/uClock/issues/53
-
-
 ## Example
 
 Here's a trivial example showing some of the ways to interact with the library. This script rotates the active clock channel according to the set tempo. The encoder can change the temo or rotation direction. The play/pause button will toggle the clock activity on or off. The shift button will freeze the clock from advancing the channel rotation.
