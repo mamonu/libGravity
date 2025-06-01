@@ -16,8 +16,7 @@
 class Gravity {
    public:
     // Constructor
-    Gravity()
-        : display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1) {}
+    Gravity() {}
 
     // Deconstructor
     ~Gravity() {}
@@ -28,14 +27,14 @@ class Gravity {
     // Polling check for state change of inputs and outputs.
     void Process();
 
-    Adafruit_SSD1306 display;             // OLED display object.
-    Clock clock;                          // Clock source wrapper.
+    Adafruit_SSD1306 * display = nullptr;             // OLED display object.
+    Clock * clock = nullptr;                          // Clock source wrapper.
     DigitalOutput outputs[OUTPUT_COUNT];  // An array containing each Output object.
-    EncoderDir encoder;                   // Rotary encoder with button instance
-    Button shift_button;
-    Button play_button;
-    AnalogInput cv1;
-    AnalogInput cv2;
+    EncoderDir * encoder = nullptr;                   // Rotary encoder with button instance
+    Button * shift_button = nullptr;
+    Button * play_button = nullptr;
+    AnalogInput * cv1 = nullptr;
+    AnalogInput * cv2 = nullptr;
 
    private:
     void InitClock();

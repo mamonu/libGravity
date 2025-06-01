@@ -15,6 +15,7 @@
 #define OLED_ADDRESS 0x3C
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
+#define OLED_RESET -1
 
 // Peripheral input pins
 #define ENCODER_PIN1 17  // A3

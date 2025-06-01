@@ -19,15 +19,22 @@ void Gravity::Init() {
 }
 
 void Gravity::InitClock() {
-    clock.Init();
+    clock = new Clock(); 
+    clock->Init();
 }
 
 void Gravity::InitInputs() {
-    shift_button.Init(SHIFT_BTN_PIN);
-    play_button.Init(PLAY_BTN_PIN);
+    shift_button = new Button();
+    play_button = new Button();
+    shift_button->Init(SHIFT_BTN_PIN);
+    play_button->Init(PLAY_BTN_PIN);
 
-    cv1.Init(CV1_PIN);
-    cv2.Init(CV2_PIN);
+    cv1 = new AnalogInput();
+    cv2 = new AnalogInput();
+    cv1->Init(CV1_PIN);
+    cv2->Init(CV2_PIN);
+
+    encoder = new EncoderDir();
 
     // Pin Change Interrupts for Encoder.
     // Thanks to https://dronebotworkshop.com/interrupts/
@@ -50,23 +57,25 @@ void Gravity::InitOutputs() {
     outputs[5].Init(OUT_CH6);
 }
 void Gravity::InitDisplay() {
+    display = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
     // OLED Display configuration.
-    display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
+    display->begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
     delay(1000);
-    display.setRotation(2);  // rotates text on OLED 1=90 degrees, 2=180 degrees
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.display();
+    display->setRotation(2);  // rotates text on OLED 1=90 degrees, 2=180 degrees
+    display->clearDisplay();
+    display->setTextSize(1);
+    display->setTextColor(WHITE);
+    display->display();
 }
 
 void Gravity::Process() {
     // Read peripherials for changes.
-    shift_button.Process();
-    play_button.Process();
-    encoder.Process();
-    cv1.Process();
-    cv2.Process();
+    shift_button->Process();
+    play_button->Process();
+    encoder->Process();
+    cv1->Process();
+    cv2->Process();
 
     // Update Output states.
     for (int i; i < OUTPUT_COUNT; i++) {
@@ -75,7 +84,7 @@ void Gravity::Process() {
 }
 
 void ReadEncoder() {
-    gravity.encoder.UpdateEncoder();
+    gravity.encoder->UpdateEncoder();
 }
 
 // Define Encoder pin ISR.
