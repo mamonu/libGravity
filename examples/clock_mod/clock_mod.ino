@@ -61,16 +61,16 @@ void setup() {
     gravity.Init();
 
     // Clock handlers.
-    gravity.clock->AttachExtHandler(ExtClock);
-    gravity.clock->AttachIntHandler(IntClock);
+    gravity.clock.AttachExtHandler(ExtClock);
+    gravity.clock.AttachIntHandler(IntClock);
 
     // Encoder rotate and press handlers.
-    gravity.encoder->AttachPressHandler(HandleEncoderPressed);
-    gravity.encoder->AttachRotateHandler(HandleRotate);
-    gravity.encoder->AttachPressRotateHandler(HandlePressedRotate);
+    gravity.encoder.AttachPressHandler(HandleEncoderPressed);
+    gravity.encoder.AttachRotateHandler(HandleRotate);
+    gravity.encoder.AttachPressRotateHandler(HandlePressedRotate);
 
     // Button press handlers.
-    gravity.play_button->AttachPressHandler(HandlePlayPressed);
+    gravity.play_button.AttachPressHandler(HandlePlayPressed);
 }
 
 void loop() {
@@ -88,8 +88,8 @@ void loop() {
 //
 
 void ExtClock() {
-    if (gravity.clock->ExternalSource()) {
-        gravity.clock->Tick();
+    if (gravity.clock.ExternalSource()) {
+        gravity.clock.Tick();
         app.refresh_screen = true;
     }
 }
@@ -98,7 +98,7 @@ void IntClock(uint32_t tick) {
     for (int i = 0; i < OUTPUT_COUNT; i++) {
         const auto& channel = app.channel[i];
         auto& output = gravity.outputs[i];
-
+        
         const uint32_t mod_pulses = clock_mod_pulses[channel.clock_mod_index];
         const uint32_t current_tick_offset = tick + channel.offset_pulses;
 
@@ -119,8 +119,8 @@ void IntClock(uint32_t tick) {
 }
 
 void HandlePlayPressed() {
-    gravity.clock->Pause();
-    if (gravity.clock->IsPaused()) {
+    gravity.clock.Pause();
+    if (gravity.clock.IsPaused()) {
         for (int i = 0; i < OUTPUT_COUNT; i++) {
             gravity.outputs[i].Low();
         }
@@ -149,21 +149,21 @@ void HandleRotate(Direction dir, int val) {
     if (app.selected_channel == 0) {
         switch (app.selected_param) {
             case 0:
-                if (gravity.clock->ExternalSource()) {
+                if (gravity.clock.ExternalSource()) {
                     break;
                 }
-                gravity.clock->SetTempo(gravity.clock->Tempo() + val);
+                gravity.clock.SetTempo(gravity.clock.Tempo() + val);
                 app.refresh_screen = true;
                 break;
 
-            case 1:
+            case 1:        
                 if (static_cast<Source>(app.selected_source) == 0 && val < 0) {
                     app.selected_source = static_cast<Source>(SOURCE_LAST - 1);
                 } else {
                     app.selected_source = static_cast<Source>((app.selected_source + val) % SOURCE_LAST);
                 }
 
-                gravity.clock->SetSource(app.selected_source);
+                gravity.clock.SetSource(app.selected_source);
                 app.refresh_screen = true;
                 break;
         }
@@ -222,7 +222,7 @@ Channel& GetSelectedChannel() {
 
 void UpdateDisplay() {
     app.refresh_screen = false;
-    gravity.display->clearDisplay();
+    gravity.display.clearDisplay();
 
     if (app.selected_channel == 0) {
         DisplayMainPage();
@@ -231,82 +231,83 @@ void UpdateDisplay() {
     }
 
     // Show selected param indicator
-    gravity.display->drawChar(0, app.selected_param * 10, 0x10, 1, 0, 1);
+    gravity.display.drawChar(0, app.selected_param * 10, 0x10, 1, 0, 1);
 
     // Global channel select UI.
     DisplaySelectedChannel();
 
-    gravity.display->display();
+    gravity.display.display();
 }
 
 void DisplaySelectedChannel() {
-    gravity.display->drawLine(1, 52, 126, 52, 1);
+    gravity.display.drawLine(1, 52, 126, 52, 1);
     for (int i = 0; i < 7; i++) {
         (app.selected_channel == i)
-            ? gravity.display->fillRect(i * 18, 52, 18, 12, 1)
-            : gravity.display->drawLine(i * 18, 52, i * 18, 64, 1);
+            ? gravity.display.fillRect(i * 18, 52, 18, 12, 1)
+            : gravity.display.drawLine(i * 18, 52, i * 18, 64, 1);
 
         int selected = app.selected_channel == i;
         if (i == 0) {
-            char icon = gravity.clock->IsPaused() ? CHAR_PAUSE : CHAR_PLAY;
-            gravity.display->drawChar((i * 18) + 7, 55, icon, !selected, selected, 1);
+            char icon = gravity.clock.IsPaused() ? CHAR_PAUSE : CHAR_PLAY;
+            gravity.display.drawChar((i * 18) + 7, 55, icon, !selected, selected, 1);
         } else {
-            gravity.display->drawChar((i * 18) + 7, 55, i + 48, !selected, selected, 1);
+            gravity.display.drawChar((i * 18) + 7, 55, i + 48, !selected, selected, 1);
         }
     }
-    gravity.display->drawLine(126, 52, 126, 64, 1);
+    gravity.display.drawLine(126, 52, 126, 64, 1);
 }
 
 void DisplayMainPage() {
-    gravity.display->setCursor(10, 0);
-    gravity.display->print(F("Tempo: "));
-    gravity.display->print(gravity.clock->Tempo());
+    gravity.display.setCursor(10, 0);
+    gravity.display.print(F("Tempo: "));
+    gravity.display.print(gravity.clock.Tempo());
 
-    gravity.display->setCursor(10, 10);
-    gravity.display->print(F("Source: "));
-    switch (app.selected_source) {
-        case SOURCE_INTERNAL:
-            gravity.display->print(F("INT"));
-            break;
-        case SOURCE_EXTERNAL_PPQN_24:
-            gravity.display->print(F("EXT 24 PPQN"));
-            break;
-        case SOURCE_EXTERNAL_PPQN_4:
-            gravity.display->print(F("EXT 4 PPQN"));
-            break;
-        // case SOURCE_EXTERNAL_MIDI:
-        //     gravity.display->print(F("EXT MIDI"));
-        //     break;
-        default:
-            break;
+    gravity.display.setCursor(10, 10);
+    gravity.display.print(F("Source: "));
+    switch (app.selected_source)
+    {
+    case SOURCE_INTERNAL:
+        gravity.display.print(F("INT"));
+        break;
+    case SOURCE_EXTERNAL_PPQN_24:
+        gravity.display.print(F("EXT 24 PPQN"));
+        break;
+    case SOURCE_EXTERNAL_PPQN_4:
+        gravity.display.print(F("EXT 4 PPQN"));
+        break;
+    // case SOURCE_EXTERNAL_MIDI:
+    //     gravity.display.print(F("EXT MIDI"));
+    //     break;
+    default:
+        break;
     }
 }
 
 void DisplayChannelPage() {
     auto& ch = GetSelectedChannel();
 
-    gravity.display->setCursor(10, 0);
-    gravity.display->print(F("Mod: "));
+    gravity.display.setCursor(10, 0);
+    gravity.display.print(F("Mod: "));
     if (clock_mod[ch.clock_mod_index] > 1) {
-        gravity.display->print(F("/ "));
-        gravity.display->print(clock_mod[ch.clock_mod_index]);
+        gravity.display.print(F("/ "));
+        gravity.display.print(clock_mod[ch.clock_mod_index]);
     } else {
-        gravity.display->print(F("X "));
-        gravity.display->print(abs(clock_mod[ch.clock_mod_index]));
+        gravity.display.print(F("X "));
+        gravity.display.print(abs(clock_mod[ch.clock_mod_index]));
     }
 
-    gravity.display->setCursor(10, 10);
-    gravity.display->print(F("Probability: "));
-    gravity.display->print(ch.probability);
-    gravity.display->print(F("%"));
+    gravity.display.setCursor(10, 10);
+    gravity.display.print(F("Probability: "));
+    gravity.display.print(ch.probability);
+    gravity.display.print(F("%"));
 
-    gravity.display->setCursor(10, 20);
-    gravity.display->print(F("Duty Cycle: "));
-    gravity.display->print(ch.duty_cycle);
-    gravity.display->print(F("%"));
+    gravity.display.setCursor(10, 20);
+    gravity.display.print(F("Duty Cycle: "));
+    gravity.display.print(ch.duty_cycle);
+    gravity.display.print(F("%"));
 
-    gravity.display->setCursor(10, 30);
-    gravity.display->print(F("Offset: "));
-    gravity.display->print(ch.offset);
-    gravity.display->print(F("%"));
+    gravity.display.setCursor(10, 30);
+    gravity.display.print(F("Offset: "));
+    gravity.display.print(ch.offset);
+    gravity.display.print(F("%"));
 }

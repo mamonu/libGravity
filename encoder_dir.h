@@ -33,11 +33,8 @@ class EncoderDir {
     Direction dir;
 
    public:
-    EncoderDir() {
-        encoder_ = new RotaryEncoder(ENCODER_PIN1, ENCODER_PIN2, RotaryEncoder::LatchMode::FOUR3);
-        button_ = new Button(ENCODER_SW_PIN);
-    }
-
+    EncoderDir() : encoder_(ENCODER_PIN1, ENCODER_PIN2, RotaryEncoder::LatchMode::FOUR3),
+                   button_(ENCODER_SW_PIN) {}
     ~EncoderDir() {}
 
     // Set to true if the encoder read direction should be reversed.
@@ -58,15 +55,15 @@ class EncoderDir {
 
     // Parse EncoderButton increment direction.
     Direction RotateDirection() {
-        int dir = (int)(encoder_->getDirection());
+        int dir = (int)(encoder_.getDirection());
         return rotate_(dir, reversed_);
     }
 
     void Process() {
         // Get encoder position change amount.
         int encoder_rotated = _rotate_change() != 0;
-        bool button_pressed = button_->On();
-        button_->Process();
+        bool button_pressed = button_.On();
+        button_.Process();
 
         // Handle encoder position change and button press.
         if (button_pressed && encoder_rotated) {
@@ -74,32 +71,32 @@ class EncoderDir {
             if (on_press_rotate != NULL) on_press_rotate(dir, change);
         } else if (!button_pressed && encoder_rotated) {
             if (on_rotate != NULL) on_rotate(dir, change);
-        } else if (button_->Change() == Button::CHANGE_RELEASED && !rotated_while_held_) {
+        } else if (button_.Change() == Button::CHANGE_RELEASED && !rotated_while_held_) {
             if (on_press != NULL) on_press();
         }
 
         // Reset rotate while held state.
-        if (button_->Change() == Button::CHANGE_RELEASED && rotated_while_held_) {
+        if (button_.Change() == Button::CHANGE_RELEASED && rotated_while_held_) {
             rotated_while_held_ = false;
         }
     }
 
     // Read the encoder state and update the read position.
     void UpdateEncoder() {
-        encoder_->tick();
+        encoder_.tick();
     }
 
    private:
     int previous_pos_;
     bool rotated_while_held_;
     bool reversed_ = true;
-    RotaryEncoder * encoder_ = nullptr;
-    Button * button_ = nullptr;
+    RotaryEncoder encoder_;
+    Button button_;
 
     // Return the number of ticks change since last polled.
     int _rotate_change() {
-        int position = encoder_->getPosition();
-        unsigned long ms = encoder_->getMillisBetweenRotations();
+        int position = encoder_.getPosition();
+        unsigned long ms = encoder_.getMillisBetweenRotations();
 
         // Validation (TODO: add debounce check).
         if (previous_pos_ == position) {
