@@ -1,9 +1,8 @@
 #ifndef GRAVITY_H
 #define GRAVITY_H
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <Arduino.h>
+#include <U8g2lib.h>
 
 #include "analog_input.h"
 #include "button.h"
@@ -17,7 +16,7 @@ class Gravity {
    public:
     // Constructor
     Gravity()
-        : display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1) {}
+        : display(U8G2_R2, SCL, SDA, U8X8_PIN_NONE) {}
 
     // Deconstructor
     ~Gravity() {}
@@ -28,10 +27,10 @@ class Gravity {
     // Polling check for state change of inputs and outputs.
     void Process();
 
-    Adafruit_SSD1306 display;             // OLED display object.
-    Clock clock;                          // Clock source wrapper.
-    DigitalOutput outputs[OUTPUT_COUNT];  // An array containing each Output object.
-    EncoderDir encoder;                   // Rotary encoder with button instance
+    U8G2_SSD1306_128X64_NONAME_2_HW_I2C display;  // OLED display object.
+    Clock clock;                                  // Clock source wrapper.
+    DigitalOutput outputs[OUTPUT_COUNT];          // An array containing each Output object.
+    EncoderDir encoder;                           // Rotary encoder with button instance
     Button shift_button;
     Button play_button;
     AnalogInput cv1;

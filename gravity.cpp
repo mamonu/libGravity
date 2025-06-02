@@ -51,13 +51,7 @@ void Gravity::InitOutputs() {
 }
 void Gravity::InitDisplay() {
     // OLED Display configuration.
-    display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
-    delay(1000);
-    display.setRotation(2);  // rotates text on OLED 1=90 degrees, 2=180 degrees
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.display();
+    display.begin();
 }
 
 void Gravity::Process() {

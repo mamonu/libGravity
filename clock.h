@@ -90,6 +90,10 @@ class Clock {
         uClock.pause();
     }
 
+    void Reset() {
+        uClock.start();
+    }
+
     bool IsPaused() {
         return uClock.clock_state == uClock.PAUSED;
     }
