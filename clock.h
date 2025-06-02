@@ -12,28 +12,49 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
+#include <NeoHWSerial.h>
 #include <uClock.h>
 
 #include "peripherials.h"
 
+// MIDI clock, start, stop, and continue byte definitions - based on MIDI 1.0 Standards.
+#define MIDI_CLOCK 0xF8
+#define MIDI_START 0xFA
+#define MIDI_STOP 0xFC
+#define MIDI_CONTINUE 0xFB
+
 const int DEFAULT_TEMPO = 120;
+static bool MIDI_ENABLED = false;
 
 enum Source {
     SOURCE_INTERNAL,
     SOURCE_EXTERNAL_PPQN_24,
     SOURCE_EXTERNAL_PPQN_4,
-    // SOURCE_MIDI,
+    SOURCE_EXTERNAL_MIDI,
     SOURCE_LAST,
 };
 
 class Clock {
    public:
     void Init() {
+        NeoSerial.begin(31250);
+        NeoSerial.attachInterrupt(onSerialEvent);
+
+        // Static pin definition for pulse out.
+        pinMode(PULSE_OUT_PIN, OUTPUT);
+
         // Initialize the clock library
         uClock.init();
         uClock.setClockMode(uClock.INTERNAL_CLOCK);
         uClock.setOutputPPQN(uClock.PPQN_96);
         uClock.setTempo(DEFAULT_TEMPO);
+
+        // MIDI events.
+        uClock.setOnClockStart(sendMIDIStart);
+        uClock.setOnClockStop(sendMIDIStop);
+        uClock.setOnSync24(sendMidiClock);
+        uClock.setOnSync48(sendPulseOut);
+
         uClock.start();
     }
 
@@ -50,6 +71,7 @@ class Clock {
     // Set the source of the clock mode.
     void SetSource(Source source) {
         uClock.stop();
+        MIDI_ENABLED = false;
         switch (source) {
             case SOURCE_INTERNAL:
                 uClock.setClockMode(uClock.INTERNAL_CLOCK);
@@ -61,6 +83,11 @@ class Clock {
             case SOURCE_EXTERNAL_PPQN_4:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
                 uClock.setInputPPQN(uClock.PPQN_4);
+                break;
+            case SOURCE_EXTERNAL_MIDI:
+                uClock.setClockMode(uClock.EXTERNAL_CLOCK);
+                uClock.setInputPPQN(uClock.PPQN_24);
+                MIDI_ENABLED = true;
                 break;
         }
         uClock.start();
@@ -96,6 +123,42 @@ class Clock {
 
     bool IsPaused() {
         return uClock.clock_state == uClock.PAUSED;
+    }
+
+   private:
+    static void onSerialEvent(uint8_t msg, uint8_t status) {
+        // if (!MIDI_ENABLED) {
+        //     return;
+        // }
+        switch (msg) {
+            case MIDI_CLOCK:
+                uClock.clockMe();
+                break;
+            case MIDI_STOP:
+                uClock.stop();
+                break;
+            case MIDI_START:
+            case MIDI_CONTINUE:
+                uClock.start();
+                break;
+            
+        }
+    }
+
+    static void sendMIDIStart() {
+        NeoSerial.write(MIDI_START);
+    }
+
+    static void sendMIDIStop() {
+        NeoSerial.write(MIDI_STOP);
+    }
+
+    static void sendMidiClock(uint32_t tick) {
+        NeoSerial.write(MIDI_CLOCK);
+    }
+
+    static void sendPulseOut(uint32_t tick) {
+        digitalWrite(PULSE_OUT_PIN, !digitalRead(PULSE_OUT_PIN));
     }
 };
 

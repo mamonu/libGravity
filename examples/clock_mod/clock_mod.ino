@@ -39,7 +39,7 @@ AppState app;
 
 // The number of clock mod options, hepls validate choices and pulses arrays are the same size.
 const int MOD_CHOICE_SIZE = 21;
-// negative=multiply, positive=divide
+// Negative for multiply, positive for divide.
 const int clock_mod[MOD_CHOICE_SIZE] = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
 
 // This represents the number of clock pulses for a 96 PPQN clock source that match the above div/mult mods.
@@ -317,9 +317,14 @@ void DisplayMainPage() {
                 textWidth = gravity.display.getUTF8Width("4 PPQN");
                 gravity.display.drawStr(32 - (textWidth / 2), subTextY, "4 PPQN");
                 break;
-                // case SOURCE_EXTERNAL_MIDI:
-                //     gravity.display.print(F("EXT MIDI"));
-                //     break;
+            case SOURCE_EXTERNAL_MIDI:
+                gravity.display.setFont(LARGE_FONT);
+                textWidth = gravity.display.getUTF8Width("EXT");
+                gravity.display.drawStr(32 - (textWidth / 2), textY, "EXT");
+                gravity.display.setFont(TEXT_FONT);
+                textWidth = gravity.display.getUTF8Width("MIDI");
+                gravity.display.drawStr(32 - (textWidth / 2), subTextY, "MIDI");
+                break;
         }
     }
 
@@ -366,7 +371,7 @@ void DisplayChannelPage() {
                 gravity.display.drawStr(32 - (textWidth / 2), subTextY, "Divide");
 
             } else {
-                sprintf(mod_str, "X%d", abs(clock_mod[ch.clock_mod_index]));
+                sprintf(mod_str, "x%d", abs(clock_mod[ch.clock_mod_index]));
                 textWidth = gravity.display.getUTF8Width(mod_str);
                 gravity.display.drawStr(32 - (textWidth / 2), textY, mod_str);
                 gravity.display.setFont(TEXT_FONT);
