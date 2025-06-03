@@ -293,7 +293,12 @@ void DisplayMainPage() {
     if (app.selected_param == 0) {
         gravity.display.setFont(LARGE_FONT);
         char num_str[3];
-        sprintf(num_str, "%d", gravity.clock.Tempo());
+        // Serial MIID is too unstable to display bpm in real time.
+        if (app.selected_source == SOURCE_EXTERNAL_MIDI) {
+            sprintf(num_str, "%s", "EXT");
+        } else {
+            sprintf(num_str, "%d", gravity.clock.Tempo());
+        }
         textWidth = gravity.display.getUTF8Width(num_str);
         gravity.display.drawStr(32 - (textWidth / 2), textY, num_str);
         gravity.display.setFont(TEXT_FONT);

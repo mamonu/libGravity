@@ -46,7 +46,6 @@ class Clock {
         pinMode(PULSE_OUT_PIN, OUTPUT);
 
         // Initialize the clock library
-        uClock.setExtIntervalBuffer(32);
         uClock.init();
         uClock.setClockMode(uClock.INTERNAL_CLOCK);
         uClock.setOutputPPQN(uClock.PPQN_96);
