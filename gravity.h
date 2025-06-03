@@ -37,10 +37,10 @@ class Gravity {
     AnalogInput cv2;
 
    private:
-    void InitClock();
-    void InitDisplay();
-    void InitInputs();
-    void InitOutputs();
+    void initClock();
+    void initDisplay();
+    void initInputs();
+    void initOutputs();
 };
 
 extern Gravity gravity;

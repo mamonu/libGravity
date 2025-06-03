@@ -13,7 +13,7 @@
  *
  * BTN1: Play/pause the internal clock.
  *
- * BTN2: Reset all clocks.
+ * BTN2: Stop all clocks.
  *
  */
 
@@ -68,8 +68,8 @@ void setup() {
     gravity.Init();
 
     // Clock handlers.
-    gravity.clock.AttachExtHandler(ExtClock);
-    gravity.clock.AttachIntHandler(IntClock);
+    gravity.clock.AttachIntHandler(HandleIntClockTick);
+    gravity.clock.AttachExtHandler(HandleExtClockTick);
 
     // Encoder rotate and press handlers.
     gravity.encoder.AttachPressHandler(HandleEncoderPressed);
@@ -95,16 +95,9 @@ void loop() {
 // Firmware handlers.
 //
 
-void ExtClock() {
-    if (gravity.clock.ExternalSource()) {
-        gravity.clock.Tick();
-        app.refresh_screen = true;
-    }
-}
-
-void IntClock(uint32_t tick) {
+void HandleIntClockTick(uint32_t tick) {
     for (int i = 0; i < OUTPUT_COUNT; i++) {
-        const auto& channel = app.channel[i];
+        auto& channel = app.channel[i];
         auto& output = gravity.outputs[i];
 
         const uint32_t mod_pulses = clock_mod_pulses[channel.clock_mod_index];
@@ -126,18 +119,27 @@ void IntClock(uint32_t tick) {
     }
 }
 
-void HandlePlayPressed() {
-    gravity.clock.Pause();
-    if (gravity.clock.IsPaused()) {
-        for (int i = 0; i < OUTPUT_COUNT; i++) {
-            gravity.outputs[i].Low();
-        }
+void HandleExtClockTick() {
+    // Ignore tick if not using external source.
+    if (!gravity.clock.ExternalSource()) {
+        return;
     }
+    gravity.clock.Tick();
+    app.refresh_screen = true;
+}
+
+void HandlePlayPressed() {
+    gravity.clock.IsPaused() 
+        ? gravity.clock.Start() 
+        : gravity.clock.Stop();
+    ResetOutputs();
     app.refresh_screen = true;
 }
 
 void HandleShiftPressed() {
-    gravity.clock.Reset();
+    gravity.clock.Stop();
+    ResetOutputs();
+    app.refresh_screen = true;
 }
 
 void HandleEncoderPressed() {
@@ -226,6 +228,12 @@ void HandlePressedRotate(Direction dir, int val) {
 
 Channel& GetSelectedChannel() {
     return app.channel[app.selected_channel - 1];
+}
+
+void ResetOutputs() {
+    for (int i = 0; i < OUTPUT_COUNT; i++) {
+        gravity.outputs[i].Low();
+    }
 }
 
 //
@@ -352,7 +360,7 @@ void DisplayChannelPage() {
     gravity.display.setFontMode(1);
     gravity.display.setDrawColor(2);
     gravity.display.setFont(LARGE_FONT);
-    
+
     int textWidth;
     int textY = 26;
     int subTextY = 42;

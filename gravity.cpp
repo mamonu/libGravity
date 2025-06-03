@@ -12,17 +12,17 @@
 #include "gravity.h"
 
 void Gravity::Init() {
-    InitClock();
-    InitInputs();
-    InitOutputs();
-    InitDisplay();
+    initClock();
+    initInputs();
+    initOutputs();
+    initDisplay();
 }
 
-void Gravity::InitClock() {
+void Gravity::initClock() {
     clock.Init();
 }
 
-void Gravity::InitInputs() {
+void Gravity::initInputs() {
     shift_button.Init(SHIFT_BTN_PIN);
     play_button.Init(PLAY_BTN_PIN);
 
@@ -40,7 +40,7 @@ void Gravity::InitInputs() {
     PCMSK1 |= B00001000;
 }
 
-void Gravity::InitOutputs() {
+void Gravity::initOutputs() {
     // Initialize each of the outputs with it's GPIO pins and probability.
     outputs[0].Init(OUT_CH1);
     outputs[1].Init(OUT_CH2);
@@ -49,7 +49,7 @@ void Gravity::InitOutputs() {
     outputs[4].Init(OUT_CH5);
     outputs[5].Init(OUT_CH6);
 }
-void Gravity::InitDisplay() {
+void Gravity::initDisplay() {
     // OLED Display configuration.
     display.begin();
 }

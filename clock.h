@@ -24,7 +24,10 @@
 #define MIDI_CONTINUE 0xFB
 
 const int DEFAULT_TEMPO = 120;
-static bool MIDI_ENABLED = false;
+
+typedef void (*ExtCallback)(void);
+static ExtCallback extUserCallback = nullptr;
+static void serialEventNoop(uint8_t msg, uint8_t status) {}
 
 enum Source {
     SOURCE_INTERNAL,
@@ -38,12 +41,12 @@ class Clock {
    public:
     void Init() {
         NeoSerial.begin(31250);
-        NeoSerial.attachInterrupt(onSerialEvent);
 
         // Static pin definition for pulse out.
         pinMode(PULSE_OUT_PIN, OUTPUT);
 
         // Initialize the clock library
+        uClock.setExtIntervalBuffer(32);
         uClock.init();
         uClock.setClockMode(uClock.INTERNAL_CLOCK);
         uClock.setOutputPPQN(uClock.PPQN_96);
@@ -52,14 +55,15 @@ class Clock {
         // MIDI events.
         uClock.setOnClockStart(sendMIDIStart);
         uClock.setOnClockStop(sendMIDIStop);
-        uClock.setOnSync24(sendMidiClock);
+        uClock.setOnSync24(sendMIDIClock);
         uClock.setOnSync48(sendPulseOut);
 
         uClock.start();
     }
 
-    // Handler for receiving clock trigger(PPQN_4 or PPQN_24).
-    void AttachExtHandler(void (*callback)(void)) {
+    // Handle external clock tick and call user callback when receiving clock trigger (PPQN_4, PPQN_24, or MIDI).
+    void AttachExtHandler(void (*callback)()) {
+        extUserCallback = callback;
         attachInterrupt(digitalPinToInterrupt(EXT_PIN), callback, RISING);
     }
 
@@ -70,8 +74,13 @@ class Clock {
 
     // Set the source of the clock mode.
     void SetSource(Source source) {
+        bool was_playing = !IsPaused();
         uClock.stop();
-        MIDI_ENABLED = false;
+        // If source is currently MIDI, disable the serial interrupt handler.
+        if (source_ == SOURCE_EXTERNAL_MIDI) {
+            NeoSerial.attachInterrupt(serialEventNoop);
+        }
+        source_ = source;
         switch (source) {
             case SOURCE_INTERNAL:
                 uClock.setClockMode(uClock.INTERNAL_CLOCK);
@@ -87,52 +96,64 @@ class Clock {
             case SOURCE_EXTERNAL_MIDI:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
                 uClock.setInputPPQN(uClock.PPQN_24);
-                MIDI_ENABLED = true;
+                NeoSerial.attachInterrupt(onSerialEvent);
                 break;
         }
-        uClock.start();
+        if (was_playing) {
+            uClock.start();
+        }
     }
 
+    // Return true if the current selected source is externl (PPQN_4, PPQN_24, or MIDI).
     bool ExternalSource() {
         return uClock.getClockMode() == uClock.EXTERNAL_CLOCK;
     }
 
+    // Return true if the current selected source is the internal master clock.
     bool InternalSource() {
         return uClock.getClockMode() == uClock.INTERNAL_CLOCK;
     }
 
+    // Returns the current BPM tempo.
     int Tempo() {
         return uClock.getTempo();
     }
 
+    // Set the clock tempo to a int between 1 and 400.
     void SetTempo(int tempo) {
         return uClock.setTempo(tempo);
     }
 
+    // Record an external clock tick received to process external/internal syncronization.
     void Tick() {
         uClock.clockMe();
     }
 
-    void Pause() {
-        uClock.pause();
-    }
-
-    void Reset() {
+    // Start the internal clock.
+    void Start() {
         uClock.start();
     }
 
+    // Stop internal clock clock.
+    void Stop() {
+        uClock.stop();
+    }
+
+    // Returns true if the clock is not running.
     bool IsPaused() {
         return uClock.clock_state == uClock.PAUSED;
     }
 
    private:
+    Source source_ = SOURCE_INTERNAL;
+
     static void onSerialEvent(uint8_t msg, uint8_t status) {
-        // if (!MIDI_ENABLED) {
-        //     return;
-        // }
+        // Note: uClock start and stop will echo to MIDI.
         switch (msg) {
             case MIDI_CLOCK:
-                uClock.clockMe();
+                if (extUserCallback) {
+                    extUserCallback();
+                }
                 break;
             case MIDI_STOP:
                 uClock.stop();
@@ -141,7 +162,6 @@ class Clock {
             case MIDI_CONTINUE:
                 uClock.start();
                 break;
-            
         }
     }
 
@@ -153,7 +173,7 @@ class Clock {
         NeoSerial.write(MIDI_STOP);
     }
 
-    static void sendMidiClock(uint32_t tick) {
+    static void sendMIDIClock(uint32_t tick) {
         NeoSerial.write(MIDI_CLOCK);
     }
 
