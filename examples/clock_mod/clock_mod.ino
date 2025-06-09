@@ -30,12 +30,26 @@ struct Channel {
 };
 struct AppState {
     bool refresh_screen = true;
+    bool editing_param = false;
     byte selected_param = 0;
     byte selected_channel = 0;  // 0=tempo, 1-6=output channel
     Source selected_source = SOURCE_INTERNAL;
     Channel channel[OUTPUT_COUNT];
 };
 AppState app;
+
+enum ParamsMainPage {
+    PARAM_MAIN_TEMPO,
+    PARAM_MAIN_SOURCE,
+    PARAM_MAIN_LAST,
+};
+enum ParamsChannelPage {
+    PARAM_CH_MOD,
+    PARAM_CH_PROB,
+    PARAM_CH_DUTY,
+    PARAM_CH_OFFSET,
+    PARAM_CH_LAST,
+};
 
 // The number of clock mod options, hepls validate choices and pulses arrays are the same size.
 const int MOD_CHOICE_SIZE = 21;
@@ -92,7 +106,7 @@ void loop() {
 }
 
 //
-// Firmware handlers.
+// Firmware handlers for clocks.
 //
 
 void HandleIntClockTick(uint32_t tick) {
@@ -128,9 +142,13 @@ void HandleExtClockTick() {
     app.refresh_screen = true;
 }
 
+//
+// UI handlers for encoder and buttons.
+//
+
 void HandlePlayPressed() {
-    gravity.clock.IsPaused() 
-        ? gravity.clock.Start() 
+    gravity.clock.IsPaused()
+        ? gravity.clock.Start()
         : gravity.clock.Stop();
     ResetOutputs();
     app.refresh_screen = true;
@@ -143,73 +161,83 @@ void HandleShiftPressed() {
 }
 
 void HandleEncoderPressed() {
-    // TODO: make this more generic/dynamic
-
-    // Main Global Settings Page.
-    if (app.selected_channel == 0) {
-        app.selected_param = (app.selected_param + 1) % 2;
-    }
-    // Selected Output Channels 1-6 Settings.
-    else {
-        app.selected_param = (app.selected_param + 1) % 4;
-    }
+    app.editing_param = !app.editing_param;
     app.refresh_screen = true;
 }
 
 void HandleRotate(Direction dir, int val) {
-    // Execute the behavior of the current selected parameter.
-
-    // Main Global Settings Page.
-    if (app.selected_channel == 0) {
-        switch (app.selected_param) {
-            case 0:
-                if (gravity.clock.ExternalSource()) {
-                    break;
-                }
-                gravity.clock.SetTempo(gravity.clock.Tempo() + val);
-                app.refresh_screen = true;
-                break;
-
-            case 1:
-                if (static_cast<Source>(app.selected_source) == 0 && val < 0) {
-                    app.selected_source = static_cast<Source>(SOURCE_LAST - 1);
-                } else {
-                    app.selected_source = static_cast<Source>((app.selected_source + val) % SOURCE_LAST);
-                }
-
-                gravity.clock.SetSource(app.selected_source);
-                app.refresh_screen = true;
-                break;
+    // Select a prameter when not in edit mode.
+    if (!app.editing_param) {
+        // Main Global Settings Page.
+        if (app.selected_channel == 0) {
+            if (app.selected_param == 0 && val < 0) {
+                app.selected_param = PARAM_MAIN_LAST - 1;
+            } else {
+                app.selected_param = (app.selected_param + val) % PARAM_MAIN_LAST;
+            }
+        }
+        // Selected Output Channels 1-6 Settings.
+        else {
+            if (app.selected_param == 0 && val < 0) {
+                app.selected_param = PARAM_CH_LAST - 1;
+            } else {
+                app.selected_param = (app.selected_param + val) % PARAM_CH_LAST;
+            }
         }
     }
-    // Selected Output Channel Settings.
+    // Edit selected param.
     else {
-        auto& ch = GetSelectedChannel();
+        // Main Global Settings Page.
+        if (app.selected_channel == 0) {
+            switch (static_cast<ParamsMainPage>(app.selected_param)) {
+                case PARAM_MAIN_TEMPO:
+                    if (gravity.clock.ExternalSource()) {
+                        break;
+                    }
+                    gravity.clock.SetTempo(gravity.clock.Tempo() + val);
+                    app.refresh_screen = true;
+                    break;
 
-        switch (app.selected_param) {
-            case 0:
-                if (dir == DIRECTION_INCREMENT && ch.clock_mod_index < MOD_CHOICE_SIZE - 1) {
-                    ch.clock_mod_index += 1;
-                } else if (dir == DIRECTION_DECREMENT && ch.clock_mod_index > 0) {
-                    ch.clock_mod_index -= 1;
-                }
-                break;
-            case 1:
-                ch.probability = constrain(ch.probability + val, 0, 100);
-                break;
-            case 2:
-                ch.duty_cycle = constrain(ch.duty_cycle + val, 0, 100);
-                break;
-            case 3:
-                ch.offset = constrain(ch.offset + val, 0, 100);
-                break;
+                case PARAM_MAIN_SOURCE:
+                    if (static_cast<Source>(app.selected_source) == 0 && val < 0) {
+                        app.selected_source = static_cast<Source>(SOURCE_LAST - 1);
+                    } else {
+                        app.selected_source = static_cast<Source>((app.selected_source + val) % SOURCE_LAST);
+                    }
+
+                    gravity.clock.SetSource(app.selected_source);
+                    app.refresh_screen = true;
+                    break;
+            }
         }
-        uint32_t mod_pulses = clock_mod_pulses[ch.clock_mod_index];
-        ch.duty_cycle_pulses = max((int)((mod_pulses * (100L - ch.duty_cycle)) / 100L), 1);
-        ch.offset_pulses = (int)(mod_pulses * (100L - ch.offset) / 100L);
+        // Selected Output Channel Settings.
+        else {
+            auto& ch = GetSelectedChannel();
 
-        app.refresh_screen = true;
+            switch (static_cast<ParamsChannelPage>(app.selected_param)) {
+                case PARAM_CH_MOD:
+                    if (dir == DIRECTION_INCREMENT && ch.clock_mod_index < MOD_CHOICE_SIZE - 1) {
+                        ch.clock_mod_index += 1;
+                    } else if (dir == DIRECTION_DECREMENT && ch.clock_mod_index > 0) {
+                        ch.clock_mod_index -= 1;
+                    }
+                    break;
+                case PARAM_CH_PROB:
+                    ch.probability = constrain(ch.probability + val, 0, 100);
+                    break;
+                case PARAM_CH_DUTY:
+                    ch.duty_cycle = constrain(ch.duty_cycle + val, 0, 99);
+                    break;
+                case PARAM_CH_OFFSET:
+                    ch.offset = constrain(ch.offset + val, 0, 99);
+                    break;
+            }
+            uint32_t mod_pulses = clock_mod_pulses[ch.clock_mod_index];
+            ch.duty_cycle_pulses = max((int)((mod_pulses * (100L - ch.duty_cycle)) / 100L), 1);
+            ch.offset_pulses = (int)(mod_pulses * (100L - ch.offset) / 100L);
+        }
     }
+    app.refresh_screen = true;
 }
 
 void HandlePressedRotate(Direction dir, int val) {
@@ -240,6 +268,18 @@ void ResetOutputs() {
 // UI Display functions.
 //
 
+// Constants for screen layout and fonts
+constexpr int SCREEN_CENTER_X = 32;
+constexpr int MAIN_TEXT_Y = 26;
+constexpr int SUB_TEXT_Y = 42;
+constexpr int MENU_ITEM_HEIGHT = 14;
+constexpr int MENU_BOX_PADDING = 4;
+constexpr int MENU_BOX_WIDTH = 64;
+constexpr int VISIBLE_MENU_ITEMS = 3;
+constexpr int CHANNEL_BOXES_Y = 50;
+constexpr int CHANNEL_BOX_WIDTH = 18;
+constexpr int CHANNEL_BOX_HEIGHT = 14;
+
 void UpdateDisplay() {
     app.refresh_screen = false;
     gravity.display.firstPage();
@@ -254,109 +294,50 @@ void UpdateDisplay() {
     } while (gravity.display.nextPage());
 }
 
-void DisplaySelectedChannel() {
-    int top = 50;
-    int boxWidth = 18;
-    int boxHeight = 14;
-    gravity.display.drawHLine(1, top, 126);
-    for (int i = 0; i < 7; i++) {
-        gravity.display.setDrawColor(1);
-        (app.selected_channel == i)
-            ? gravity.display.drawBox(i * boxWidth, top, boxWidth, boxHeight)
-            : gravity.display.drawVLine(i * boxWidth, top, boxHeight);
-
-        gravity.display.setDrawColor(2);
-        if (i == 0) {
-            gravity.display.setDrawColor(2);
-            gravity.display.setBitmapMode(1);
-            auto icon = gravity.clock.IsPaused() ? pause_icon : play_icon;
-            gravity.display.drawXBM(2, top, play_icon_width, play_icon_height, icon);
-        } else {
-            gravity.display.setFont(TEXT_FONT);
-            gravity.display.setCursor((i * boxWidth) + 7, 63);
-            gravity.display.print(i);
-        }
-    }
-    gravity.display.drawVLine(126, top, boxHeight);
-}
-
 void DisplayMainPage() {
     gravity.display.setFontMode(1);
     gravity.display.setDrawColor(2);
     gravity.display.setFont(TEXT_FONT);
 
-    int textWidth;
-    int textY = 26;
-    int subTextY = 42;
+    // Display selected editable value
+    char mainText[8];
+    const char* subText;
 
-    // Display selected editable value.
     if (app.selected_param == 0) {
-        gravity.display.setFont(LARGE_FONT);
-        char num_str[3];
         // Serial MIID is too unstable to display bpm in real time.
         if (app.selected_source == SOURCE_EXTERNAL_MIDI) {
-            sprintf(num_str, "%s", "EXT");
+            sprintf(mainText, "%s", "EXT");
         } else {
-            sprintf(num_str, "%d", gravity.clock.Tempo());
+            sprintf(mainText, "%d", gravity.clock.Tempo());
         }
-        textWidth = gravity.display.getUTF8Width(num_str);
-        gravity.display.drawStr(32 - (textWidth / 2), textY, num_str);
-        gravity.display.setFont(TEXT_FONT);
-        textWidth = gravity.display.getUTF8Width("BPM");
-        gravity.display.drawStr(32 - (textWidth / 2), subTextY, "BPM");
+        subText = "BPM";
     } else if (app.selected_param == 1) {
         switch (app.selected_source) {
             case SOURCE_INTERNAL:
-                gravity.display.setFont(LARGE_FONT);
-                textWidth = gravity.display.getUTF8Width("INT");
-                gravity.display.drawStr(32 - (textWidth / 2), textY, "INT");
-                gravity.display.setFont(TEXT_FONT);
-                textWidth = gravity.display.getUTF8Width("Clock");
-                gravity.display.drawStr(32 - (textWidth / 2), subTextY, "Clock");
+                sprintf(mainText, "%s", "INT");
+                subText = "Clock";
                 break;
             case SOURCE_EXTERNAL_PPQN_24:
-                gravity.display.setFont(LARGE_FONT);
-                textWidth = gravity.display.getUTF8Width("EXT");
-                gravity.display.drawStr(32 - (textWidth / 2), textY, "EXT");
-                gravity.display.setFont(TEXT_FONT);
-                textWidth = gravity.display.getUTF8Width("24 PPQN");
-                gravity.display.drawStr(32 - (textWidth / 2), subTextY, "24 PPQN");
+                sprintf(mainText, "%s", "EXT");
+                subText = "24 PPQN";
                 break;
             case SOURCE_EXTERNAL_PPQN_4:
-                gravity.display.setFont(LARGE_FONT);
-                textWidth = gravity.display.getUTF8Width("EXT");
-                gravity.display.drawStr(32 - (textWidth / 2), textY, "EXT");
-                gravity.display.setFont(TEXT_FONT);
-                textWidth = gravity.display.getUTF8Width("4 PPQN");
-                gravity.display.drawStr(32 - (textWidth / 2), subTextY, "4 PPQN");
+                sprintf(mainText, "%s", "EXT");
+                subText = "4 PPQN";
                 break;
             case SOURCE_EXTERNAL_MIDI:
-                gravity.display.setFont(LARGE_FONT);
-                textWidth = gravity.display.getUTF8Width("EXT");
-                gravity.display.drawStr(32 - (textWidth / 2), textY, "EXT");
-                gravity.display.setFont(TEXT_FONT);
-                textWidth = gravity.display.getUTF8Width("MIDI");
-                gravity.display.drawStr(32 - (textWidth / 2), subTextY, "MIDI");
+                sprintf(mainText, "%s", "EXT");
+                subText = "MIDI";
                 break;
         }
     }
 
-    int idx;
-    int drawX;
-    int height = 14;
-    int padding = 4;
+    drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
+    drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
 
-    // Draw selected menu item box.
-    gravity.display.drawBox(65, (height * app.selected_param) + 2, 63, height + 1);
-
-    // Draw each menu item.
-    textWidth = gravity.display.getUTF8Width("Tempo");
-    drawX = (SCREEN_WIDTH - textWidth) - padding;
-    gravity.display.drawStr(drawX, height * ++idx, "Tempo");
-
-    textWidth = gravity.display.getUTF8Width("Source");
-    drawX = (SCREEN_WIDTH - textWidth) - padding;
-    gravity.display.drawStr(drawX, height * ++idx, "Source");
+    // Draw Main Page menu items
+    const char* menu_items[PARAM_MAIN_LAST] = {"Tempo", "Source"};
+    drawMenuItems(menu_items);
 }
 
 void DisplayChannelPage() {
@@ -364,89 +345,123 @@ void DisplayChannelPage() {
 
     gravity.display.setFontMode(1);
     gravity.display.setDrawColor(2);
-    gravity.display.setFont(LARGE_FONT);
 
-    int textWidth;
-    int textY = 26;
-    int subTextY = 42;
-    char num_str[4];
+    // Display selected editable value
+    char mainText[5];
+    const char* subText;
 
-    // Display selected editable value.
     switch (app.selected_param) {
-        case 0:  // Clock Mod
-            char mod_str[4];
-            if (clock_mod[ch.clock_mod_index] > 1) {
-                sprintf(mod_str, "/%d", clock_mod[ch.clock_mod_index]);
-                textWidth = gravity.display.getUTF8Width(mod_str);
-                gravity.display.drawStr(32 - (textWidth / 2), textY, mod_str);
-                gravity.display.setFont(TEXT_FONT);
-                textWidth = gravity.display.getUTF8Width("Divide");
-                gravity.display.drawStr(32 - (textWidth / 2), subTextY, "Divide");
-
+        case 0: {  // Clock Mod
+            int mod_value = clock_mod[ch.clock_mod_index];
+            if (mod_value > 1) {
+                sprintf(mainText, "/%d", mod_value);
+                subText = "Divide";
             } else {
-                sprintf(mod_str, "x%d", abs(clock_mod[ch.clock_mod_index]));
-                textWidth = gravity.display.getUTF8Width(mod_str);
-                gravity.display.drawStr(32 - (textWidth / 2), textY, mod_str);
-                gravity.display.setFont(TEXT_FONT);
-                textWidth = gravity.display.getUTF8Width("Multiply");
-                gravity.display.drawStr(32 - (textWidth / 2), subTextY, "Multiply");
+                sprintf(mainText, "x%d", abs(mod_value));
+                subText = "Multiply";
             }
             break;
+        }
         case 1:  // Probability
-            sprintf(num_str, "%d%%", ch.probability);
-            textWidth = gravity.display.getUTF8Width(num_str);
-            gravity.display.drawStr(32 - (textWidth / 2), textY, num_str);
-            gravity.display.setFont(TEXT_FONT);
-            textWidth = gravity.display.getUTF8Width("Hit Chance");
-            gravity.display.drawStr(32 - (textWidth / 2), subTextY, "Hit Chance");
+            sprintf(mainText, "%d%%", ch.probability);
+            subText = "Hit Chance";
             break;
         case 2:  // Duty Cycle
-            sprintf(num_str, "%d%%", ch.duty_cycle);
-            textWidth = gravity.display.getUTF8Width(num_str);
-            gravity.display.drawStr(32 - (textWidth / 2), textY, num_str);
-            gravity.display.setFont(TEXT_FONT);
-            textWidth = gravity.display.getUTF8Width("Pulse Width");
-            gravity.display.drawStr(32 - (textWidth / 2), subTextY, "Pulse Width");
+            sprintf(mainText, "%d%%", ch.duty_cycle);
+            subText = "Pulse Width";
             break;
         case 3:  // Offset
-            sprintf(num_str, "%d%%", ch.offset);
-            textWidth = gravity.display.getUTF8Width(num_str);
-            gravity.display.drawStr(32 - (textWidth / 2), textY, num_str);
-            gravity.display.setFont(TEXT_FONT);
-            textWidth = gravity.display.getUTF8Width("Shift Hit");
-            gravity.display.drawStr(32 - (textWidth / 2), subTextY, "Shift Hit");
+            sprintf(mainText, "%d%%", ch.offset);
+            subText = "Shift Hit";
             break;
     }
 
-    int idx = 0;
-    int drawX;
-    int height = 14;
-    int padding = 4;
+    drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
+    drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
 
+    // Draw Channel Page menu items
+    const char* menu_items[PARAM_CH_LAST] = {
+        "Mod", "Probability", "Duty Cycle", "Offset"};
+    drawMenuItems(menu_items);
+}
+
+void DisplaySelectedChannel() {
+    int boxX = CHANNEL_BOX_WIDTH;
+    int boxY = CHANNEL_BOXES_Y;
+    int boxWidth = CHANNEL_BOX_WIDTH;
+    int boxHeight = CHANNEL_BOX_HEIGHT;
+    int textOffset = 7;  // Half of font width
+
+    // Draw top and right side of frame.
+    gravity.display.drawHLine(1, boxY, SCREEN_WIDTH - 2);
+    gravity.display.drawVLine(SCREEN_WIDTH - 2, boxY, boxHeight);
+
+    for (int i = 0; i < OUTPUT_COUNT + 1; i++) {
+        // Draw box frame or filled selected box.
+        gravity.display.setDrawColor(1);
+        (app.selected_channel == i)
+            ? gravity.display.drawBox(i * boxWidth, boxY, boxWidth, boxHeight)
+            : gravity.display.drawVLine(i * boxWidth, boxY, boxHeight);
+
+        // Draw clock status icon or each channel number.
+        gravity.display.setDrawColor(2);
+        if (i == 0) {
+            gravity.display.setBitmapMode(1);
+            auto icon = gravity.clock.IsPaused() ? pause_icon : play_icon;
+            gravity.display.drawXBM(2, boxY, play_icon_width, play_icon_height, icon);
+        } else {
+            gravity.display.setFont(TEXT_FONT);
+            gravity.display.setCursor((i * boxWidth) + textOffset, SCREEN_HEIGHT - 1);
+            gravity.display.print(i);
+        }
+    }
+}
+
+void drawMenuItems(const char* menu_items[]) {
+    // Draw menu items
     gravity.display.setFont(TEXT_FONT);
-    int textHeight = gravity.display.getFontAscent();
 
-    // Draw selected menu item box.
-    gravity.display.drawBox(65, (height * min(2, app.selected_param)) + 2, 63, height + 1);
-
-    // Draw each menu item.
-    if (app.selected_param < 3) {
-        textWidth = gravity.display.getUTF8Width("Mod");
-        drawX = (SCREEN_WIDTH - textWidth) - padding;
-        gravity.display.drawStr(drawX, (height * ++idx), "Mod");
+    // Draw selected menu item box
+    int selectedBoxY = 0;
+    if (app.selected_param == PARAM_CH_LAST - 1) {
+        selectedBoxY = MENU_ITEM_HEIGHT * min(2, app.selected_param);
+    } else if (app.selected_param > 0) {
+        selectedBoxY = MENU_ITEM_HEIGHT;
     }
 
-    textWidth = gravity.display.getUTF8Width("Probability");
-    drawX = (SCREEN_WIDTH - textWidth) - padding;
-    gravity.display.drawStr(drawX, (height * ++idx), "Probability");
+    int boxX = MENU_BOX_WIDTH + 1;
+    int boxY = selectedBoxY + 2;
+    int boxWidth = MENU_BOX_WIDTH - 1;
+    int boxHeight = MENU_ITEM_HEIGHT + 1;
 
-    textWidth = gravity.display.getUTF8Width("Duty Cycle");
-    drawX = (SCREEN_WIDTH - textWidth) - padding;
-    gravity.display.drawStr(drawX, (height * ++idx), "Duty Cycle");
+    app.editing_param
+        ? gravity.display.drawBox(boxX, boxY, boxWidth, boxHeight)
+        : gravity.display.drawFrame(boxX, boxY, boxWidth, boxHeight);
 
-    if (app.selected_param > 2) {
-        textWidth = gravity.display.getUTF8Width("Offset");
-        drawX = (SCREEN_WIDTH - textWidth) - padding;
-        gravity.display.drawStr(drawX, (height * ++idx), "Offset");
+    // Draw the visible menu items
+    int start_index = 0;
+    if (app.selected_param == PARAM_CH_LAST - 1) {
+        start_index = PARAM_CH_LAST - VISIBLE_MENU_ITEMS;
+    } else if (app.selected_param > 0) {
+        start_index = app.selected_param - 1;
     }
+
+    for (int i = 0; i < VISIBLE_MENU_ITEMS; ++i) {
+        int idx = start_index + i;
+        drawRightAlignedText(menu_items[idx], MENU_ITEM_HEIGHT * (i + 1));
+    }
+}
+
+// Helper function to draw centered text
+void drawCenteredText(const char* text, int y, const uint8_t* font) {
+    gravity.display.setFont(font);
+    int textWidth = gravity.display.getUTF8Width(text);
+    gravity.display.drawStr(SCREEN_CENTER_X - (textWidth / 2), y, text);
+}
+
+// Helper function to draw right-aligned text
+void drawRightAlignedText(const char* text, int y) {
+    int textWidth = gravity.display.getUTF8Width(text);
+    int drawX = (SCREEN_WIDTH - textWidth) - MENU_BOX_PADDING;
+    gravity.display.drawStr(drawX, y, text);
 }
