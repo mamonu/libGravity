@@ -4,16 +4,14 @@
 #include <Arduino.h>
 #include <gravity.h>
 
-
 static const int MOD_CHOICE_SIZE = 21;
 // Negative for multiply, positive for divide.
 static const int clock_mod[MOD_CHOICE_SIZE] = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
 // This represents the number of clock pulses for a 96 PPQN clock source that match the above div/mult mods.
 static const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
 
-
 class Channel {
-public:
+   public:
     /**
      * @brief Construct a new Channel object with default values.
      */
@@ -21,7 +19,7 @@ public:
         updatePulses();
     }
 
-    // --- Setters for channel properties ---
+    // Setters for channel properties
 
     void setClockMod(int index) {
         if (index >= 0 && index < MOD_CHOICE_SIZE) {
@@ -44,9 +42,8 @@ public:
         updatePulses();
     }
 
-    // --- Getters for channel properties ---
+    // Getters for channel properties
 
-    int getClockModIndex() const { return clock_mod_index; }
     int getProbability() const { return probability; }
     int getDutyCycle() const { return duty_cycle; }
     int getOffset() const { return offset; }
@@ -77,7 +74,7 @@ public:
         }
     }
 
-private:
+   private:
     /**
      * @brief Recalculates pulse values based on current channel settings.
      * Should be called whenever mod, duty cycle, or offset changes.
@@ -88,7 +85,7 @@ private:
         offset_pulses = (long)((mod_pulses * (100L - offset)) / 100L);
     }
 
-    byte clock_mod_index = 7;  // 1x
+    byte clock_mod_index = 7;  // 1x clock mod
     byte probability = 100;
     byte duty_cycle = 50;
     byte offset = 0;
@@ -96,4 +93,4 @@ private:
     int offset_pulses;
 };
 
-#endif // CHANNEL_H
+#endif  // CHANNEL_H
