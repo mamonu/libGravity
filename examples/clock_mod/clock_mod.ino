@@ -31,7 +31,7 @@ struct Channel {
 struct AppState {
     bool refresh_screen = true;
     bool editing_param = false;
-    byte selected_param = 0;
+    int selected_param = 0;
     byte selected_channel = 0;  // 0=tempo, 1-6=output channel
     Source selected_source = SOURCE_INTERNAL;
     Channel channel[OUTPUT_COUNT];
@@ -43,12 +43,25 @@ enum ParamsMainPage {
     PARAM_MAIN_SOURCE,
     PARAM_MAIN_LAST,
 };
+
+const char* MAIN_PAGE_MENU[PARAM_MAIN_LAST] = {
+    "Tempo",
+    "Source",
+};
+
 enum ParamsChannelPage {
     PARAM_CH_MOD,
     PARAM_CH_PROB,
     PARAM_CH_DUTY,
     PARAM_CH_OFFSET,
     PARAM_CH_LAST,
+};
+
+const char* CHANNEL_PAGE_MENU[PARAM_CH_LAST] = {
+    "Mod",
+    "Probability",
+    "Duty Cycle",
+    "Offset",
 };
 
 // The number of clock mod options, hepls validate choices and pulses arrays are the same size.
@@ -166,77 +179,19 @@ void HandleEncoderPressed() {
 }
 
 void HandleRotate(Direction dir, int val) {
-    // Select a prameter when not in edit mode.
     if (!app.editing_param) {
-        // Main Global Settings Page.
+        // Navigation Mode
+        const int max_param = (app.selected_channel == 0) ? PARAM_MAIN_LAST : PARAM_CH_LAST;
+        updateSelection(app.selected_param, val, max_param);
+    } else {
+        // Editing Mode
         if (app.selected_channel == 0) {
-            if (app.selected_param == 0 && val < 0) {
-                app.selected_param = PARAM_MAIN_LAST - 1;
-            } else {
-                app.selected_param = (app.selected_param + val) % PARAM_MAIN_LAST;
-            }
-        }
-        // Selected Output Channels 1-6 Settings.
-        else {
-            if (app.selected_param == 0 && val < 0) {
-                app.selected_param = PARAM_CH_LAST - 1;
-            } else {
-                app.selected_param = (app.selected_param + val) % PARAM_CH_LAST;
-            }
+            editMainParameter(val);
+        } else {
+            editChannelParameter(dir, val);
         }
     }
-    // Edit selected param.
-    else {
-        // Main Global Settings Page.
-        if (app.selected_channel == 0) {
-            switch (static_cast<ParamsMainPage>(app.selected_param)) {
-                case PARAM_MAIN_TEMPO:
-                    if (gravity.clock.ExternalSource()) {
-                        break;
-                    }
-                    gravity.clock.SetTempo(gravity.clock.Tempo() + val);
-                    app.refresh_screen = true;
-                    break;
 
-                case PARAM_MAIN_SOURCE:
-                    if (static_cast<Source>(app.selected_source) == 0 && val < 0) {
-                        app.selected_source = static_cast<Source>(SOURCE_LAST - 1);
-                    } else {
-                        app.selected_source = static_cast<Source>((app.selected_source + val) % SOURCE_LAST);
-                    }
-
-                    gravity.clock.SetSource(app.selected_source);
-                    app.refresh_screen = true;
-                    break;
-            }
-        }
-        // Selected Output Channel Settings.
-        else {
-            auto& ch = GetSelectedChannel();
-
-            switch (static_cast<ParamsChannelPage>(app.selected_param)) {
-                case PARAM_CH_MOD:
-                    if (dir == DIRECTION_INCREMENT && ch.clock_mod_index < MOD_CHOICE_SIZE - 1) {
-                        ch.clock_mod_index += 1;
-                    } else if (dir == DIRECTION_DECREMENT && ch.clock_mod_index > 0) {
-                        ch.clock_mod_index -= 1;
-                    }
-                    break;
-                case PARAM_CH_PROB:
-                    ch.probability = constrain(ch.probability + val, 0, 100);
-                    break;
-                case PARAM_CH_DUTY:
-                    ch.duty_cycle = constrain(ch.duty_cycle + val, 0, 99);
-                    break;
-                case PARAM_CH_OFFSET:
-                    ch.offset = constrain(ch.offset + val, 0, 99);
-                    break;
-            }
-            uint32_t mod_pulses = clock_mod_pulses[ch.clock_mod_index];
-            ch.duty_cycle_pulses = max((int)((mod_pulses * (100L - ch.duty_cycle)) / 100L), 1);
-            ch.offset_pulses = (int)(mod_pulses * (100L - ch.offset) / 100L);
-        }
-    }
     app.refresh_screen = true;
 }
 
@@ -248,6 +203,57 @@ void HandlePressedRotate(Direction dir, int val) {
     }
     app.selected_param = 0;
     app.refresh_screen = true;
+}
+
+void editMainParameter(int val) {
+    switch (static_cast<ParamsMainPage>(app.selected_param)) {
+        case PARAM_MAIN_TEMPO:
+            if (gravity.clock.ExternalSource()) {
+                break;
+            }
+            gravity.clock.SetTempo(gravity.clock.Tempo() + val);
+            break;
+
+        case PARAM_MAIN_SOURCE: {
+            int source = static_cast<int>(app.selected_source);
+            updateSelection(source, val, SOURCE_LAST);
+            app.selected_source = static_cast<Source>(source);
+            gravity.clock.SetSource(app.selected_source);
+            break;
+        }
+    }
+}
+
+void editChannelParameter(Direction dir, int val) {
+    auto& ch = GetSelectedChannel();
+    switch (static_cast<ParamsChannelPage>(app.selected_param)) {
+        case PARAM_CH_MOD:
+            if (dir == DIRECTION_INCREMENT && ch.clock_mod_index < MOD_CHOICE_SIZE - 1) {
+                ch.clock_mod_index++;
+            } else if (dir == DIRECTION_DECREMENT && ch.clock_mod_index > 0) {
+                ch.clock_mod_index--;
+            }
+            break;
+        case PARAM_CH_PROB:
+            ch.probability = constrain(ch.probability + val, 0, 100);
+            break;
+        case PARAM_CH_DUTY:
+            ch.duty_cycle = constrain(ch.duty_cycle + val, 0, 99);
+            break;
+        case PARAM_CH_OFFSET:
+            ch.offset = constrain(ch.offset + val, 0, 99);
+            break;
+    }
+
+    // Update this channel's parameters based on new values.
+    uint32_t mod_pulses = clock_mod_pulses[ch.clock_mod_index];
+    ch.duty_cycle_pulses = max((int)((mod_pulses * (100L - ch.duty_cycle)) / 100L), 1);
+    ch.offset_pulses = (int)(mod_pulses * (100L - ch.offset) / 100L);
+}
+
+void updateSelection(int& param, int change, int maxValue) {
+    // This formula correctly handles positive and negative wrapping.
+    param = (param + change % maxValue + maxValue) % maxValue;
 }
 
 //
@@ -336,8 +342,7 @@ void DisplayMainPage() {
     drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    const char* menu_items[PARAM_MAIN_LAST] = {"Tempo", "Source"};
-    drawMenuItems(menu_items);
+    drawMenuItems(MAIN_PAGE_MENU, PARAM_MAIN_LAST);
 }
 
 void DisplayChannelPage() {
@@ -380,9 +385,7 @@ void DisplayChannelPage() {
     drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Channel Page menu items
-    const char* menu_items[PARAM_CH_LAST] = {
-        "Mod", "Probability", "Duty Cycle", "Offset"};
-    drawMenuItems(menu_items);
+    drawMenuItems(CHANNEL_PAGE_MENU, PARAM_CH_LAST);
 }
 
 void DisplaySelectedChannel() {
@@ -417,13 +420,13 @@ void DisplaySelectedChannel() {
     }
 }
 
-void drawMenuItems(const char* menu_items[]) {
+void drawMenuItems(const char* menu_items[], int menu_size) {
     // Draw menu items
     gravity.display.setFont(TEXT_FONT);
 
     // Draw selected menu item box
     int selectedBoxY = 0;
-    if (app.selected_param == PARAM_CH_LAST - 1) {
+    if (menu_size >= VISIBLE_MENU_ITEMS && app.selected_param == menu_size - 1) {
         selectedBoxY = MENU_ITEM_HEIGHT * min(2, app.selected_param);
     } else if (app.selected_param > 0) {
         selectedBoxY = MENU_ITEM_HEIGHT;
@@ -440,13 +443,13 @@ void drawMenuItems(const char* menu_items[]) {
 
     // Draw the visible menu items
     int start_index = 0;
-    if (app.selected_param == PARAM_CH_LAST - 1) {
-        start_index = PARAM_CH_LAST - VISIBLE_MENU_ITEMS;
+    if (menu_size >= VISIBLE_MENU_ITEMS && app.selected_param == menu_size - 1) {
+        start_index = menu_size - VISIBLE_MENU_ITEMS;
     } else if (app.selected_param > 0) {
         start_index = app.selected_param - 1;
     }
 
-    for (int i = 0; i < VISIBLE_MENU_ITEMS; ++i) {
+    for (int i = 0; i < min(menu_size, VISIBLE_MENU_ITEMS); ++i) {
         int idx = start_index + i;
         drawRightAlignedText(menu_items[idx], MENU_ITEM_HEIGHT * (i + 1));
     }
