@@ -86,6 +86,13 @@ void loop() {
     // Process change in state of inputs and outputs.
     gravity.Process();
 
+    // NEW: Read CVs and call the main-loop-safe update function for each channel.
+    int cv1 = gravity.cv1.Read();
+    int cv2 = gravity.cv2.Read();
+    for (int i = 0; i < OUTPUT_COUNT; i++) {
+        app.channel[i].updateFinalValues(cv1, cv2);
+    }
+
     if (app.refresh_screen) {
         UpdateDisplay();
     }
