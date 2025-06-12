@@ -9,7 +9,7 @@ enum CvSource {
     CV_NONE,
     CV_1,
     CV_2,
-    CV_SOURCE_LAST,
+    CV_LAST,
 };
 
 enum CvDestination {
@@ -29,27 +29,26 @@ static const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 
 
 class Channel {
    public:
-    /**
-     * @brief Construct a new Channel object with default values.
-     */
     Channel() {
         final_clock_mod_index = base_clock_mod_index;
         final_probability = base_probability;
         final_duty_cycle = base_duty_cycle;
         final_offset = base_offset;
-        updatePulses();
     }
 
-    // --- Setters (They set the BASE value) ---
+    // Setters (Set the BASE value)
 
     void setClockMod(int index) {
         if (index >= 0 && index < MOD_CHOICE_SIZE) base_clock_mod_index = index;
     }
     void setProbability(int prob) { base_probability = constrain(prob, 0, 100); }
-    void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 0, 99); }
-    void setOffset(int off) { base_offset = constrain(off, 0, 99); }
+    void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 1, 99); }
+    void setOffset(int off) { base_offset = constrain(off, 1, 99); }
+    void setCvSource(CvSource source) { cv_source = source; }
+    void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
-    // --- Getters (They get the BASE value for the UI) ---
+    // Getters (Get the BASE value for the UI)
+
     int getProbability() const { return base_probability; }
     int getDutyCycle() const { return base_duty_cycle; }
     int getOffset() const { return base_offset; }
@@ -57,9 +56,8 @@ class Channel {
     int getClockModIndex() const { return base_clock_mod_index; }
     uint32_t getDutyCyclePulses() const { return duty_cycle_pulses; }
     uint32_t getOffsetPulses() const { return offset_pulses; }
-
-    CvSource getCvSource() const { return cv_source; }
-    CvDestination getCvDestination() const { return cv_destination; }
+    CvSource getCvSource() { return cv_source; }
+    CvDestination getCvDestination() { return cv_destination; }
     bool isCvActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
 
     /**
@@ -68,7 +66,7 @@ class Channel {
      * @param output The output object (or a reference to its state) to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
-        // --- Use pre-calculated final values ---
+        // Use pre-calculated final values
         const uint32_t mod_pulses = clock_mod_pulses[final_clock_mod_index];
         const uint32_t duty_pulses = max((long)((mod_pulses * (100L - final_duty_cycle)) / 100L), 1L);
         const uint32_t offset_pulses = (long)((mod_pulses * (100L - final_offset)) / 100L);
@@ -88,11 +86,6 @@ class Channel {
         if (duty_cycle_end_tick % mod_pulses == 0) {
             output.Low();
         }
-    }
-
-    void setCvConfig(CvSource source, CvDestination dest) {
-        cv_source = source;
-        cv_destination = dest;
     }
 
     void updateFinalValues(int cv1_value, int cv2_value) {
@@ -134,7 +127,7 @@ class Channel {
      * Should be called whenever mod, duty cycle, or offset changes.
      */
     void updatePulses() {
-        uint32_t mod_pulses = clock_mod_pulses[final_clock_mod_index];
+        const uint32_t mod_pulses = clock_mod_pulses[final_clock_mod_index];
         duty_cycle_pulses = max((long)((mod_pulses * (100L - final_duty_cycle)) / 100L), 1L);
         offset_pulses = (long)((mod_pulses * (100L - final_offset)) / 100L);
     }

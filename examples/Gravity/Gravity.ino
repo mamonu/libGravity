@@ -43,6 +43,8 @@ enum ParamsChannelPage {
     PARAM_CH_PROB,
     PARAM_CH_DUTY,
     PARAM_CH_OFFSET,
+    PARAM_CH_CV_SRC,
+    PARAM_CH_CV_DEST,
     PARAM_CH_LAST,
 };
 
@@ -150,7 +152,7 @@ void HandleRotate(Direction dir, int val) {
         if (app.selected_channel == 0) {
             editMainParameter(val);
         } else {
-            editChannelParameter(dir, val);
+            editChannelParameter(val);
         }
     }
     app.refresh_screen = true;
@@ -185,9 +187,9 @@ void editMainParameter(int val) {
     }
 }
 
-void editChannelParameter(Direction dir, int val) {
+void editChannelParameter(int val) {
     auto& ch = GetSelectedChannel();
-    switch (static_cast<ParamsChannelPage>(app.selected_param)) {
+    switch (app.selected_param) {
         case PARAM_CH_MOD:
             ch.setClockMod(ch.getClockModIndex() + val);
             break;
@@ -200,6 +202,18 @@ void editChannelParameter(Direction dir, int val) {
         case PARAM_CH_OFFSET:
             ch.setOffset(ch.getOffset() + val);
             break;
+        case PARAM_CH_CV_SRC: {
+            int source = static_cast<int>(ch.getCvSource());
+            updateSelection(source, val, CV_LAST);
+            ch.setCvSource(static_cast<CvSource>(source));
+            break;
+        }
+        case PARAM_CH_CV_DEST: {
+            int dest = static_cast<int>(ch.getCvDestination());
+            updateSelection(dest, val, CV_DEST_LAST);
+            ch.setCvDestination(static_cast<CvDestination>(dest));
+            break;
+        }
     }
 }
 
@@ -311,7 +325,7 @@ void DisplayChannelPage() {
     const char* subText;
 
     switch (app.selected_param) {
-        case 0: {  // Clock Mod
+        case PARAM_CH_MOD: {
             int mod_value = ch.getClockMod();
             if (mod_value > 1) {
                 sprintf(mainText, "/%d", mod_value);
@@ -322,25 +336,63 @@ void DisplayChannelPage() {
             }
             break;
         }
-        case 1:  // Probability
+        case PARAM_CH_PROB:
             sprintf(mainText, "%d%%", ch.getProbability());
             subText = "Hit Chance";
             break;
-        case 2:  // Duty Cycle
+        case PARAM_CH_DUTY:
             sprintf(mainText, "%d%%", ch.getDutyCycle());
             subText = "Pulse Width";
             break;
-        case 3:  // Offset
+        case PARAM_CH_OFFSET:
             sprintf(mainText, "%d%%", ch.getOffset());
             subText = "Shift Hit";
             break;
+        case PARAM_CH_CV_SRC: {
+            switch (ch.getCvSource()) {
+                case CV_NONE:
+                    sprintf(mainText, "-");
+                    break;
+                case CV_1:
+                    sprintf(mainText, "CV1");
+                    break;
+                case CV_2:
+                    sprintf(mainText, "CV2");
+                    break;
+            }
+            subText = "CV Source";
+            break;
+        }
+        case PARAM_CH_CV_DEST: {
+            switch (ch.getCvDestination()) {
+                case CV_DEST_NONE:
+                    sprintf(mainText, "-");
+                    break;
+                case CV_DEST_MOD:
+                    sprintf(mainText, "Mod");
+                    break;
+                case CV_DEST_PROB:
+                    sprintf(mainText, "Prob");
+                    break;
+                case CV_DEST_DUTY:
+                    sprintf(mainText, "Duty");
+                    break;
+                case CV_DEST_OFFSET:
+                    sprintf(mainText, "Offs");
+                    break;
+            }
+            subText = "CV Dest";
+            break;
+        }
+        
     }
 
     drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
     drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Channel Page menu items
-    const char* menu_items[PARAM_CH_LAST] = {"Mod", "Probability", "Duty Cycle", "Offset"};
+    const char* menu_items[PARAM_CH_LAST] = {
+        "Mod", "Probability", "Duty", "Offset", "CV Source", "CV Dest"};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 
