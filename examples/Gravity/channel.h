@@ -30,10 +30,10 @@ static const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 
 class Channel {
    public:
     Channel() {
-        final_clock_mod_index = base_clock_mod_index;
-        final_probability = base_probability;
-        final_duty_cycle = base_duty_cycle;
-        final_offset = base_offset;
+        cvmod_clock_mod_index = base_clock_mod_index;
+        cvmod_probability = base_probability;
+        cvmod_duty_cycle = base_duty_cycle;
+        cvmod_offset = base_offset;
     }
 
     // Setters (Set the BASE value)
@@ -43,22 +43,22 @@ class Channel {
     }
     void setProbability(int prob) { base_probability = constrain(prob, 0, 100); }
     void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 1, 99); }
-    void setOffset(int off) { base_offset = constrain(off, 1, 99); }
+    void setOffset(int off) { base_offset = constrain(off, 0, 100); }
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
     // Getters (Get the BASE value for the UI)
 
-    int getProbability() const { return base_probability; }
-    int getDutyCycle() const { return base_duty_cycle; }
-    int getOffset() const { return base_offset; }
-    int getClockMod() const { return clock_mod[base_clock_mod_index]; }
-    int getClockModIndex() const { return base_clock_mod_index; }
+    int getProbability(bool withCvMod = false) const { return withCvMod ? cvmod_probability : base_probability; }
+    int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
+    int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
+    int getClockMod(bool withCvMod = false) const { return clock_mod[getClockModIndex(withCvMod)]; }
+    int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
     uint32_t getDutyCyclePulses() const { return duty_cycle_pulses; }
     uint32_t getOffsetPulses() const { return offset_pulses; }
     CvSource getCvSource() { return cv_source; }
     CvDestination getCvDestination() { return cv_destination; }
-    bool isCvActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
+    bool isCvModActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
 
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
@@ -67,16 +67,15 @@ class Channel {
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
         // Use pre-calculated final values
-        const uint32_t mod_pulses = clock_mod_pulses[final_clock_mod_index];
-        const uint32_t duty_pulses = max((long)((mod_pulses * (100L - final_duty_cycle)) / 100L), 1L);
-        const uint32_t offset_pulses = (long)((mod_pulses * (100L - final_offset)) / 100L);
+        const uint32_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
+        const uint32_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
+        const uint32_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
 
         const uint32_t current_tick_offset = tick + offset_pulses;
 
         // Duty cycle high check
         if (current_tick_offset % mod_pulses == 0) {
-            // Use final_probability here
-            if (final_probability >= random(0, 100)) {
+            if (cvmod_probability >= random(0, 100)) {
                 output.High();
             }
         }
@@ -89,12 +88,12 @@ class Channel {
     }
 
     void updateFinalValues(int cv1_value, int cv2_value) {
-        if (!isCvActive()) {
+        if (!isCvModActive()) {
             // If CV is off, ensure final values match the base values.
-            final_clock_mod_index = base_clock_mod_index;
-            final_probability = base_probability;
-            final_duty_cycle = base_duty_cycle;
-            final_offset = base_offset;
+            cvmod_clock_mod_index = base_clock_mod_index;
+            cvmod_probability = base_probability;
+            cvmod_duty_cycle = base_duty_cycle;
+            cvmod_offset = base_offset;
             return;
         }
 
@@ -104,19 +103,19 @@ class Channel {
         // Calculate and store final values using bipolar mapping.
         // Default to base value if not the current CV destination.
 
-        final_clock_mod_index = (cv_destination == CV_DEST_MOD)
+        cvmod_clock_mod_index = (cv_destination == CV_DEST_MOD)
                                     ? constrain(base_clock_mod_index + map(active_cv_value, -512, 512, -10, 10), 0, MOD_CHOICE_SIZE - 1)
                                     : base_clock_mod_index;
 
-        final_probability = (cv_destination == CV_DEST_PROB)
+        cvmod_probability = (cv_destination == CV_DEST_PROB)
                                 ? constrain(base_probability + map(active_cv_value, -512, 512, -50, 50), 0, 100)
                                 : base_probability;
 
-        final_duty_cycle = (cv_destination == CV_DEST_DUTY)
+        cvmod_duty_cycle = (cv_destination == CV_DEST_DUTY)
                                ? constrain(base_duty_cycle + map(active_cv_value, -512, 512, -50, 50), 0, 99)
                                : base_duty_cycle;
 
-        final_offset = (cv_destination == CV_DEST_OFFSET)
+        cvmod_offset = (cv_destination == CV_DEST_OFFSET)
                            ? constrain(base_offset + map(active_cv_value, -512, 512, -50, 50), 0, 99)
                            : base_offset;
     }
@@ -127,9 +126,9 @@ class Channel {
      * Should be called whenever mod, duty cycle, or offset changes.
      */
     void updatePulses() {
-        const uint32_t mod_pulses = clock_mod_pulses[final_clock_mod_index];
-        duty_cycle_pulses = max((long)((mod_pulses * (100L - final_duty_cycle)) / 100L), 1L);
-        offset_pulses = (long)((mod_pulses * (100L - final_offset)) / 100L);
+        const uint32_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
+        duty_cycle_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
+        offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
     }
 
     // User-settable "base" values.
@@ -145,10 +144,10 @@ class Channel {
     CvSource cv_source = CV_NONE;
     CvDestination cv_destination = CV_DEST_NONE;
 
-    volatile byte final_clock_mod_index;
-    volatile byte final_probability;
-    volatile byte final_duty_cycle;
-    volatile byte final_offset;
+    volatile byte cvmod_clock_mod_index;
+    volatile byte cvmod_probability;
+    volatile byte cvmod_duty_cycle;
+    volatile byte cvmod_offset;
 };
 
 #endif  // CHANNEL_H

@@ -105,8 +105,17 @@ void loop() {
 //
 
 void HandleIntClockTick(uint32_t tick) {
+    bool refresh = false;
     for (int i = 0; i < OUTPUT_COUNT; i++) {
         app.channel[i].processClockTick(tick, gravity.outputs[i]);
+
+        if (app.channel[i].isCvModActive()) {
+            refresh = true;
+        }
+    }
+
+    if (!app.editing_param) {
+        app.refresh_screen |= refresh;
     }
 }
 
@@ -324,9 +333,13 @@ void DisplayChannelPage() {
     char mainText[5];
     const char* subText;
 
+    // When editing a param, just show the base value. When not editing show
+    // the value with cv mod.
+    bool withCvMod = !app.editing_param;
+
     switch (app.selected_param) {
         case PARAM_CH_MOD: {
-            int mod_value = ch.getClockMod();
+            int mod_value = ch.getClockMod(withCvMod);
             if (mod_value > 1) {
                 sprintf(mainText, "/%d", mod_value);
                 subText = "Divide";
@@ -337,54 +350,59 @@ void DisplayChannelPage() {
             break;
         }
         case PARAM_CH_PROB:
-            sprintf(mainText, "%d%%", ch.getProbability());
+            sprintf(mainText, "%d%%", ch.getProbability(withCvMod));
             subText = "Hit Chance";
             break;
         case PARAM_CH_DUTY:
-            sprintf(mainText, "%d%%", ch.getDutyCycle());
+            sprintf(mainText, "%d%%", ch.getDutyCycle(withCvMod));
             subText = "Pulse Width";
             break;
         case PARAM_CH_OFFSET:
-            sprintf(mainText, "%d%%", ch.getOffset());
+            sprintf(mainText, "%d%%", ch.getOffset(withCvMod));
             subText = "Shift Hit";
             break;
         case PARAM_CH_CV_SRC: {
             switch (ch.getCvSource()) {
                 case CV_NONE:
-                    sprintf(mainText, "-");
+                    sprintf(mainText, "SRC");
+                    subText = "None";
                     break;
                 case CV_1:
-                    sprintf(mainText, "CV1");
+                    sprintf(mainText, "SRC");
+                    subText = "CV 1";
                     break;
                 case CV_2:
-                    sprintf(mainText, "CV2");
+                    sprintf(mainText, "SRC");
+                    subText = "CV 2";
                     break;
             }
-            subText = "CV Source";
             break;
         }
         case PARAM_CH_CV_DEST: {
             switch (ch.getCvDestination()) {
                 case CV_DEST_NONE:
-                    sprintf(mainText, "-");
+                    sprintf(mainText, "DEST");
+                    subText = "None";
                     break;
                 case CV_DEST_MOD:
-                    sprintf(mainText, "Mod");
+                    sprintf(mainText, "DEST");
+                    subText = "Clock Mod";
                     break;
                 case CV_DEST_PROB:
-                    sprintf(mainText, "Prob");
+                    sprintf(mainText, "DEST");
+                    subText = "Probability";
                     break;
                 case CV_DEST_DUTY:
-                    sprintf(mainText, "Duty");
+                    sprintf(mainText, "DEST");
+                    subText = "Duty Cycle";
                     break;
                 case CV_DEST_OFFSET:
-                    sprintf(mainText, "Offs");
+                    sprintf(mainText, "DEST");
+                    subText = "Offset";
                     break;
             }
-            subText = "CV Dest";
             break;
         }
-        
     }
 
     drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
