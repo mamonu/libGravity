@@ -47,7 +47,7 @@ class Channel {
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
-    // Getters (Get the BASE value for the UI)
+    // Getters (Get the BASE value for editing or cv modded value for display)
 
     int getProbability(bool withCvMod = false) const { return withCvMod ? cvmod_probability : base_probability; }
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
@@ -63,7 +63,7 @@ class Channel {
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
      * @param tick The current clock tick count.
-     * @param output The output object (or a reference to its state) to be modified.
+     * @param output The output object to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
         // Use pre-calculated final values
@@ -121,21 +121,17 @@ class Channel {
     }
 
    private:
-    /**
-     * @brief Recalculates pulse values based on current channel settings.
-     * Should be called whenever mod, duty cycle, or offset changes.
-     */
-    void updatePulses() {
-        const uint32_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
-        duty_cycle_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
-        offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
-    }
-
     // User-settable "base" values.
     byte base_clock_mod_index = 7;
     byte base_probability = 100;
     byte base_duty_cycle = 50;
     byte base_offset = 0;
+
+    // Base value with cv mod applied.
+    volatile byte cvmod_clock_mod_index;
+    volatile byte cvmod_probability;
+    volatile byte cvmod_duty_cycle;
+    volatile byte cvmod_offset;
 
     int duty_cycle_pulses;
     int offset_pulses;
@@ -143,11 +139,6 @@ class Channel {
     // CV configuration
     CvSource cv_source = CV_NONE;
     CvDestination cv_destination = CV_DEST_NONE;
-
-    volatile byte cvmod_clock_mod_index;
-    volatile byte cvmod_probability;
-    volatile byte cvmod_duty_cycle;
-    volatile byte cvmod_offset;
 };
 
 #endif  // CHANNEL_H
