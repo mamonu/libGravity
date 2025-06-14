@@ -43,6 +43,8 @@ enum ParamsChannelPage {
     PARAM_CH_PROB,
     PARAM_CH_DUTY,
     PARAM_CH_OFFSET,
+    PARAM_CH_CV_SRC,
+    PARAM_CH_CV_DEST,
     PARAM_CH_LAST,
 };
 
@@ -86,6 +88,13 @@ void loop() {
     // Process change in state of inputs and outputs.
     gravity.Process();
 
+    // Read CVs and call the update function for each channel.
+    int cv1 = gravity.cv1.Read();
+    int cv2 = gravity.cv2.Read();
+    for (int i = 0; i < OUTPUT_COUNT; i++) {
+        app.channel[i].applyCvMod(cv1, cv2);
+    }
+
     if (app.refresh_screen) {
         UpdateDisplay();
     }
@@ -96,8 +105,17 @@ void loop() {
 //
 
 void HandleIntClockTick(uint32_t tick) {
+    bool refresh = false;
     for (int i = 0; i < OUTPUT_COUNT; i++) {
         app.channel[i].processClockTick(tick, gravity.outputs[i]);
+
+        if (app.channel[i].isCvModActive()) {
+            refresh = true;
+        }
+    }
+
+    if (!app.editing_param) {
+        app.refresh_screen |= refresh;
     }
 }
 
@@ -143,7 +161,7 @@ void HandleRotate(Direction dir, int val) {
         if (app.selected_channel == 0) {
             editMainParameter(val);
         } else {
-            editChannelParameter(dir, val);
+            editChannelParameter(val);
         }
     }
     app.refresh_screen = true;
@@ -178,9 +196,9 @@ void editMainParameter(int val) {
     }
 }
 
-void editChannelParameter(Direction dir, int val) {
+void editChannelParameter(int val) {
     auto& ch = GetSelectedChannel();
-    switch (static_cast<ParamsChannelPage>(app.selected_param)) {
+    switch (app.selected_param) {
         case PARAM_CH_MOD:
             ch.setClockMod(ch.getClockModIndex() + val);
             break;
@@ -193,6 +211,18 @@ void editChannelParameter(Direction dir, int val) {
         case PARAM_CH_OFFSET:
             ch.setOffset(ch.getOffset() + val);
             break;
+        case PARAM_CH_CV_SRC: {
+            int source = static_cast<int>(ch.getCvSource());
+            updateSelection(source, val, CV_LAST);
+            ch.setCvSource(static_cast<CvSource>(source));
+            break;
+        }
+        case PARAM_CH_CV_DEST: {
+            int dest = static_cast<int>(ch.getCvDestination());
+            updateSelection(dest, val, CV_DEST_LAST);
+            ch.setCvDestination(static_cast<CvDestination>(dest));
+            break;
+        }
     }
 }
 
@@ -303,9 +333,13 @@ void DisplayChannelPage() {
     char mainText[5];
     const char* subText;
 
+    // When editing a param, just show the base value. When not editing show
+    // the value with cv mod.
+    bool withCvMod = !app.editing_param;
+
     switch (app.selected_param) {
-        case 0: {  // Clock Mod
-            int mod_value = ch.getClockMod();
+        case PARAM_CH_MOD: {
+            int mod_value = ch.getClockMod(withCvMod);
             if (mod_value > 1) {
                 sprintf(mainText, "/%d", mod_value);
                 subText = "Divide";
@@ -315,25 +349,68 @@ void DisplayChannelPage() {
             }
             break;
         }
-        case 1:  // Probability
-            sprintf(mainText, "%d%%", ch.getProbability());
+        case PARAM_CH_PROB:
+            sprintf(mainText, "%d%%", ch.getProbability(withCvMod));
             subText = "Hit Chance";
             break;
-        case 2:  // Duty Cycle
-            sprintf(mainText, "%d%%", ch.getDutyCycle());
+        case PARAM_CH_DUTY:
+            sprintf(mainText, "%d%%", ch.getDutyCycle(withCvMod));
             subText = "Pulse Width";
             break;
-        case 3:  // Offset
-            sprintf(mainText, "%d%%", ch.getOffset());
+        case PARAM_CH_OFFSET:
+            sprintf(mainText, "%d%%", ch.getOffset(withCvMod));
             subText = "Shift Hit";
             break;
+        case PARAM_CH_CV_SRC: {
+            switch (ch.getCvSource()) {
+                case CV_NONE:
+                    sprintf(mainText, "SRC");
+                    subText = "None";
+                    break;
+                case CV_1:
+                    sprintf(mainText, "SRC");
+                    subText = "CV 1";
+                    break;
+                case CV_2:
+                    sprintf(mainText, "SRC");
+                    subText = "CV 2";
+                    break;
+            }
+            break;
+        }
+        case PARAM_CH_CV_DEST: {
+            switch (ch.getCvDestination()) {
+                case CV_DEST_NONE:
+                    sprintf(mainText, "DEST");
+                    subText = "None";
+                    break;
+                case CV_DEST_MOD:
+                    sprintf(mainText, "DEST");
+                    subText = "Clock Mod";
+                    break;
+                case CV_DEST_PROB:
+                    sprintf(mainText, "DEST");
+                    subText = "Probability";
+                    break;
+                case CV_DEST_DUTY:
+                    sprintf(mainText, "DEST");
+                    subText = "Duty Cycle";
+                    break;
+                case CV_DEST_OFFSET:
+                    sprintf(mainText, "DEST");
+                    subText = "Offset";
+                    break;
+            }
+            break;
+        }
     }
 
     drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
     drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Channel Page menu items
-    const char* menu_items[PARAM_CH_LAST] = {"Mod", "Probability", "Duty Cycle", "Offset"};
+    const char* menu_items[PARAM_CH_LAST] = {
+        "Mod", "Probability", "Duty", "Offset", "CV Source", "CV Dest"};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 
