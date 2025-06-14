@@ -92,7 +92,7 @@ void loop() {
     int cv1 = gravity.cv1.Read();
     int cv2 = gravity.cv2.Read();
     for (int i = 0; i < OUTPUT_COUNT; i++) {
-        app.channel[i].updateFinalValues(cv1, cv2);
+        app.channel[i].applyCvMod(cv1, cv2);
     }
 
     if (app.refresh_screen) {

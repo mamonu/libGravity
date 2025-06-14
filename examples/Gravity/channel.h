@@ -87,7 +87,7 @@ class Channel {
         }
     }
 
-    void updateFinalValues(int cv1_value, int cv2_value) {
+    void applyCvMod(int cv1_value, int cv2_value) {
         if (!isCvModActive()) {
             // If CV is off, ensure final values match the base values.
             cvmod_clock_mod_index = base_clock_mod_index;
@@ -98,25 +98,25 @@ class Channel {
         }
 
         // The channel knows its own config, so it selects the correct CV value.
-        int active_cv_value = (cv_source == CV_1) ? cv1_value : cv2_value;
+        int value = (cv_source == CV_1) ? cv1_value : cv2_value;
 
         // Calculate and store final values using bipolar mapping.
         // Default to base value if not the current CV destination.
 
         cvmod_clock_mod_index = (cv_destination == CV_DEST_MOD)
-                                    ? constrain(base_clock_mod_index + map(active_cv_value, -512, 512, -10, 10), 0, MOD_CHOICE_SIZE - 1)
+                                    ? constrain(base_clock_mod_index + map(value, -512, 512, -10, 10), 0, MOD_CHOICE_SIZE - 1)
                                     : base_clock_mod_index;
 
         cvmod_probability = (cv_destination == CV_DEST_PROB)
-                                ? constrain(base_probability + map(active_cv_value, -512, 512, -50, 50), 0, 100)
+                                ? constrain(base_probability + map(value, -512, 512, -50, 50), 0, 100)
                                 : base_probability;
 
         cvmod_duty_cycle = (cv_destination == CV_DEST_DUTY)
-                               ? constrain(base_duty_cycle + map(active_cv_value, -512, 512, -50, 50), 0, 99)
+                               ? constrain(base_duty_cycle + map(value, -512, 512, -50, 50), 1, 99)
                                : base_duty_cycle;
 
         cvmod_offset = (cv_destination == CV_DEST_OFFSET)
-                           ? constrain(base_offset + map(active_cv_value, -512, 512, -50, 50), 0, 99)
+                           ? constrain(base_offset + map(value, -512, 512, -50, 50), 0, 99)
                            : base_offset;
     }
 
