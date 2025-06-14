@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <gravity.h>
 
-// Enums for CV configuration (still needed)
+// Enums for CV configuration
 enum CvSource {
     CV_NONE,
     CV_1,
@@ -66,7 +66,7 @@ class Channel {
      * @param output The output object to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
-        // Use pre-calculated final values
+        // Calculate output duty cycle state using cv modded values to determine pulse counts.
         const uint32_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
         const uint32_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
         const uint32_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
@@ -89,7 +89,7 @@ class Channel {
 
     void applyCvMod(int cv1_value, int cv2_value) {
         if (!isCvModActive()) {
-            // If CV is off, ensure final values match the base values.
+            // If CV is off, ensure cv modded values match the base values.
             cvmod_clock_mod_index = base_clock_mod_index;
             cvmod_probability = base_probability;
             cvmod_duty_cycle = base_duty_cycle;
@@ -97,10 +97,10 @@ class Channel {
             return;
         }
 
-        // The channel knows its own config, so it selects the correct CV value.
+        // Use the CV value for current selected cv source.
         int value = (cv_source == CV_1) ? cv1_value : cv2_value;
 
-        // Calculate and store final values using bipolar mapping.
+        // Calculate and store cv modded values using bipolar mapping.
         // Default to base value if not the current CV destination.
 
         cvmod_clock_mod_index = (cv_destination == CV_DEST_MOD)
@@ -128,10 +128,10 @@ class Channel {
     byte base_offset = 0;
 
     // Base value with cv mod applied.
-    volatile byte cvmod_clock_mod_index;
-    volatile byte cvmod_probability;
-    volatile byte cvmod_duty_cycle;
-    volatile byte cvmod_offset;
+    byte cvmod_clock_mod_index;
+    byte cvmod_probability;
+    byte cvmod_duty_cycle;
+    byte cvmod_offset;
 
     int duty_cycle_pulses;
     int offset_pulses;
