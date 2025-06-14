@@ -19,7 +19,7 @@
 // Peripheral input pins
 #define ENCODER_PIN1 17  // A3
 #define ENCODER_PIN2 4
-#define ENCODER_SW_PIN 14
+#define ENCODER_SW_PIN 14  // A0
 
 // Clock and CV Inputs
 #define EXT_PIN 2

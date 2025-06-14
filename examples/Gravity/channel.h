@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <gravity.h>
 
-// Enums for CV configuration (still needed)
+// Enums for CV configuration
 enum CvSource {
     CV_NONE,
     CV_1,
@@ -47,7 +47,7 @@ class Channel {
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
-    // Getters (Get the BASE value for the UI)
+    // Getters (Get the BASE value for editing or cv modded value for display)
 
     int getProbability(bool withCvMod = false) const { return withCvMod ? cvmod_probability : base_probability; }
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
@@ -63,10 +63,10 @@ class Channel {
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
      * @param tick The current clock tick count.
-     * @param output The output object (or a reference to its state) to be modified.
+     * @param output The output object to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
-        // Use pre-calculated final values
+        // Calculate output duty cycle state using cv modded values to determine pulse counts.
         const uint32_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
         const uint32_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
         const uint32_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
@@ -89,7 +89,7 @@ class Channel {
 
     void applyCvMod(int cv1_value, int cv2_value) {
         if (!isCvModActive()) {
-            // If CV is off, ensure final values match the base values.
+            // If CV is off, ensure cv modded values match the base values.
             cvmod_clock_mod_index = base_clock_mod_index;
             cvmod_probability = base_probability;
             cvmod_duty_cycle = base_duty_cycle;
@@ -97,10 +97,10 @@ class Channel {
             return;
         }
 
-        // The channel knows its own config, so it selects the correct CV value.
+        // Use the CV value for current selected cv source.
         int value = (cv_source == CV_1) ? cv1_value : cv2_value;
 
-        // Calculate and store final values using bipolar mapping.
+        // Calculate and store cv modded values using bipolar mapping.
         // Default to base value if not the current CV destination.
 
         cvmod_clock_mod_index = (cv_destination == CV_DEST_MOD)
@@ -121,21 +121,17 @@ class Channel {
     }
 
    private:
-    /**
-     * @brief Recalculates pulse values based on current channel settings.
-     * Should be called whenever mod, duty cycle, or offset changes.
-     */
-    void updatePulses() {
-        const uint32_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
-        duty_cycle_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
-        offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
-    }
-
     // User-settable "base" values.
     byte base_clock_mod_index = 7;
     byte base_probability = 100;
     byte base_duty_cycle = 50;
     byte base_offset = 0;
+
+    // Base value with cv mod applied.
+    byte cvmod_clock_mod_index;
+    byte cvmod_probability;
+    byte cvmod_duty_cycle;
+    byte cvmod_offset;
 
     int duty_cycle_pulses;
     int offset_pulses;
@@ -143,11 +139,6 @@ class Channel {
     // CV configuration
     CvSource cv_source = CV_NONE;
     CvDestination cv_destination = CV_DEST_NONE;
-
-    volatile byte cvmod_clock_mod_index;
-    volatile byte cvmod_probability;
-    volatile byte cvmod_duty_cycle;
-    volatile byte cvmod_offset;
 };
 
 #endif  // CHANNEL_H
