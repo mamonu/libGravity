@@ -30,10 +30,24 @@ static const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 
 class Channel {
    public:
     Channel() {
+        Init();
+    }
+
+    void Init() {
+        // Reset base values to their defaults
+        base_clock_mod_index = 7;
+        base_probability = 100;
+        base_duty_cycle = 50;
+        base_offset = 0;
+        cv_source = CV_NONE;
+        cv_destination = CV_DEST_NONE;
+
         cvmod_clock_mod_index = base_clock_mod_index;
         cvmod_probability = base_probability;
         cvmod_duty_cycle = base_duty_cycle;
         cvmod_offset = base_offset;
+        duty_cycle_pulses = 0;
+        offset_pulses = 0;
     }
 
     // Setters (Set the BASE value)
@@ -121,11 +135,11 @@ class Channel {
     }
 
    private:
-    // User-settable "base" values.
-    byte base_clock_mod_index = 7;
-    byte base_probability = 100;
-    byte base_duty_cycle = 50;
-    byte base_offset = 0;
+    // User-settable base values.
+    byte base_clock_mod_index;
+    byte base_probability;
+    byte base_duty_cycle;
+    byte base_offset;
 
     // Base value with cv mod applied.
     byte cvmod_clock_mod_index;
@@ -133,8 +147,8 @@ class Channel {
     byte cvmod_duty_cycle;
     byte cvmod_offset;
 
-    int duty_cycle_pulses;
-    int offset_pulses;
+    uint32_t duty_cycle_pulses;
+    uint32_t offset_pulses;
 
     // CV configuration
     CvSource cv_source = CV_NONE;

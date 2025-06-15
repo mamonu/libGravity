@@ -39,6 +39,4 @@
 #define OUT_CH5 9
 #define OUT_CH6 11
 
-const uint8_t OUTPUT_COUNT = 6;
-
 #endif

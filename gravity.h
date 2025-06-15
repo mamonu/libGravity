@@ -14,6 +14,8 @@
 // Hardware abstraction wrapper for the Gravity module.
 class Gravity {
    public:
+    static const uint8_t OUTPUT_COUNT = 6;
+
     // Constructor
     Gravity()
         : display(U8G2_R2, SCL, SDA, U8X8_PIN_NONE) {}
