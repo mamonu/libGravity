@@ -1,5 +1,5 @@
 /**
- * @file clock_mod.ino
+ * @file Gravity.ino
  * @author Adam Wonak (https://github.com/awonak/)
  * @brief Demo firmware for Sitka Instruments Gravity.
  * @version 0.1
@@ -18,19 +18,13 @@
  */
 
 #include <gravity.h>
-
+#include "save_state.h"
+#include "app_state.h"
 #include "channel.h"
 
-// Firmware state variables.
-struct AppState {
-    bool refresh_screen = true;
-    bool editing_param = false;
-    int selected_param = 0;
-    byte selected_channel = 0;  // 0=tempo, 1-6=output channel
-    Source selected_source = SOURCE_INTERNAL;
-    Channel channel[OUTPUT_COUNT];
-};
 AppState app;
+
+StateManager stateManager;
 
 enum ParamsMainPage {
     PARAM_MAIN_TEMPO,
@@ -114,6 +108,13 @@ void setup() {
     // Start Gravity.
     gravity.Init();
 
+    // Initialize the state manager. This will load settings from EEPROM
+    stateManager.initialize(app);
+
+    // Apply the loaded state to the hardware
+    gravity.clock.SetTempo(app.tempo);
+    gravity.clock.SetSource(app.selected_source);
+
     // Clock handlers.
     gravity.clock.AttachIntHandler(HandleIntClockTick);
     gravity.clock.AttachExtHandler(HandleExtClockTick);
@@ -192,6 +193,7 @@ void HandleShiftPressed() {
 
 void HandleEncoderPressed() {
     app.editing_param = !app.editing_param;
+    stateManager.save(app);
     app.refresh_screen = true;
 }
 
@@ -208,6 +210,7 @@ void HandleRotate(Direction dir, int val) {
             editChannelParameter(val);
         }
     }
+    stateManager.save(app);
     app.refresh_screen = true;
 }
 
@@ -218,6 +221,7 @@ void HandlePressedRotate(Direction dir, int val) {
         app.selected_channel--;
     }
     app.selected_param = 0;
+    stateManager.save(app);
     app.refresh_screen = true;
 }
 
@@ -228,6 +232,7 @@ void editMainParameter(int val) {
                 break;
             }
             gravity.clock.SetTempo(gravity.clock.Tempo() + val);
+            app.tempo = gravity.clock.Tempo();
             break;
 
         case PARAM_MAIN_SOURCE: {
@@ -357,6 +362,7 @@ void DisplayMainPage() {
                     subText = "MIDI";
                     break;
             }
+            break;            
     }
 
     drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
