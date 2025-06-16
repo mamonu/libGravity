@@ -16,15 +16,20 @@ const float CURRENT_SKETCH_VERSION = 0.2f;
  */
 class StateManager {
    public:
+    StateManager();
+
     bool initialize(AppState& app);
-    void save(const AppState& app);
     void reset(AppState& app);
+    // Call from main loop, check if state has changed and needs to be saved.
+    void update(const AppState& app);
+    // Indicate that state has changed and we should save.
+    void markDirty();
 
    private:
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
         char sketchName[16];
-        float version;
+        byte version;
     };
     struct ChannelState {
         byte base_clock_mod_index;
@@ -37,14 +42,23 @@ class StateManager {
     // This struct holds all the parameters we want to save.
     struct EepromData {
         int tempo;
+        bool encoder_reversed;
         byte selected_param;
         byte selected_channel;
         byte selected_source;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
 
+    void save(const AppState& app);
+
     bool isDataValid();
-    void writeMetadata();
+    void _save_worker(const AppState& app);
+    void _metadata_worker();
+
+    bool _isDirty;
+    unsigned long _lastChangeTime;
+    static const unsigned long SAVE_DELAY_MS = 2000;
+
 };
 
 #endif  // SAVE_STATE_H

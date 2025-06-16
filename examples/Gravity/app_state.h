@@ -8,6 +8,7 @@
 // Global state for settings and app behavior.
 struct AppState {
     int tempo = Clock::DEFAULT_TEMPO;
+    bool encoder_reversed = false;
     bool refresh_screen = true;
     bool editing_param = false;
     int selected_param = 0;

@@ -4,13 +4,16 @@
 
 #include "app_state.h"
 
+StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
+
 bool StateManager::initialize(AppState& app) {
     if (isDataValid()) {
-        EepromData load_data;
+        static EepromData load_data;
         EEPROM.get(sizeof(Metadata), load_data);
 
         // Restore main app state
         app.tempo = load_data.tempo;
+        app.encoder_reversed = load_data.encoder_reversed;
         app.selected_param = load_data.selected_param;
         app.selected_channel = load_data.selected_channel;
         app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
@@ -30,41 +33,21 @@ bool StateManager::initialize(AppState& app) {
 
         return true;
     } else {
-        writeMetadata();
-        save(app);  // Save the initial default state
+        reset(app);
         return false;
     }
 }
 
 void StateManager::save(const AppState& app) {
-    EepromData save_data;
-
-    // Populate main app state
-    save_data.tempo = app.tempo;
-    save_data.selected_param = app.selected_param;
-    save_data.selected_channel = app.selected_channel;
-    save_data.selected_source = static_cast<byte>(app.selected_source);
-
-    // Loop through and populate each channel's state
-    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
-        const auto& ch = app.channel[i];
-        auto& saved_ch_state = save_data.channel_data[i];
-
-        // Use the getters with 'withCvMod = false' to get the base values
-        saved_ch_state.base_clock_mod_index = ch.getClockModIndex(false);
-        saved_ch_state.base_probability = ch.getProbability(false);
-        saved_ch_state.base_duty_cycle = ch.getDutyCycle(false);
-        saved_ch_state.base_offset = ch.getOffset(false);
-        saved_ch_state.cv_source = static_cast<byte>(ch.getCvSource());
-        saved_ch_state.cv_destination = static_cast<byte>(ch.getCvDestination());
-    }
-
-    // Write the entire state struct to EEPROM
-    EEPROM.put(sizeof(Metadata), save_data);
+    // Ensure interrupts do not cause corrupt data writes.
+    noInterrupts();
+    _save_worker(app);
+    interrupts();
 }
 
 void StateManager::reset(AppState& app) {
     app.tempo = Clock::DEFAULT_TEMPO;
+    app.encoder_reversed = false;
     app.selected_param = 0;
     app.selected_channel = 0;
     app.selected_source = Clock::SOURCE_INTERNAL;
@@ -73,8 +56,25 @@ void StateManager::reset(AppState& app) {
         app.channel[i].Init();
     }
 
-    writeMetadata();
-    save(app);
+    noInterrupts();
+    _metadata_worker();  // Write the new metadata
+    _save_worker(app);   // Write the new (default) app state
+    interrupts();
+
+    _isDirty = false;
+}
+
+void StateManager::update(const AppState& app) {
+    // Check if a save is pending and if enough time has passed.
+    if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
+        save(app);
+        _isDirty = false;  // Clear the flag, we are now "clean".
+    }
+}
+
+void StateManager::markDirty() {
+    _isDirty = true;
+    _lastChangeTime = millis();
 }
 
 bool StateManager::isDataValid() {
@@ -85,9 +85,35 @@ bool StateManager::isDataValid() {
     return nameMatch && versionMatch;
 }
 
-void StateManager::writeMetadata() {
-    Metadata save_meta;
-    strcpy(save_meta.sketchName, CURRENT_SKETCH_NAME);
-    save_meta.version = CURRENT_SKETCH_VERSION;
-    EEPROM.put(0, save_meta);
+void StateManager::_save_worker(const AppState& app) {
+    static EepromData save_data;
+
+    // Populate main app state
+    save_data.tempo = app.tempo;
+    save_data.encoder_reversed = app.encoder_reversed;
+    save_data.selected_param = app.selected_param;
+    save_data.selected_channel = app.selected_channel;
+    save_data.selected_source = static_cast<byte>(app.selected_source);
+
+    // Loop through and populate each channel's state
+    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
+        const auto& ch = app.channel[i];
+        auto& save_ch = save_data.channel_data[i];
+
+        // Use the getters with 'withCvMod = false' to get the base values
+        save_ch.base_clock_mod_index = ch.getClockModIndex(false);
+        save_ch.base_probability = ch.getProbability(false);
+        save_ch.base_duty_cycle = ch.getDutyCycle(false);
+        save_ch.base_offset = ch.getOffset(false);
+        save_ch.cv_source = static_cast<byte>(ch.getCvSource());
+        save_ch.cv_destination = static_cast<byte>(ch.getCvDestination());
+    }
+    EEPROM.put(sizeof(Metadata), save_data);
+}
+
+void StateManager::_metadata_worker() {
+    Metadata currentMeta;
+    strcpy(currentMeta.sketchName, CURRENT_SKETCH_NAME);
+    currentMeta.version = CURRENT_SKETCH_VERSION;
+    EEPROM.put(0, currentMeta);
 }

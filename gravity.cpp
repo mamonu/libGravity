@@ -11,6 +11,9 @@
 
 #include "gravity.h"
 
+// Initialize the static pointer for the EncoderDir class to null.
+EncoderDir* EncoderDir::_instance = nullptr;
+
 void Gravity::Init() {
     initClock();
     initInputs();
@@ -68,18 +71,13 @@ void Gravity::Process() {
     }
 }
 
-void ReadEncoder() {
-    gravity.encoder.UpdateEncoder();
-}
-
-// Define Encoder pin ISR.
-// Pin Change Interrupt on Port C (D17/A3).
-ISR(PCINT2_vect) {
-    ReadEncoder();
-};
 // Pin Change Interrupt on Port D (D4).
+ISR(PCINT2_vect) {
+    EncoderDir::isr();
+};
+// Pin Change Interrupt on Port C (D17/A3).
 ISR(PCINT1_vect) {
-    ReadEncoder();
+    EncoderDir::isr();
 };
 
 // Singleton

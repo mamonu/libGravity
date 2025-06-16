@@ -30,6 +30,7 @@ StateManager stateManager;
 enum ParamsMainPage {
     PARAM_MAIN_TEMPO,
     PARAM_MAIN_SOURCE,
+    PARAM_MAIN_ENCODER_DIR,
     PARAM_MAIN_RESET_STATE,
     PARAM_MAIN_LAST,
 };
@@ -139,6 +140,9 @@ void loop() {
         app.channel[i].applyCvMod(cv1, cv2);
     }
 
+    // Check for dirty state eligible to be saved.
+    stateManager.update(app);
+
     if (app.refresh_screen) {
         UpdateDisplay();
     }
@@ -194,19 +198,23 @@ void HandleEncoderPressed() {
     // Check if leaving editing mode should apply a selection.
     if (app.editing_param) {
         if (app.selected_channel == 0) {  // main page
+            if (app.selected_param == PARAM_MAIN_ENCODER_DIR) {
+                bool reversed = app.selected_sub_param == 1;
+                gravity.encoder.SetReverseDirection(reversed);
+            }
             // Reset state
             if (app.selected_param == PARAM_MAIN_RESET_STATE) {
                 if (app.selected_sub_param == 0) {  // Reset
                     stateManager.reset(app);
-                    // stateManager.initialize(app);
                     InitAppState(app);
                 }
             }
         }
+        // Only mark dirty when leaving editing mode.
+        stateManager.markDirty();
     }
     app.selected_sub_param = 0;
     app.editing_param = !app.editing_param;
-    stateManager.save(app);
     app.refresh_screen = true;
 }
 
@@ -223,7 +231,6 @@ void HandleRotate(Direction dir, int val) {
             editChannelParameter(val);
         }
     }
-    stateManager.save(app);
     app.refresh_screen = true;
 }
 
@@ -234,7 +241,7 @@ void HandlePressedRotate(Direction dir, int val) {
         app.selected_channel--;
     }
     app.selected_param = 0;
-    stateManager.save(app);
+    stateManager.markDirty();
     app.refresh_screen = true;
 }
 
@@ -255,6 +262,9 @@ void editMainParameter(int val) {
             gravity.clock.SetSource(app.selected_source);
             break;
         }
+        case PARAM_MAIN_ENCODER_DIR:
+            updateSelection(app.selected_sub_param, val, 2);
+            break;
         case PARAM_MAIN_RESET_STATE:
             updateSelection(app.selected_sub_param, val, 2);
             break;
@@ -303,6 +313,7 @@ void updateSelection(int& param, int change, int maxValue) {
 void InitAppState(AppState& app) {
     gravity.clock.SetTempo(app.tempo);
     gravity.clock.SetSource(app.selected_source);
+    gravity.encoder.SetReverseDirection(app.encoder_reversed);
 }
 
 Channel& GetSelectedChannel() {
@@ -384,6 +395,10 @@ void DisplayMainPage() {
                     break;
             }
             break;
+        case PARAM_MAIN_ENCODER_DIR:
+            sprintf(mainText, "%s", "DIR");
+            subText = app.selected_sub_param == 0 ? "DEFAULT" : "REVERSED";
+            break;
         case PARAM_MAIN_RESET_STATE:
             sprintf(mainText, "%s", "RST");
             subText = app.selected_sub_param == 0 ? "RESET ALL" : "BACK";
@@ -394,7 +409,7 @@ void DisplayMainPage() {
     drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    const char* menu_items[PARAM_MAIN_LAST] = {"TEMPO", "SOURCE", "RESET"};
+    const char* menu_items[PARAM_MAIN_LAST] = {"TEMPO", "SOURCE", "ENCODER DIR", "RESET"};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
