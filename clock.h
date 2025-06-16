@@ -23,22 +23,22 @@
 #define MIDI_STOP 0xFC
 #define MIDI_CONTINUE 0xFB
 
-const int DEFAULT_TEMPO = 120;
-
 typedef void (*ExtCallback)(void);
 static ExtCallback extUserCallback = nullptr;
 static void serialEventNoop(uint8_t msg, uint8_t status) {}
 
-enum Source {
-    SOURCE_INTERNAL,
-    SOURCE_EXTERNAL_PPQN_24,
-    SOURCE_EXTERNAL_PPQN_4,
-    SOURCE_EXTERNAL_MIDI,
-    SOURCE_LAST,
-};
-
 class Clock {
    public:
+    static constexpr int DEFAULT_TEMPO = 120;
+
+    enum Source {
+        SOURCE_INTERNAL,
+        SOURCE_EXTERNAL_PPQN_24,
+        SOURCE_EXTERNAL_PPQN_4,
+        SOURCE_EXTERNAL_MIDI,
+        SOURCE_LAST,
+    };
+
     void Init() {
         NeoSerial.begin(31250);
 

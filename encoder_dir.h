@@ -34,7 +34,9 @@ class EncoderDir {
 
    public:
     EncoderDir() : encoder_(ENCODER_PIN1, ENCODER_PIN2, RotaryEncoder::LatchMode::FOUR3),
-                   button_(ENCODER_SW_PIN) {}
+                   button_(ENCODER_SW_PIN) {
+        _instance = this;
+    }
     ~EncoderDir() {}
 
     // Set to true if the encoder read direction should be reversed.
@@ -81,15 +83,19 @@ class EncoderDir {
         }
     }
 
-    // Read the encoder state and update the read position.
-    void UpdateEncoder() {
-        encoder_.tick();
+    static void isr() {
+        // If the instance has been created, call its tick() method.
+        if (_instance) {
+            _instance->encoder_.tick();
+        }
     }
 
    private:
+    static EncoderDir* _instance;
+
     int previous_pos_;
     bool rotated_while_held_;
-    bool reversed_ = true;
+    bool reversed_ = false;
     RotaryEncoder encoder_;
     Button button_;
 
@@ -115,15 +121,18 @@ class EncoderDir {
             change *= 2;
         }
 
+        if (reversed_) {
+            change = -(change);
+        }
         return change;
     }
 
     inline Direction rotate_(int dir, bool reversed) {
         switch (dir) {
             case 1:
-                return (reversed) ? DIRECTION_INCREMENT : DIRECTION_DECREMENT;
-            case -1:
                 return (reversed) ? DIRECTION_DECREMENT : DIRECTION_INCREMENT;
+            case -1:
+                return (reversed) ? DIRECTION_INCREMENT : DIRECTION_DECREMENT;
             default:
                 return DIRECTION_UNCHANGED;
         }
