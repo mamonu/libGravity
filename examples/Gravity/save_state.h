@@ -18,7 +18,9 @@ class StateManager {
    public:
     StateManager();
 
+    // Populate the AppState instance with values from EEPROM if they exist.
     bool initialize(AppState& app);
+    // Reset AppState instance back to default values.
     void reset(AppState& app);
     // Call from main loop, check if state has changed and needs to be saved.
     void update(const AppState& app);
@@ -36,8 +38,8 @@ class StateManager {
         byte base_probability;
         byte base_duty_cycle;
         byte base_offset;
-        byte cv_source;       // We'll store the CvSource enum as a byte
-        byte cv_destination;  // We'll store the CvDestination enum as a byte
+        byte cv_source;       // Cast the CvSource enum to a byte for storage
+        byte cv_destination;  // Cast the CvDestination enum as a byte for storage
     };
     // This struct holds all the parameters we want to save.
     struct EepromData {
