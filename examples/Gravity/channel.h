@@ -46,8 +46,6 @@ class Channel {
         cvmod_probability = base_probability;
         cvmod_duty_cycle = base_duty_cycle;
         cvmod_offset = base_offset;
-        duty_cycle_pulses = 0;
-        offset_pulses = 0;
     }
 
     // Setters (Set the BASE value)
@@ -68,8 +66,6 @@ class Channel {
     int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
     int getClockMod(bool withCvMod = false) const { return clock_mod[getClockModIndex(withCvMod)]; }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
-    uint32_t getDutyCyclePulses() const { return duty_cycle_pulses; }
-    uint32_t getOffsetPulses() const { return offset_pulses; }
     CvSource getCvSource() { return cv_source; }
     CvDestination getCvDestination() { return cv_destination; }
     bool isCvModActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
@@ -146,9 +142,6 @@ class Channel {
     byte cvmod_probability;
     byte cvmod_duty_cycle;
     byte cvmod_offset;
-
-    uint32_t duty_cycle_pulses;
-    uint32_t offset_pulses;
 
     // CV configuration
     CvSource cv_source = CV_NONE;
