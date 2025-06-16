@@ -58,7 +58,6 @@ class StateManager {
     bool _isDirty;
     unsigned long _lastChangeTime;
     static const unsigned long SAVE_DELAY_MS = 2000;
-
 };
 
 #endif  // SAVE_STATE_H
