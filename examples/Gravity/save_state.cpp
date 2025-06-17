@@ -7,7 +7,7 @@
 StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 
 bool StateManager::initialize(AppState& app) {
-    if (isDataValid()) {
+    if (_isDataValid()) {
         static EepromData load_data;
         EEPROM.get(sizeof(Metadata), load_data);
 
@@ -38,10 +38,10 @@ bool StateManager::initialize(AppState& app) {
     }
 }
 
-void StateManager::save(const AppState& app) {
+void StateManager::_save(const AppState& app) {
     // Ensure interrupts do not cause corrupt data writes.
     noInterrupts();
-    _save_worker(app);
+    _saveState(app);
     interrupts();
 }
 
@@ -57,8 +57,8 @@ void StateManager::reset(AppState& app) {
     }
 
     noInterrupts();
-    _metadata_worker();  // Write the new metadata
-    _save_worker(app);   // Write the new (default) app state
+    _saveMetadata();  // Write the new metadata
+    _saveState(app);   // Write the new (default) app state
     interrupts();
 
     _isDirty = false;
@@ -67,7 +67,7 @@ void StateManager::reset(AppState& app) {
 void StateManager::update(const AppState& app) {
     // Check if a save is pending and if enough time has passed.
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
-        save(app);
+        _save(app);
         _isDirty = false;  // Clear the flag, we are now "clean".
     }
 }
@@ -77,15 +77,15 @@ void StateManager::markDirty() {
     _lastChangeTime = millis();
 }
 
-bool StateManager::isDataValid() {
+bool StateManager::_isDataValid() {
     Metadata load_meta;
     EEPROM.get(0, load_meta);
-    bool nameMatch = (strcmp(load_meta.sketchName, CURRENT_SKETCH_NAME) == 0);
-    bool versionMatch = (load_meta.version == CURRENT_SKETCH_VERSION);
-    return nameMatch && versionMatch;
+    bool name_match = (strcmp(load_meta.sketch_name, SKETCH_NAME) == 0);
+    bool version_match = (load_meta.version == SKETCH_VERSION);
+    return name_match && version_match;
 }
 
-void StateManager::_save_worker(const AppState& app) {
+void StateManager::_saveState(const AppState& app) {
     static EepromData save_data;
 
     // Populate main app state
@@ -111,9 +111,9 @@ void StateManager::_save_worker(const AppState& app) {
     EEPROM.put(sizeof(Metadata), save_data);
 }
 
-void StateManager::_metadata_worker() {
-    Metadata currentMeta;
-    strcpy(currentMeta.sketchName, CURRENT_SKETCH_NAME);
-    currentMeta.version = CURRENT_SKETCH_VERSION;
-    EEPROM.put(0, currentMeta);
+void StateManager::_saveMetadata() {
+    Metadata current_meta;
+    strcpy(current_meta.sketch_name, SKETCH_NAME);
+    current_meta.version = SKETCH_VERSION;
+    EEPROM.put(0, current_meta);
 }

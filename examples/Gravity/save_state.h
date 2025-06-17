@@ -8,8 +8,11 @@
 struct AppState;
 
 // Define the constants for the current firmware.
-const char CURRENT_SKETCH_NAME[] = "Gravity";
-const byte CURRENT_SKETCH_VERSION = 3;
+const char SKETCH_NAME[] = "Gravity";
+const byte SKETCH_VERSION = 3;
+
+// Define the minimum amount of time between EEPROM writes.
+static const unsigned long SAVE_DELAY_MS = 2000;
 
 /**
  * @brief Manages saving and loading of the application state to and from EEPROM.
@@ -30,7 +33,7 @@ class StateManager {
    private:
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
-        char sketchName[16];
+        char sketch_name[16];
         byte version;
     };
     struct ChannelState {
@@ -51,15 +54,13 @@ class StateManager {
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
 
-    void save(const AppState& app);
-
-    bool isDataValid();
-    void _save_worker(const AppState& app);
-    void _metadata_worker();
+    void _save(const AppState& app);
+    bool _isDataValid();
+    void _saveState(const AppState& app);
+    void _saveMetadata();
 
     bool _isDirty;
     unsigned long _lastChangeTime;
-    static const unsigned long SAVE_DELAY_MS = 2000;
 };
 
 #endif  // SAVE_STATE_H
