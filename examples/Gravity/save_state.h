@@ -9,7 +9,7 @@ struct AppState;
 
 // Define the constants for the current firmware.
 const char CURRENT_SKETCH_NAME[] = "Gravity";
-const float CURRENT_SKETCH_VERSION = 0.2f;
+const byte CURRENT_SKETCH_VERSION = 3;
 
 /**
  * @brief Manages saving and loading of the application state to and from EEPROM.
