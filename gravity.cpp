@@ -81,5 +81,5 @@ ISR(PCINT1_vect) {
     EncoderDir::isr();
 };
 
-// Singleton
+// Global instance
 Gravity gravity;

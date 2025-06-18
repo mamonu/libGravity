@@ -18,4 +18,28 @@ struct AppState {
     Channel channel[Gravity::OUTPUT_COUNT];
 };
 
+extern AppState app;
+
+static Channel& GetSelectedChannel() {
+    return app.channel[app.selected_channel - 1];
+}
+
+enum ParamsMainPage {
+    PARAM_MAIN_TEMPO,
+    PARAM_MAIN_SOURCE,
+    PARAM_MAIN_ENCODER_DIR,
+    PARAM_MAIN_RESET_STATE,
+    PARAM_MAIN_LAST,
+};
+
+enum ParamsChannelPage {
+    PARAM_CH_MOD,
+    PARAM_CH_PROB,
+    PARAM_CH_DUTY,
+    PARAM_CH_OFFSET,
+    PARAM_CH_CV_SRC,
+    PARAM_CH_CV_DEST,
+    PARAM_CH_LAST,
+};
+
 #endif  // APP_STATE_H
