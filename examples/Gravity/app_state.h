@@ -14,6 +14,7 @@ struct AppState {
     int selected_param = 0;
     int selected_sub_param = 0;
     byte selected_channel = 0;  // 0=tempo, 1-6=output channel
+    byte selected_shuffle = 0;  // index into shuffle template
     Clock::Source selected_source = Clock::SOURCE_INTERNAL;
     Channel channel[Gravity::OUTPUT_COUNT];
 };
@@ -37,6 +38,7 @@ enum ParamsChannelPage {
     PARAM_CH_PROB,
     PARAM_CH_DUTY,
     PARAM_CH_OFFSET,
+    PARAM_CH_SHUFFLE,
     PARAM_CH_CV_SRC,
     PARAM_CH_CV_DEST,
     PARAM_CH_LAST,

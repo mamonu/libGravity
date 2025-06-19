@@ -244,6 +244,14 @@ void DisplayChannelPage() {
             sprintf(mainText, "%d%%", ch.getOffset(withCvMod));
             subText = "SHIFT HIT";
             break;
+        case PARAM_CH_SHUFFLE:
+            ch.getShuffleIndex() == 0
+                // ? sprintf(mainText, "OFF")
+                // TODO: why is this being incremented by 2?
+                ? sprintf(mainText, "%d", ch.getStepCount())
+                : sprintf(mainText, "%d%%", shuffle_amount[ch.getShuffleIndex()]);
+            subText = "SHUFFLE";
+            break;
         case PARAM_CH_CV_SRC: {
             switch (ch.getCvSource()) {
                 case CV_NONE:
@@ -293,7 +301,7 @@ void DisplayChannelPage() {
 
     // Draw Channel Page menu items
     const char* menu_items[PARAM_CH_LAST] = {
-        "MOD", "PROBABILITY", "DUTY", "OFFSET", "CV SOURCE", "CV DEST"};
+        "MOD", "PROBABILITY", "DUTY", "OFFSET", "SHUFFLE", "CV SOURCE", "CV DEST"};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 
