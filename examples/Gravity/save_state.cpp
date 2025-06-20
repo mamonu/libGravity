@@ -27,7 +27,7 @@ bool StateManager::initialize(AppState& app) {
             ch.setProbability(saved_ch_state.base_probability);
             ch.setDutyCycle(saved_ch_state.base_duty_cycle);
             ch.setOffset(saved_ch_state.base_offset);
-            ch.setShuffleIndex(saved_ch_state.shuffle_index);
+            ch.setShuffle(saved_ch_state.base_shuffle);
             ch.setCvSource(static_cast<CvSource>(saved_ch_state.cv_source));
             ch.setCvDestination(static_cast<CvDestination>(saved_ch_state.cv_destination));
         }
@@ -106,7 +106,7 @@ void StateManager::_saveState(const AppState& app) {
         save_ch.base_probability = ch.getProbability(false);
         save_ch.base_duty_cycle = ch.getDutyCycle(false);
         save_ch.base_offset = ch.getOffset(false);
-        save_ch.shuffle_index = ch.getShuffleIndex();
+        save_ch.base_shuffle = ch.getShuffle();
         save_ch.cv_source = static_cast<byte>(ch.getCvSource());
         save_ch.cv_destination = static_cast<byte>(ch.getCvDestination());
     }

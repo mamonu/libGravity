@@ -245,11 +245,9 @@ void DisplayChannelPage() {
             subText = "SHIFT HIT";
             break;
         case PARAM_CH_SHUFFLE:
-            ch.getShuffleIndex() == 0
-                // ? sprintf(mainText, "OFF")
-                // TODO: why is this being incremented by 2?
-                ? sprintf(mainText, "%d", ch.getStepCount())
-                : sprintf(mainText, "%d%%", shuffle_amount[ch.getShuffleIndex()]);
+            ch.getShuffle() == 0
+                ? sprintf(mainText, "OFF")
+                : sprintf(mainText, "%d%%", ch.getShuffle() + 50);
             subText = "SHUFFLE";
             break;
         case PARAM_CH_CV_SRC: {

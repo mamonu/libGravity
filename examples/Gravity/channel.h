@@ -27,30 +27,6 @@ static const int clock_mod[MOD_CHOICE_SIZE] = {-24, -12, -8, -6, -4, -3, -2, 1, 
 // This represents the number of clock pulses for a 96 PPQN clock source that match the above div/mult mods.
 static const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
 
-static const int8_t shuffle_size = 2;
-
-// MPC60 groove signatures?
-static const int8_t shuffle_54[2] = {0, 2};
-static const int8_t shuffle_58[2] = {0, 4};
-static const int8_t shuffle_62[2] = {0, 6};
-static const int8_t shuffle_66[2] = {0, 8};
-static const int8_t shuffle_71[2] = {0, 10};
-static const int8_t shuffle_75[2] = {0, 12};
-
-// SWING Groove
-static const int8_t swing_54[2] = {0, 1};
-static const int8_t swing_58[2] = {-1, 1};
-static const int8_t swing_62[2] = {-1, 2};
-static const int8_t swing_66[2] = {-2, 2};
-static const int8_t swing_71[2] = {-2, 3};
-static const int8_t swing_75[2] = {-3, 3};
-
-// static const String shuffle_name[6] = {"OFF", "54%", "58%", "62%", "66%", "71%"};
-static const uint8_t SHUFFLE_SIZE = 6;
-static const byte shuffle_amount[SHUFFLE_SIZE] = {54, 58, 62, 66, 71, 75};
-static const int8_t* shuffle_templates[SHUFFLE_SIZE] = {shuffle_54, shuffle_58, shuffle_62, shuffle_66, shuffle_71, shuffle_75};
-// static const int8_t* shuffle_templates[SHUFFLE_SIZE] = {swing_54, swing_58, swing_62, swing_66, swing_71, swing_75};
-
 class Channel {
    public:
     Channel() {
@@ -65,8 +41,7 @@ class Channel {
         base_offset = 0;
         cv_source = CV_NONE;
         cv_destination = CV_DEST_NONE;
-        shuffle_index = 0;
-        step_count = 0;
+        base_shuffle = 0;
 
         cvmod_clock_mod_index = base_clock_mod_index;
         cvmod_probability = base_probability;
@@ -82,7 +57,7 @@ class Channel {
     void setProbability(int prob) { base_probability = constrain(prob, 0, 100); }
     void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 1, 99); }
     void setOffset(int off) { base_offset = constrain(off, 0, 100); }
-    void setShuffleIndex(int val) { shuffle_index = constrain(val, 0, SHUFFLE_SIZE - 1); }
+    void setShuffle(int val) { base_shuffle = constrain(val, 0, 50); }
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
@@ -91,13 +66,12 @@ class Channel {
     int getProbability(bool withCvMod = false) const { return withCvMod ? cvmod_probability : base_probability; }
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
     int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
-    int getShuffleIndex() const { return shuffle_index; }
+    int getShuffle() const { return base_shuffle; }
     int getClockMod(bool withCvMod = false) const { return clock_mod[getClockModIndex(withCvMod)]; }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
     CvSource getCvSource() { return cv_source; }
     CvDestination getCvDestination() { return cv_destination; }
     bool isCvModActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
-    int getStepCount() {return step_count;}
 
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
@@ -111,25 +85,25 @@ class Channel {
         const uint32_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
 
         uint32_t shuffle_pulses = 0;
-        if (step_count % 2 == 0) {
-            // shuffle_pulses = (long)((mod_pulses * (100L - shuffle_amount[shuffle_index])) / 100L);
-            shuffle_pulses = 4 * shuffle_templates[shuffle_index][1];
+        // Check step increment for odd beats.
+        if ((tick / mod_pulses) % 2 == 1) {
+            shuffle_pulses = (long)((mod_pulses * (100L - base_shuffle)) / 100L);
         }
 
         const uint32_t current_tick_offset = tick + offset_pulses + shuffle_pulses;
 
         // Step check
-        // TODO: Why is this incrementing twice?
-        if (current_tick_offset % mod_pulses == 0) {
-            // Duty cycle high check
-            if (cvmod_probability >= random(0, 100)) {
-                step_count += 1;
-                output.High();
+        if (!output.On()) {
+            if (current_tick_offset % mod_pulses == 0) {
+                // Duty cycle high check
+                if (cvmod_probability >= random(0, 100)) {
+                    output.High();
+                }
             }
         }
 
         // Duty cycle low check
-        const uint32_t duty_cycle_end_tick = tick + duty_pulses + offset_pulses + shuffle_pulses;
+        const uint32_t duty_cycle_end_tick = tick + duty_pulses + offset_pulses;
         if (duty_cycle_end_tick % mod_pulses == 0) {
             output.Low();
         }
@@ -169,14 +143,12 @@ class Channel {
     }
 
    private:
-    uint32_t step_count;
-
     // User-settable base values.
     byte base_clock_mod_index;
     byte base_probability;
     byte base_duty_cycle;
     byte base_offset;
-    byte shuffle_index;
+    byte base_shuffle;
 
     // Base value with cv mod applied.
     byte cvmod_clock_mod_index;

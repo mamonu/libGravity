@@ -41,7 +41,7 @@ class StateManager {
         byte base_probability;
         byte base_duty_cycle;
         byte base_offset;
-        byte shuffle_index;
+        byte base_shuffle;
         byte cv_source;       // Cast the CvSource enum to a byte for storage
         byte cv_destination;  // Cast the CvDestination enum as a byte for storage
     };
