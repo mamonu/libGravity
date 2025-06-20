@@ -18,6 +18,7 @@ enum CvDestination {
     CV_DEST_PROB,
     CV_DEST_DUTY,
     CV_DEST_OFFSET,
+    CV_DEST_SHUFFLE,
     CV_DEST_LAST,
 };
 
@@ -39,14 +40,15 @@ class Channel {
         base_probability = 100;
         base_duty_cycle = 50;
         base_offset = 0;
+        base_shuffle = 0;
         cv_source = CV_NONE;
         cv_destination = CV_DEST_NONE;
-        base_shuffle = 0;
 
         cvmod_clock_mod_index = base_clock_mod_index;
         cvmod_probability = base_probability;
         cvmod_duty_cycle = base_duty_cycle;
         cvmod_offset = base_offset;
+        cvmod_shuffle = base_shuffle;
     }
 
     // Setters (Set the BASE value)
@@ -66,7 +68,7 @@ class Channel {
     int getProbability(bool withCvMod = false) const { return withCvMod ? cvmod_probability : base_probability; }
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
     int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
-    int getShuffle() const { return base_shuffle; }
+    int getShuffle(bool withCvMod = false) const { return withCvMod ? cvmod_shuffle : base_shuffle; }
     int getClockMod(bool withCvMod = false) const { return clock_mod[getClockModIndex(withCvMod)]; }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
     CvSource getCvSource() { return cv_source; }
@@ -87,7 +89,7 @@ class Channel {
         uint32_t shuffle_pulses = 0;
         // Check step increment for odd beats.
         if ((tick / mod_pulses) % 2 == 1) {
-            shuffle_pulses = (long)((mod_pulses * (100L - base_shuffle)) / 100L);
+            shuffle_pulses = (long)((mod_pulses * (100L - cvmod_shuffle)) / 100L);
         }
 
         const uint32_t current_tick_offset = tick + offset_pulses + shuffle_pulses;
@@ -116,6 +118,7 @@ class Channel {
             cvmod_probability = base_probability;
             cvmod_duty_cycle = base_duty_cycle;
             cvmod_offset = base_offset;
+            cvmod_shuffle = base_shuffle;
             return;
         }
 
@@ -140,6 +143,10 @@ class Channel {
         cvmod_offset = (cv_destination == CV_DEST_OFFSET)
                            ? constrain(base_offset + map(value, -512, 512, -50, 50), 0, 99)
                            : base_offset;
+        
+        cvmod_shuffle = (cv_destination == CV_DEST_SHUFFLE)
+                           ? constrain(base_shuffle + map(value, -512, 512, -25, 25), 0, 50)
+                           : base_shuffle;
     }
 
    private:
@@ -155,6 +162,7 @@ class Channel {
     byte cvmod_probability;
     byte cvmod_duty_cycle;
     byte cvmod_offset;
+    byte cvmod_shuffle;
 
     // CV configuration
     CvSource cv_source = CV_NONE;

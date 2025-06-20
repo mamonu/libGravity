@@ -247,7 +247,7 @@ void DisplayChannelPage() {
         case PARAM_CH_SHUFFLE:
             ch.getShuffle() == 0
                 ? sprintf(mainText, "OFF")
-                : sprintf(mainText, "%d%%", ch.getShuffle() + 50);
+                : sprintf(mainText, "%d%%", ch.getShuffle(withCvMod) + 50);
             subText = "SHUFFLE";
             break;
         case PARAM_CH_CV_SRC: {
@@ -288,6 +288,10 @@ void DisplayChannelPage() {
                 case CV_DEST_OFFSET:
                     sprintf(mainText, "DEST");
                     subText = "OFFSET";
+                    break;
+                case CV_DEST_SHUFFLE:
+                    sprintf(mainText, "DEST");
+                    subText = "SHUFFLE";
                     break;
             }
             break;
