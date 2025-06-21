@@ -18,7 +18,7 @@ enum CvDestination {
     CV_DEST_PROB,
     CV_DEST_DUTY,
     CV_DEST_OFFSET,
-    CV_DEST_SHUFFLE,
+    CV_DEST_SWING,
     CV_DEST_LAST,
 };
 
@@ -59,7 +59,7 @@ class Channel {
     void setProbability(int prob) { base_probability = constrain(prob, 0, 100); }
     void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 1, 99); }
     void setOffset(int off) { base_offset = constrain(off, 0, 100); }
-    void setShuffle(int val) { base_shuffle = constrain(val, 0, 50); }
+    void setSwing(int val) { base_shuffle = constrain(val, 0, 50); }
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
@@ -68,7 +68,7 @@ class Channel {
     int getProbability(bool withCvMod = false) const { return withCvMod ? cvmod_probability : base_probability; }
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
     int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
-    int getShuffle(bool withCvMod = false) const { return withCvMod ? cvmod_shuffle : base_shuffle; }
+    int getSwing(bool withCvMod = false) const { return withCvMod ? cvmod_shuffle : base_shuffle; }
     int getClockMod(bool withCvMod = false) const { return clock_mod[getClockModIndex(withCvMod)]; }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
     CvSource getCvSource() { return cv_source; }
@@ -144,7 +144,7 @@ class Channel {
                            ? constrain(base_offset + map(value, -512, 512, -50, 50), 0, 99)
                            : base_offset;
         
-        cvmod_shuffle = (cv_destination == CV_DEST_SHUFFLE)
+        cvmod_shuffle = (cv_destination == CV_DEST_SWING)
                            ? constrain(base_shuffle + map(value, -512, 512, -25, 25), 0, 50)
                            : base_shuffle;
     }

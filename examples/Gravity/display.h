@@ -96,16 +96,16 @@ void drawRightAlignedText(const char* text, int y) {
 void drawSelectHero() {
     gravity.display.setDrawColor(1);
     const int tickSize = 3;
-    const int heroWidth = SCREEN_WIDTH/2;
+    const int heroWidth = SCREEN_WIDTH / 2;
     const int heroHeight = 49;
     gravity.display.drawLine(0, 0, tickSize, 0);
     gravity.display.drawLine(0, 0, 0, tickSize);
-    gravity.display.drawLine(heroWidth, 0, heroWidth-tickSize, 0);
+    gravity.display.drawLine(heroWidth, 0, heroWidth - tickSize, 0);
     gravity.display.drawLine(heroWidth, 0, heroWidth, tickSize);
-    gravity.display.drawLine(heroWidth, heroHeight, heroWidth, heroHeight-tickSize);
-    gravity.display.drawLine(heroWidth, heroHeight, heroWidth-tickSize, heroHeight);
+    gravity.display.drawLine(heroWidth, heroHeight, heroWidth, heroHeight - tickSize);
+    gravity.display.drawLine(heroWidth, heroHeight, heroWidth - tickSize, heroHeight);
     gravity.display.drawLine(0, heroHeight, tickSize, heroHeight);
-    gravity.display.drawLine(0, heroHeight, 0, heroHeight-tickSize);
+    gravity.display.drawLine(0, heroHeight, 0, heroHeight - tickSize);
     gravity.display.setDrawColor(2);
 }
 
@@ -144,6 +144,24 @@ void drawMenuItems(const char* menu_items[], int menu_size) {
     for (int i = 0; i < min(menu_size, VISIBLE_MENU_ITEMS); ++i) {
         int idx = start_index + i;
         drawRightAlignedText(menu_items[idx], MENU_ITEM_HEIGHT * (i + 1) - 1);
+    }
+}
+
+void swingDivisionMark() {
+    auto& ch = GetSelectedChannel();
+    switch (ch.getSwing() + 50) {
+        case 58:  // 1/32nd
+        case 66:  // 1/16th
+        case 75:  // 1/8th
+            gravity.display.drawBox(56, 4, 4, 4);
+            break;
+        case 54:  // 1/32nd tripplet
+        case 62:  // 1/16th tripplet
+        case 71:  // 1/8th tripplet
+            gravity.display.drawBox(56, 4, 4, 4);
+            gravity.display.drawBox(57, 5, 2, 2);
+            break;
+
     }
 }
 
@@ -244,11 +262,12 @@ void DisplayChannelPage() {
             sprintf(mainText, "%d%%", ch.getOffset(withCvMod));
             subText = "SHIFT HIT";
             break;
-        case PARAM_CH_SHUFFLE:
-            ch.getShuffle() == 0
+        case PARAM_CH_SWING:
+            ch.getSwing() == 0
                 ? sprintf(mainText, "OFF")
-                : sprintf(mainText, "%d%%", ch.getShuffle(withCvMod) + 50);
-            subText = "SHUFFLE";
+                : sprintf(mainText, "%d%%", ch.getSwing(withCvMod) + 50);
+            subText = "DOWN BEAT";
+            swingDivisionMark();
             break;
         case PARAM_CH_CV_SRC: {
             switch (ch.getCvSource()) {
@@ -289,9 +308,9 @@ void DisplayChannelPage() {
                     sprintf(mainText, "DEST");
                     subText = "OFFSET";
                     break;
-                case CV_DEST_SHUFFLE:
+                case CV_DEST_SWING:
                     sprintf(mainText, "DEST");
-                    subText = "SHUFFLE";
+                    subText = "SWING";
                     break;
             }
             break;
@@ -303,7 +322,7 @@ void DisplayChannelPage() {
 
     // Draw Channel Page menu items
     const char* menu_items[PARAM_CH_LAST] = {
-        "MOD", "PROBABILITY", "DUTY", "OFFSET", "SHUFFLE", "CV SOURCE", "CV DEST"};
+        "MOD", "PROBABILITY", "DUTY", "OFFSET", "SWING", "CV SOURCE", "CV DEST"};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 

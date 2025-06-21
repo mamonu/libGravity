@@ -210,8 +210,8 @@ void editChannelParameter(int val) {
         case PARAM_CH_OFFSET:
             ch.setOffset(ch.getOffset() + val);
             break;
-        case PARAM_CH_SHUFFLE:
-            ch.setShuffle(ch.getShuffle() + val);
+        case PARAM_CH_SWING:
+            ch.setSwing(ch.getSwing() + val);
             break;
         case PARAM_CH_CV_SRC: {
             int source = static_cast<int>(ch.getCvSource());
