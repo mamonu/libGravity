@@ -82,13 +82,13 @@ constexpr int CHANNEL_BOX_HEIGHT = 14;
 // Helper function to draw centered text
 void drawCenteredText(const char* text, int y, const uint8_t* font) {
     gravity.display.setFont(font);
-    int textWidth = gravity.display.getUTF8Width(text);
+    int textWidth = gravity.display.getStrWidth(text);
     gravity.display.drawStr(SCREEN_CENTER_X - (textWidth / 2), y, text);
 }
 
 // Helper function to draw right-aligned text
 void drawRightAlignedText(const char* text, int y) {
-    int textWidth = gravity.display.getUTF8Width(text);
+    int textWidth = gravity.display.getStrWidth(text);
     int drawX = (SCREEN_WIDTH - textWidth) - MENU_BOX_PADDING;
     gravity.display.drawStr(drawX, y, text);
 }
