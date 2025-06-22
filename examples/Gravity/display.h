@@ -149,7 +149,7 @@ void drawMenuItems(const char* menu_items[], int menu_size) {
 
 void swingDivisionMark() {
     auto& ch = GetSelectedChannel();
-    switch (ch.getSwing() + 50) {
+    switch (ch.getSwing()) {
         case 58:  // 1/32nd
         case 66:  // 1/16th
         case 75:  // 1/8th
@@ -263,9 +263,9 @@ void DisplayChannelPage() {
             subText = "SHIFT HIT";
             break;
         case PARAM_CH_SWING:
-            ch.getSwing() == 0
+            ch.getSwing() == 50
                 ? sprintf(mainText, "OFF")
-                : sprintf(mainText, "%d%%", ch.getSwing(withCvMod) + 50);
+                : sprintf(mainText, "%d%%", ch.getSwing(withCvMod));
             subText = "DOWN BEAT";
             swingDivisionMark();
             break;

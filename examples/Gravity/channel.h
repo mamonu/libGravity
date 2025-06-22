@@ -40,7 +40,7 @@ class Channel {
         base_probability = 100;
         base_duty_cycle = 50;
         base_offset = 0;
-        base_shuffle = 0;
+        base_swing = 50;
         cv_source = CV_NONE;
         cv_destination = CV_DEST_NONE;
 
@@ -48,7 +48,7 @@ class Channel {
         cvmod_probability = base_probability;
         cvmod_duty_cycle = base_duty_cycle;
         cvmod_offset = base_offset;
-        cvmod_shuffle = base_shuffle;
+        cvmod_swing = base_swing;
     }
 
     // Setters (Set the BASE value)
@@ -58,8 +58,8 @@ class Channel {
     }
     void setProbability(int prob) { base_probability = constrain(prob, 0, 100); }
     void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 1, 99); }
-    void setOffset(int off) { base_offset = constrain(off, 0, 100); }
-    void setSwing(int val) { base_shuffle = constrain(val, 0, 50); }
+    void setOffset(int off) { base_offset = constrain(off, 0, 99); }
+    void setSwing(int val) { base_swing = constrain(val, 50, 95); }
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
@@ -68,7 +68,7 @@ class Channel {
     int getProbability(bool withCvMod = false) const { return withCvMod ? cvmod_probability : base_probability; }
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
     int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
-    int getSwing(bool withCvMod = false) const { return withCvMod ? cvmod_shuffle : base_shuffle; }
+    int getSwing(bool withCvMod = false) const { return withCvMod ? cvmod_swing : base_swing; }
     int getClockMod(bool withCvMod = false) const { return clock_mod[getClockModIndex(withCvMod)]; }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
     CvSource getCvSource() { return cv_source; }
@@ -86,13 +86,14 @@ class Channel {
         const uint32_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
         const uint32_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
 
-        uint32_t shuffle_pulses = 0;
+        uint32_t swing_pulses = 0;
         // Check step increment for odd beats.
-        if ((tick / mod_pulses) % 2 == 1) {
-            shuffle_pulses = (long)((mod_pulses * (100L - cvmod_shuffle)) / 100L);
+        if (cvmod_swing > 50 && (tick / mod_pulses) % 2 == 1) {
+            int shifted_swing = cvmod_swing - 50;
+            swing_pulses = (long)((mod_pulses * (100L - shifted_swing)) / 100L);
         }
 
-        const uint32_t current_tick_offset = tick + offset_pulses + shuffle_pulses;
+        const uint32_t current_tick_offset = tick + offset_pulses + swing_pulses;
 
         // Step check
         if (!output.On()) {
@@ -118,7 +119,7 @@ class Channel {
             cvmod_probability = base_probability;
             cvmod_duty_cycle = base_duty_cycle;
             cvmod_offset = base_offset;
-            cvmod_shuffle = base_shuffle;
+            cvmod_swing = base_swing;
             return;
         }
 
@@ -144,9 +145,9 @@ class Channel {
                            ? constrain(base_offset + map(value, -512, 512, -50, 50), 0, 99)
                            : base_offset;
         
-        cvmod_shuffle = (cv_destination == CV_DEST_SWING)
-                           ? constrain(base_shuffle + map(value, -512, 512, -25, 25), 0, 50)
-                           : base_shuffle;
+        cvmod_swing = (cv_destination == CV_DEST_SWING)
+                           ? constrain(base_swing + map(value, -512, 512, -25, 25), 50, 95)
+                           : base_swing;
     }
 
    private:
@@ -155,14 +156,14 @@ class Channel {
     byte base_probability;
     byte base_duty_cycle;
     byte base_offset;
-    byte base_shuffle;
+    byte base_swing;
 
     // Base value with cv mod applied.
     byte cvmod_clock_mod_index;
     byte cvmod_probability;
     byte cvmod_duty_cycle;
     byte cvmod_offset;
-    byte cvmod_shuffle;
+    byte cvmod_swing;
 
     // CV configuration
     CvSource cv_source = CV_NONE;
