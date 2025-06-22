@@ -129,25 +129,30 @@ class Channel {
         // Calculate and store cv modded values using bipolar mapping.
         // Default to base value if not the current CV destination.
 
-        cvmod_clock_mod_index = (cv_destination == CV_DEST_MOD)
-                                    ? constrain(base_clock_mod_index + map(value, -512, 512, -10, 10), 0, MOD_CHOICE_SIZE - 1)
-                                    : base_clock_mod_index;
+        cvmod_clock_mod_index =
+            (cv_destination == CV_DEST_MOD)
+                ? constrain(base_clock_mod_index + map(value, -512, 512, -10, 10), 0, MOD_CHOICE_SIZE - 1)
+                : base_clock_mod_index;
 
-        cvmod_probability = (cv_destination == CV_DEST_PROB)
-                                ? constrain(base_probability + map(value, -512, 512, -50, 50), 0, 100)
-                                : base_probability;
+        cvmod_probability =
+            (cv_destination == CV_DEST_PROB)
+                ? constrain(base_probability + map(value, -512, 512, -50, 50), 0, 100)
+                : base_probability;
 
-        cvmod_duty_cycle = (cv_destination == CV_DEST_DUTY)
-                               ? constrain(base_duty_cycle + map(value, -512, 512, -50, 50), 1, 99)
-                               : base_duty_cycle;
+        cvmod_duty_cycle =
+            (cv_destination == CV_DEST_DUTY)
+                ? constrain(base_duty_cycle + map(value, -512, 512, -50, 50), 1, 99)
+                : base_duty_cycle;
 
-        cvmod_offset = (cv_destination == CV_DEST_OFFSET)
-                           ? constrain(base_offset + map(value, -512, 512, -50, 50), 0, 99)
-                           : base_offset;
-        
-        cvmod_swing = (cv_destination == CV_DEST_SWING)
-                           ? constrain(base_swing + map(value, -512, 512, -25, 25), 50, 95)
-                           : base_swing;
+        cvmod_offset =
+            (cv_destination == CV_DEST_OFFSET)
+                ? constrain(base_offset + map(value, -512, 512, -50, 50), 0, 99)
+                : base_offset;
+
+        cvmod_swing =
+            (cv_destination == CV_DEST_SWING)
+                ? constrain(base_swing + map(value, -512, 512, -25, 25), 50, 95)
+                : base_swing;
     }
 
    private:

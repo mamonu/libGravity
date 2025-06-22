@@ -161,7 +161,6 @@ void swingDivisionMark() {
             gravity.display.drawBox(56, 4, 4, 4);
             gravity.display.drawBox(57, 5, 2, 2);
             break;
-
     }
 }
 
