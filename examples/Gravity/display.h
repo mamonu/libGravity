@@ -58,11 +58,11 @@ const PROGMEM uint8_t LARGE_FONT[916] U8G2_FONT_SECTION("stk-l") =
 
 #define play_icon_width 14
 #define play_icon_height 14
-static const unsigned char play_icon[] = {
+static const unsigned char play_icon[] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x7C, 0x00, 0xFC, 0x00, 0xFC, 0x03,
     0xFC, 0x0F, 0xFC, 0x0F, 0xFC, 0x03, 0xFC, 0x00, 0x7C, 0x00, 0x3C, 0x00,
     0x00, 0x00, 0x00, 0x00};
-static const unsigned char pause_icon[] = {
+static const unsigned char pause_icon[] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E,
     0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E,
     0x38, 0x0E, 0x00, 0x00};
@@ -93,23 +93,23 @@ void drawRightAlignedText(const char* text, int y) {
     gravity.display.drawStr(drawX, y, text);
 }
 
-void drawSelectHero() {
+void drawMainSelection() {
     gravity.display.setDrawColor(1);
     const int tickSize = 3;
-    const int heroWidth = SCREEN_WIDTH / 2;
-    const int heroHeight = 49;
+    const int mainWidth = SCREEN_WIDTH / 2;
+    const int mainHeight = 49;
     gravity.display.drawLine(0, 0, tickSize, 0);
     gravity.display.drawLine(0, 0, 0, tickSize);
-    gravity.display.drawLine(heroWidth, 0, heroWidth - tickSize, 0);
-    gravity.display.drawLine(heroWidth, 0, heroWidth, tickSize);
-    gravity.display.drawLine(heroWidth, heroHeight, heroWidth, heroHeight - tickSize);
-    gravity.display.drawLine(heroWidth, heroHeight, heroWidth - tickSize, heroHeight);
-    gravity.display.drawLine(0, heroHeight, tickSize, heroHeight);
-    gravity.display.drawLine(0, heroHeight, 0, heroHeight - tickSize);
+    gravity.display.drawLine(mainWidth, 0, mainWidth - tickSize, 0);
+    gravity.display.drawLine(mainWidth, 0, mainWidth, tickSize);
+    gravity.display.drawLine(mainWidth, mainHeight, mainWidth, mainHeight - tickSize);
+    gravity.display.drawLine(mainWidth, mainHeight, mainWidth - tickSize, mainHeight);
+    gravity.display.drawLine(0, mainHeight, tickSize, mainHeight);
+    gravity.display.drawLine(0, mainHeight, 0, mainHeight - tickSize);
     gravity.display.setDrawColor(2);
 }
 
-void drawMenuItems(const char* menu_items[], int menu_size) {
+void drawMenuItems(String menu_items[], int menu_size) {
     // Draw menu items
     gravity.display.setFont(TEXT_FONT);
 
@@ -128,7 +128,7 @@ void drawMenuItems(const char* menu_items[], int menu_size) {
 
     if (app.editing_param) {
         gravity.display.drawBox(boxX, boxY, boxWidth, boxHeight);
-        drawSelectHero();
+        drawMainSelection();
     } else {
         gravity.display.drawFrame(boxX, boxY, boxWidth, boxHeight);
     }
@@ -143,7 +143,7 @@ void drawMenuItems(const char* menu_items[], int menu_size) {
 
     for (int i = 0; i < min(menu_size, VISIBLE_MENU_ITEMS); ++i) {
         int idx = start_index + i;
-        drawRightAlignedText(menu_items[idx], MENU_ITEM_HEIGHT * (i + 1) - 1);
+        drawRightAlignedText(menu_items[idx].c_str(), MENU_ITEM_HEIGHT * (i + 1) - 1);
     }
 }
 
@@ -173,54 +173,52 @@ void DisplayMainPage() {
     gravity.display.setFont(TEXT_FONT);
 
     // Display selected editable value
-    char mainText[8];
-    const char* subText;
+    String mainText;
+    String subText;
 
     switch (app.selected_param) {
         case PARAM_MAIN_TEMPO:
             // Serial MIDI is too unstable to display bpm in real time.
             if (app.selected_source == Clock::SOURCE_EXTERNAL_MIDI) {
-                sprintf(mainText, "%s", "EXT");
+                mainText = F("EXT");
             } else {
-                sprintf(mainText, "%d", gravity.clock.Tempo());
+                mainText = String(gravity.clock.Tempo());
             }
-            subText = "BPM";
+            subText = F("BPM");
             break;
         case PARAM_MAIN_SOURCE:
+            mainText = F("EXT");
             switch (app.selected_source) {
                 case Clock::SOURCE_INTERNAL:
-                    sprintf(mainText, "%s", "INT");
-                    subText = "CLOCK";
+                    mainText = F("INT");
+                    subText = F("CLOCK");
                     break;
                 case Clock::SOURCE_EXTERNAL_PPQN_24:
-                    sprintf(mainText, "%s", "EXT");
-                    subText = "24 PPQN";
+                    subText = F("24 PPQN");
                     break;
                 case Clock::SOURCE_EXTERNAL_PPQN_4:
-                    sprintf(mainText, "%s", "EXT");
-                    subText = "4 PPQN";
+                    subText = F("4 PPQN");
                     break;
                 case Clock::SOURCE_EXTERNAL_MIDI:
-                    sprintf(mainText, "%s", "EXT");
-                    subText = "MIDI";
+                    subText = F("MIDI");
                     break;
             }
             break;
         case PARAM_MAIN_ENCODER_DIR:
-            sprintf(mainText, "%s", "DIR");
-            subText = app.selected_sub_param == 0 ? "DEFAULT" : "REVERSED";
+            mainText = F("DIR");
+            subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("REVERSED");
             break;
         case PARAM_MAIN_RESET_STATE:
-            sprintf(mainText, "%s", "RST");
-            subText = app.selected_sub_param == 0 ? "RESET ALL" : "BACK";
+            mainText = F("RST");
+            subText = app.selected_sub_param == 0 ? F("RESET ALL") : F("BACK");
             break;
     }
 
-    drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
-    drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
+    drawCenteredText(mainText.c_str(), MAIN_TEXT_Y, LARGE_FONT);
+    drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    const char* menu_items[PARAM_MAIN_LAST] = {"TEMPO", "SOURCE", "ENCODER DIR", "RESET"};
+    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("ENCODER DIR"), F("RESET")};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
@@ -231,8 +229,8 @@ void DisplayChannelPage() {
     gravity.display.setDrawColor(2);
 
     // Display selected editable value
-    char mainText[5];
-    const char* subText;
+    String mainText;
+    String subText;
 
     // When editing a param, just show the base value. When not editing show
     // the value with cv mod.
@@ -242,87 +240,82 @@ void DisplayChannelPage() {
         case PARAM_CH_MOD: {
             int mod_value = ch.getClockMod(withCvMod);
             if (mod_value > 1) {
-                sprintf(mainText, "/%d", mod_value);
-                subText = "DIVIDE";
+                mainText = F("/");
+                mainText += String(mod_value);
+                subText = F("DIVIDE");
             } else {
-                sprintf(mainText, "x%d", abs(mod_value));
-                subText = "MULTIPLY";
+                mainText = F("x");
+                mainText += String(abs(mod_value));
+                subText = F("MULTIPLY");
             }
             break;
         }
         case PARAM_CH_PROB:
-            sprintf(mainText, "%d%%", ch.getProbability(withCvMod));
-            subText = "HIT CHANCE";
+            mainText = String(ch.getProbability(withCvMod)) + F("%");
+            subText = F("HIT CHANCE");
             break;
         case PARAM_CH_DUTY:
-            sprintf(mainText, "%d%%", ch.getDutyCycle(withCvMod));
-            subText = "PULSE WIDTH";
+            mainText = String(ch.getDutyCycle(withCvMod)) + F("%");
+            subText = F("PULSE WIDTH");
             break;
         case PARAM_CH_OFFSET:
-            sprintf(mainText, "%d%%", ch.getOffset(withCvMod));
-            subText = "SHIFT HIT";
+            mainText = String(ch.getOffset(withCvMod)) + F("%");
+            subText = F("SHIFT HIT");
             break;
         case PARAM_CH_SWING:
             ch.getSwing() == 50
-                ? sprintf(mainText, "OFF")
-                : sprintf(mainText, "%d%%", ch.getSwing(withCvMod));
+                ? mainText = F("OFF")
+                : mainText = String(ch.getSwing(withCvMod)) + F("%");
             subText = "DOWN BEAT";
             swingDivisionMark();
             break;
         case PARAM_CH_CV_SRC: {
             switch (ch.getCvSource()) {
+                mainText = F("SRC");
                 case CV_NONE:
-                    sprintf(mainText, "SRC");
-                    subText = "NONE";
+                    subText = F("NONE");
                     break;
                 case CV_1:
-                    sprintf(mainText, "SRC");
-                    subText = "CV 1";
+                    subText = F("CV 1");
                     break;
                 case CV_2:
-                    sprintf(mainText, "SRC");
-                    subText = "CV 2";
+                    subText = F("CV 2");
                     break;
             }
             break;
         }
         case PARAM_CH_CV_DEST: {
             switch (ch.getCvDestination()) {
+                mainText = F("DEST");
                 case CV_DEST_NONE:
-                    sprintf(mainText, "DEST");
-                    subText = "NONE";
+                    subText = F("NONE");
                     break;
                 case CV_DEST_MOD:
-                    sprintf(mainText, "DEST");
-                    subText = "CLOCK MOD";
+                    subText = F("CLOCK MOD");
                     break;
                 case CV_DEST_PROB:
-                    sprintf(mainText, "DEST");
-                    subText = "PROBABILITY";
+                    subText = F("PROBABILITY");
                     break;
                 case CV_DEST_DUTY:
-                    sprintf(mainText, "DEST");
-                    subText = "DUTY CYCLE";
+                    subText = F("DUTY CYCLE");
                     break;
                 case CV_DEST_OFFSET:
-                    sprintf(mainText, "DEST");
-                    subText = "OFFSET";
+                    subText = F("OFFSET");
                     break;
                 case CV_DEST_SWING:
-                    sprintf(mainText, "DEST");
-                    subText = "SWING";
+                    subText = F("SWING");
                     break;
             }
             break;
         }
     }
 
-    drawCenteredText(mainText, MAIN_TEXT_Y, LARGE_FONT);
-    drawCenteredText(subText, SUB_TEXT_Y, TEXT_FONT);
+    drawCenteredText(mainText.c_str(), MAIN_TEXT_Y, LARGE_FONT);
+    drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Channel Page menu items
-    const char* menu_items[PARAM_CH_LAST] = {
-        "MOD", "PROBABILITY", "DUTY", "OFFSET", "SWING", "CV SOURCE", "CV DEST"};
+    String menu_items[PARAM_CH_LAST] = {
+        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("CV SOURCE"), F("CV DEST")};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 
@@ -349,7 +342,7 @@ void DisplaySelectedChannel() {
         if (i == 0) {
             gravity.display.setBitmapMode(1);
             auto icon = gravity.clock.IsPaused() ? pause_icon : play_icon;
-            gravity.display.drawXBM(2, boxY, play_icon_width, play_icon_height, icon);
+            gravity.display.drawXBMP(2, boxY, play_icon_width, play_icon_height, icon);
         } else {
             gravity.display.setFont(TEXT_FONT);
             gravity.display.setCursor((i * boxWidth) + textOffset, SCREEN_HEIGHT - 3);
