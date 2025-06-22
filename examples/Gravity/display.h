@@ -147,6 +147,24 @@ void drawMenuItems(String menu_items[], int menu_size) {
     }
 }
 
+// Display an indicator when swing percentage matches a musical note.
+void swingDivisionMark() {
+    auto& ch = GetSelectedChannel();
+    switch (ch.getSwing()) {
+        case 58:  // 1/32nd
+        case 66:  // 1/16th
+        case 75:  // 1/8th
+            gravity.display.drawBox(56, 4, 4, 4);
+            break;
+        case 54:  // 1/32nd tripplet
+        case 62:  // 1/16th tripplet
+        case 71:  // 1/8th tripplet
+            gravity.display.drawBox(56, 4, 4, 4);
+            gravity.display.drawBox(57, 5, 2, 2);
+            break;
+    }
+}
+
 // Main display functions
 
 void DisplayMainPage() {
@@ -244,6 +262,13 @@ void DisplayChannelPage() {
             mainText = String(ch.getOffset(withCvMod)) + F("%");
             subText = F("SHIFT HIT");
             break;
+        case PARAM_CH_SWING:
+            ch.getSwing() == 50
+                ? mainText = F("OFF")
+                : mainText = String(ch.getSwing(withCvMod)) + F("%");
+            subText = "DOWN BEAT";
+            swingDivisionMark();
+            break;
         case PARAM_CH_CV_SRC: {
             switch (ch.getCvSource()) {
                 mainText = F("SRC");
@@ -277,6 +302,9 @@ void DisplayChannelPage() {
                 case CV_DEST_OFFSET:
                     subText = F("OFFSET");
                     break;
+                case CV_DEST_SWING:
+                    subText = F("SWING");
+                    break;
             }
             break;
         }
@@ -287,7 +315,7 @@ void DisplayChannelPage() {
 
     // Draw Channel Page menu items
     String menu_items[PARAM_CH_LAST] = {
-        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("CV SOURCE"), F("CV DEST")};
+        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("CV SOURCE"), F("CV DEST")};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 
