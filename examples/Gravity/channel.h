@@ -82,18 +82,18 @@ class Channel {
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
         // Calculate output duty cycle state using cv modded values to determine pulse counts.
-        const uint32_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
-        const uint32_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
-        const uint32_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
+        const uint16_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
+        const uint16_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
+        const uint16_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
 
-        uint32_t swing_pulses = 0;
+        uint16_t swing_pulses = 0;
         // Check step increment for odd beats.
         if (cvmod_swing > 50 && (tick / mod_pulses) % 2 == 1) {
             int shifted_swing = cvmod_swing - 50;
             swing_pulses = (long)((mod_pulses * (100L - shifted_swing)) / 100L);
         }
 
-        const uint32_t current_tick_offset = tick + offset_pulses + swing_pulses;
+        const uint16_t current_tick_offset = tick + offset_pulses + swing_pulses;
 
         // Step check
         if (!output.On()) {
@@ -106,7 +106,7 @@ class Channel {
         }
 
         // Duty cycle low check
-        const uint32_t duty_cycle_end_tick = tick + duty_pulses + offset_pulses;
+        const uint16_t duty_cycle_end_tick = tick + duty_pulses + offset_pulses + swing_pulses;
         if (duty_cycle_end_tick % mod_pulses == 0) {
             output.Low();
         }
