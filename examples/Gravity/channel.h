@@ -93,7 +93,7 @@ class Channel {
             swing_pulses = (long)((mod_pulses * (100L - shifted_swing)) / 100L);
         }
 
-        const uint16_t current_tick_offset = tick + offset_pulses + swing_pulses;
+        const uint32_t current_tick_offset = tick + offset_pulses + swing_pulses;
 
         // Step check
         if (!output.On()) {
@@ -106,7 +106,7 @@ class Channel {
         }
 
         // Duty cycle low check
-        const uint16_t duty_cycle_end_tick = tick + duty_pulses + offset_pulses + swing_pulses;
+        const uint32_t duty_cycle_end_tick = tick + duty_pulses + offset_pulses + swing_pulses;
         if (duty_cycle_end_tick % mod_pulses == 0) {
             output.Low();
         }

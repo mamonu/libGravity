@@ -147,6 +147,7 @@ void drawMenuItems(const char* menu_items[], int menu_size) {
     }
 }
 
+// Display an indicator when swing percentage matches a musical note.
 void swingDivisionMark() {
     auto& ch = GetSelectedChannel();
     switch (ch.getSwing()) {
