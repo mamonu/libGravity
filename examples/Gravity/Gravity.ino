@@ -21,8 +21,8 @@
 
 #include "app_state.h"
 #include "channel.h"
-#include "save_state.h"
 #include "display.h"
+#include "save_state.h"
 
 AppState app;
 StateManager stateManager;
@@ -229,8 +229,7 @@ void editChannelParameter(int val) {
 }
 
 void updateSelection(int& param, int change, int maxValue) {
-    // This formula correctly handles positive and negative wrapping.
-    param = (param + change % maxValue + maxValue) % maxValue;
+    param = constrain(param + change, 0, maxValue - 1);
 }
 
 //
