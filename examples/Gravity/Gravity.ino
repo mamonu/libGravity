@@ -142,7 +142,7 @@ void HandleEncoderPressed() {
     app.refresh_screen = true;
 }
 
-void HandleRotate(Direction dir, int val) {
+void HandleRotate(int val) {
     if (!app.editing_param) {
         // Navigation Mode
         const int max_param = (app.selected_channel == 0) ? PARAM_MAIN_LAST : PARAM_CH_LAST;
@@ -158,12 +158,8 @@ void HandleRotate(Direction dir, int val) {
     app.refresh_screen = true;
 }
 
-void HandlePressedRotate(Direction dir, int val) {
-    if (dir == DIRECTION_INCREMENT && app.selected_channel < Gravity::OUTPUT_COUNT) {
-        app.selected_channel++;
-    } else if (dir == DIRECTION_DECREMENT && app.selected_channel > 0) {
-        app.selected_channel--;
-    }
+void HandlePressedRotate(int val) {
+    updateSelection(app.selected_channel, val, Gravity::OUTPUT_COUNT + 1);
     app.selected_param = 0;
     stateManager.markDirty();
     app.refresh_screen = true;
@@ -180,7 +176,7 @@ void editMainParameter(int val) {
             break;
 
         case PARAM_MAIN_SOURCE: {
-            int source = static_cast<int>(app.selected_source);
+            byte source = static_cast<int>(app.selected_source);
             updateSelection(source, val, Clock::SOURCE_LAST);
             app.selected_source = static_cast<Clock::Source>(source);
             gravity.clock.SetSource(app.selected_source);
@@ -220,13 +216,13 @@ void editChannelParameter(int val) {
             ch.setHits(ch.getHits() + val);
             break;
         case PARAM_CH_CV_SRC: {
-            int source = static_cast<int>(ch.getCvSource());
+            byte source = static_cast<int>(ch.getCvSource());
             updateSelection(source, val, CV_LAST);
             ch.setCvSource(static_cast<CvSource>(source));
             break;
         }
         case PARAM_CH_CV_DEST: {
-            int dest = static_cast<int>(ch.getCvDestination());
+            byte dest = static_cast<int>(ch.getCvDestination());
             updateSelection(dest, val, CV_DEST_LAST);
             ch.setCvDestination(static_cast<CvDestination>(dest));
             break;
@@ -234,12 +230,17 @@ void editChannelParameter(int val) {
     }
 }
 
-void updateSelection(int& param, int change, int maxValue) {
+// Changes the param by the value provided.
+void updateSelection(byte& param, int change, int maxValue) {
+    // Do not apply acceleration if max value is less than 25.
+    if (maxValue < 25) {
+        change = change > 0 ? 1 : -1;
+    }
     param = constrain(param + change, 0, maxValue - 1);
 }
 
 //
-// Helper functions.
+// App Helper functions.
 //
 
 void InitAppState(AppState& app) {

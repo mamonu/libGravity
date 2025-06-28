@@ -16,28 +16,21 @@
 #include "button.h"
 #include "peripherials.h"
 
-enum Direction {
-    DIRECTION_UNCHANGED,
-    DIRECTION_INCREMENT,
-    DIRECTION_DECREMENT,
-};
-
-class EncoderDir {
+class Encoder {
    protected:
     typedef void (*CallbackFunction)(void);
-    typedef void (*RotateCallbackFunction)(Direction dir, int val);
+    typedef void (*RotateCallbackFunction)(int val);
     CallbackFunction on_press;
     RotateCallbackFunction on_press_rotate;
     RotateCallbackFunction on_rotate;
     int change;
-    Direction dir;
 
    public:
-    EncoderDir() : encoder_(ENCODER_PIN1, ENCODER_PIN2, RotaryEncoder::LatchMode::FOUR3),
+    Encoder() : encoder_(ENCODER_PIN1, ENCODER_PIN2, RotaryEncoder::LatchMode::FOUR3),
                    button_(ENCODER_SW_PIN) {
         _instance = this;
     }
-    ~EncoderDir() {}
+    ~Encoder() {}
 
     // Set to true if the encoder read direction should be reversed.
     void SetReverseDirection(bool reversed) {
@@ -55,12 +48,6 @@ class EncoderDir {
         on_press_rotate = f;
     }
 
-    // Parse EncoderButton increment direction.
-    Direction RotateDirection() {
-        int dir = (int)(encoder_.getDirection());
-        return rotate_(dir, reversed_);
-    }
-
     void Process() {
         // Get encoder position change amount.
         int encoder_rotated = _rotate_change() != 0;
@@ -70,9 +57,9 @@ class EncoderDir {
         // Handle encoder position change and button press.
         if (button_pressed && encoder_rotated) {
             rotated_while_held_ = true;
-            if (on_press_rotate != NULL) on_press_rotate(dir, change);
+            if (on_press_rotate != NULL) on_press_rotate(change);
         } else if (!button_pressed && encoder_rotated) {
-            if (on_rotate != NULL) on_rotate(dir, change);
+            if (on_rotate != NULL) on_rotate(change);
         } else if (button_.Change() == Button::CHANGE_RELEASED && !rotated_while_held_) {
             if (on_press != NULL) on_press();
         }
@@ -91,7 +78,7 @@ class EncoderDir {
     }
 
    private:
-    static EncoderDir* _instance;
+    static Encoder* _instance;
 
     int previous_pos_;
     bool rotated_while_held_;
@@ -112,7 +99,6 @@ class EncoderDir {
         // Update state variables.
         change = position - previous_pos_;
         previous_pos_ = position;
-        dir = RotateDirection();
 
         // Encoder rotate acceleration.
         if (ms < 16) {
@@ -125,17 +111,6 @@ class EncoderDir {
             change = -(change);
         }
         return change;
-    }
-
-    inline Direction rotate_(int dir, bool reversed) {
-        switch (dir) {
-            case 1:
-                return (reversed) ? DIRECTION_DECREMENT : DIRECTION_INCREMENT;
-            case -1:
-                return (reversed) ? DIRECTION_INCREMENT : DIRECTION_DECREMENT;
-            default:
-                return DIRECTION_UNCHANGED;
-        }
     }
 };
 

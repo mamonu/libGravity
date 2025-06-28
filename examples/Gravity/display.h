@@ -9,7 +9,7 @@
 // UI Display functions for drawing the UI to the OLED display.
 //
 
-const PROGMEM uint8_t TEXT_FONT[437] U8G2_FONT_SECTION("velvetscreen") =
+const uint8_t TEXT_FONT[437] U8G2_FONT_SECTION("velvetscreen") PROGMEM =
     "\64\0\2\2\3\3\2\3\4\5\5\0\0\5\0\5\0\0\221\0\0\1\230 \4\200\134%\11\255tT"
     "R\271RI(\6\252\334T\31)\7\252\134bJ\12+\7\233\345\322J\0,\5\221T\4-\5\213"
     "f\6.\5\211T\2/\6\244\354c\33\60\10\254\354T\64\223\2\61\7\353\354\222\254\6\62\11\254l"
@@ -25,7 +25,7 @@ const PROGMEM uint8_t TEXT_FONT[437] U8G2_FONT_SECTION("velvetscreen") =
     "\7p\10\255\364V\266\323\2q\7\255\364\216\257\5r\10\253d\242\32*\2t\6\255t\376#w\11"
     "\255\364V\245FN\13x\6\233dR\7\0\0\0\4\377\377\0";
 
-const PROGMEM uint8_t LARGE_FONT[916] U8G2_FONT_SECTION("stk-l") =
+const uint8_t LARGE_FONT[916] U8G2_FONT_SECTION("stk-l") PROGMEM =
     "#\0\4\4\4\5\2\1\6\17\30\1\0\27\0\0\0\1\77\0\0\3w%'\17\37\313\330R#&"
     "\32!F\14\211I\310\24!\65\204(MF\21)Cd\304\10\62b\14\215\60Vb\334\20\0/\14"
     "\272\336\336d\244\350\263q\343\0\60\37|\377\216!%*\10\35\263\253ChD\30\21bB\14\242S"
@@ -58,11 +58,11 @@ const PROGMEM uint8_t LARGE_FONT[916] U8G2_FONT_SECTION("stk-l") =
 
 #define play_icon_width 14
 #define play_icon_height 14
-static const unsigned char play_icon[] PROGMEM = {
+static const unsigned char play_icon[28] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x7C, 0x00, 0xFC, 0x00, 0xFC, 0x03,
     0xFC, 0x0F, 0xFC, 0x0F, 0xFC, 0x03, 0xFC, 0x00, 0x7C, 0x00, 0x3C, 0x00,
     0x00, 0x00, 0x00, 0x00};
-static const unsigned char pause_icon[] PROGMEM = {
+static const unsigned char pause_icon[28] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E,
     0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E, 0x38, 0x0E,
     0x38, 0x0E, 0x00, 0x00};
@@ -278,8 +278,8 @@ void DisplayChannelPage() {
             subText = "EUCLID HITS";
             break;
         case PARAM_CH_CV_SRC: {
+            mainText = F("SRC");
             switch (ch.getCvSource()) {
-                mainText = F("SRC");
                 case CV_NONE:
                     subText = F("NONE");
                     break;
@@ -293,8 +293,8 @@ void DisplayChannelPage() {
             break;
         }
         case PARAM_CH_CV_DEST: {
+            mainText = F("DEST");
             switch (ch.getCvDestination()) {
-                mainText = F("DEST");
                 case CV_DEST_NONE:
                     subText = F("NONE");
                     break;

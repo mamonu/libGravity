@@ -13,7 +13,7 @@
 
 // Initialize the static pointer for the EncoderDir class to null. We want to
 // have a static pointer to decouple the ISR from the global gravity object. 
-EncoderDir* EncoderDir::_instance = nullptr;
+Encoder* Encoder::_instance = nullptr;
 
 void Gravity::Init() {
     initClock();
@@ -74,11 +74,11 @@ void Gravity::Process() {
 
 // Pin Change Interrupt on Port D (D4).
 ISR(PCINT2_vect) {
-    EncoderDir::isr();
+    Encoder::isr();
 };
 // Pin Change Interrupt on Port C (D17/A3).
 ISR(PCINT1_vect) {
-    EncoderDir::isr();
+    Encoder::isr();
 };
 
 // Global instance
