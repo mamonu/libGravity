@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <gravity.h>
+#include "euclidean.h"
 
 // Enums for CV configuration
 enum CvSource {
@@ -41,6 +42,7 @@ class Channel {
         base_duty_cycle = 50;
         base_offset = 0;
         base_swing = 50;
+
         cv_source = CV_NONE;
         cv_destination = CV_DEST_NONE;
 
@@ -49,6 +51,8 @@ class Channel {
         cvmod_duty_cycle = base_duty_cycle;
         cvmod_offset = base_offset;
         cvmod_swing = base_swing;
+
+        pattern.Init(DEFAULT_PATTERN);
     }
 
     // Setters (Set the BASE value)
@@ -75,6 +79,13 @@ class Channel {
     CvDestination getCvDestination() { return cv_destination; }
     bool isCvModActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
 
+    // Euclidean
+    void setSteps(byte val) { pattern.SetSteps(val); }
+    void setHits(byte val) { pattern.SetHits(val); }
+
+    byte getSteps() { pattern.GetSteps(); }
+    byte getHits() { pattern.GetHits(); }
+
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
      * @param tick The current clock tick count.
@@ -95,11 +106,26 @@ class Channel {
 
         const uint32_t current_tick_offset = tick + offset_pulses + swing_pulses;
 
-        // Step check
+        // Duty cycle high check logic
         if (!output.On()) {
+            // Step check
             if (current_tick_offset % mod_pulses == 0) {
-                // Duty cycle high check
-                if (cvmod_probability >= random(0, 100)) {
+                bool hit = cvmod_probability >= random(0, 100);
+                if (pattern.IsActive()) {
+                    // Euclidean rhythm check
+                    switch (pattern.NextStep()) {
+                    case Pattern::REST:  // Rest when active or fall back to probability
+                        hit = pattern.IsActive() ? false : hit;
+                        break;
+                    case Pattern::HIT:  // Hit if probability is true
+                        hit &= true;
+                        break;
+                    case Pattern::PADDING:  // Padding returns only when active, always rest)
+                        hit = false;
+                        break;
+                    }
+                }
+                if (hit) {
                     output.High();
                 }
             }
@@ -173,6 +199,9 @@ class Channel {
     // CV configuration
     CvSource cv_source = CV_NONE;
     CvDestination cv_destination = CV_DEST_NONE;
+
+    // Euclidean pattern
+    Pattern pattern;
 };
 
 #endif  // CHANNEL_H

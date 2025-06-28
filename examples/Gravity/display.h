@@ -269,6 +269,14 @@ void DisplayChannelPage() {
             subText = "DOWN BEAT";
             swingDivisionMark();
             break;
+        case PARAM_CH_EUC_STEPS:
+            mainText = String(ch.getSteps());
+            subText = "EUCLID STEPS";
+            break;
+        case PARAM_CH_EUC_HITS:
+            mainText = String(ch.getHits());
+            subText = "EUCLID HITS";
+            break;
         case PARAM_CH_CV_SRC: {
             switch (ch.getCvSource()) {
                 mainText = F("SRC");
@@ -315,7 +323,8 @@ void DisplayChannelPage() {
 
     // Draw Channel Page menu items
     String menu_items[PARAM_CH_LAST] = {
-        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("CV SOURCE"), F("CV DEST")};
+        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("EUC STEPS"), 
+        F("EUC HITS"), F("CV SOURCE"), F("CV DEST")};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 

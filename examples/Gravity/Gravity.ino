@@ -213,6 +213,12 @@ void editChannelParameter(int val) {
         case PARAM_CH_SWING:
             ch.setSwing(ch.getSwing() + val);
             break;
+        case PARAM_CH_EUC_STEPS:
+            ch.setSteps(ch.getSteps() + val);
+            break;
+        case PARAM_CH_EUC_HITS:
+            ch.setHits(ch.getHits() + val);
+            break;
         case PARAM_CH_CV_SRC: {
             int source = static_cast<int>(ch.getCvSource());
             updateSelection(source, val, CV_LAST);

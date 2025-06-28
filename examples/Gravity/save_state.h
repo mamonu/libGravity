@@ -9,7 +9,7 @@ struct AppState;
 
 // Define the constants for the current firmware.
 const char SKETCH_NAME[] = "Gravity";
-const byte SKETCH_VERSION = 4;
+const byte SKETCH_VERSION = 5;
 
 // Define the minimum amount of time between EEPROM writes.
 static const unsigned long SAVE_DELAY_MS = 2000;
