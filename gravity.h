@@ -8,7 +8,7 @@
 #include "button.h"
 #include "clock.h"
 #include "digital_output.h"
-#include "encoder_dir.h"
+#include "encoder.h"
 #include "peripherials.h"
 
 // Hardware abstraction wrapper for the Gravity module.
@@ -32,7 +32,7 @@ class Gravity {
     U8G2_SSD1306_128X64_NONAME_1_HW_I2C display;  // OLED display object.
     Clock clock;                                  // Clock source wrapper.
     DigitalOutput outputs[OUTPUT_COUNT];          // An array containing each Output object.
-    EncoderDir encoder;                           // Rotary encoder with button instance
+    Encoder encoder;                           // Rotary encoder with button instance
     Button shift_button;
     Button play_button;
     AnalogInput cv1;

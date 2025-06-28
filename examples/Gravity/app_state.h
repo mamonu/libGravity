@@ -11,8 +11,8 @@ struct AppState {
     bool encoder_reversed = false;
     bool refresh_screen = true;
     bool editing_param = false;
-    int selected_param = 0;
-    int selected_sub_param = 0;
+    byte selected_param = 0;
+    byte selected_sub_param = 0;
     byte selected_channel = 0;  // 0=tempo, 1-6=output channel
     byte selected_shuffle = 0;
     Clock::Source selected_source = Clock::SOURCE_INTERNAL;
