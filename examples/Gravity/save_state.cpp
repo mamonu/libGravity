@@ -30,6 +30,8 @@ bool StateManager::initialize(AppState& app) {
             ch.setSwing(saved_ch_state.base_shuffle);
             ch.setCvSource(static_cast<CvSource>(saved_ch_state.cv_source));
             ch.setCvDestination(static_cast<CvDestination>(saved_ch_state.cv_destination));
+            ch.setSteps(saved_ch_state.euc_steps);
+            ch.setHits(saved_ch_state.euc_hits);
         }
 
         return true;
@@ -109,6 +111,8 @@ void StateManager::_saveState(const AppState& app) {
         save_ch.base_shuffle = ch.getSwing();
         save_ch.cv_source = static_cast<byte>(ch.getCvSource());
         save_ch.cv_destination = static_cast<byte>(ch.getCvDestination());
+        save_ch.euc_steps = ch.getSteps();
+        save_ch.euc_hits = ch.getHits();
     }
     EEPROM.put(sizeof(Metadata), save_data);
 }

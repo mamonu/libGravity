@@ -60,8 +60,23 @@ void loop() {
     // Read CVs and call the update function for each channel.
     int cv1 = gravity.cv1.Read();
     int cv2 = gravity.cv2.Read();
+
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
-        app.channel[i].applyCvMod(cv1, cv2);
+        auto& ch = app.channel[i];
+        // Only apply CV to the channel when the current channel has cv
+        // mod configured.
+        if (ch.isCvModActive()) {
+            // hack -- do not apply mod to euclidean rhythm when editing.
+            bool editing_euc;
+            editing_euc |= ch.getCvDestination() == CV_DEST_EUC_STEPS;
+            editing_euc |= ch.getCvDestination() == CV_DEST_EUC_HITS;
+            editing_euc &= (app.selected_channel - 1) == i;
+            editing_euc &= app.editing_param;
+            if (editing_euc) {
+                continue;
+            }
+            ch.applyCvMod(cv1, cv2);
+        }
     }
 
     // Check for dirty state eligible to be saved.
@@ -208,6 +223,12 @@ void editChannelParameter(int val) {
             break;
         case PARAM_CH_SWING:
             ch.setSwing(ch.getSwing() + val);
+            break;
+        case PARAM_CH_EUC_STEPS:
+            ch.setSteps(ch.getSteps() + val);
+            break;
+        case PARAM_CH_EUC_HITS:
+            ch.setHits(ch.getHits() + val);
             break;
         case PARAM_CH_CV_SRC: {
             byte source = static_cast<int>(ch.getCvSource());

@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <gravity.h>
+#include "euclidean.h"
 
 // Enums for CV configuration
 enum CvSource {
@@ -19,6 +20,8 @@ enum CvDestination {
     CV_DEST_DUTY,
     CV_DEST_OFFSET,
     CV_DEST_SWING,
+    CV_DEST_EUC_STEPS,
+    CV_DEST_EUC_HITS,
     CV_DEST_LAST,
 };
 
@@ -41,6 +44,7 @@ class Channel {
         base_duty_cycle = 50;
         base_offset = 0;
         base_swing = 50;
+
         cv_source = CV_NONE;
         cv_destination = CV_DEST_NONE;
 
@@ -49,17 +53,46 @@ class Channel {
         cvmod_duty_cycle = base_duty_cycle;
         cvmod_offset = base_offset;
         cvmod_swing = base_swing;
+
+        pattern.Init(DEFAULT_PATTERN);
     }
 
     // Setters (Set the BASE value)
 
     void setClockMod(int index) {
-        if (index >= 0 && index < MOD_CHOICE_SIZE) base_clock_mod_index = index;
+        base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
+        if (!isCvModActive()) {
+            cvmod_clock_mod_index = base_clock_mod_index;
+        }
     }
-    void setProbability(int prob) { base_probability = constrain(prob, 0, 100); }
-    void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 1, 99); }
-    void setOffset(int off) { base_offset = constrain(off, 0, 99); }
-    void setSwing(int val) { base_swing = constrain(val, 50, 95); }
+
+    void setProbability(int prob) { 
+        base_probability = constrain(prob, 0, 100);
+        if (!isCvModActive()) {
+            cvmod_probability = base_probability;
+        }
+    }
+
+    void setDutyCycle(int duty) {
+        base_duty_cycle = constrain(duty, 1, 99); 
+        if (!isCvModActive()) {
+            cvmod_duty_cycle = base_duty_cycle;
+        }
+    }
+
+    void setOffset(int off) { 
+        base_offset = constrain(off, 0, 99);
+        if (!isCvModActive()) {
+            cvmod_offset = base_offset;
+        }
+    }
+    void setSwing(int val) {
+         base_swing = constrain(val, 50, 95); 
+        if (!isCvModActive()) {
+            cvmod_swing = base_swing;
+        }
+    }
+
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
@@ -74,6 +107,12 @@ class Channel {
     CvSource getCvSource() { return cv_source; }
     CvDestination getCvDestination() { return cv_destination; }
     bool isCvModActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
+
+    // Euclidean
+    void setSteps(int val) { pattern.SetSteps(val); }
+    void setHits(int val) { pattern.SetHits(val); }
+    byte getSteps() { return pattern.GetSteps(); }
+    byte getHits() { return pattern.GetHits(); }
 
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
@@ -95,11 +134,21 @@ class Channel {
 
         const uint32_t current_tick_offset = tick + offset_pulses + swing_pulses;
 
-        // Step check
+        // Duty cycle high check logic
         if (!output.On()) {
+            // Step check
             if (current_tick_offset % mod_pulses == 0) {
-                // Duty cycle high check
-                if (cvmod_probability >= random(0, 100)) {
+                bool hit = cvmod_probability >= random(0, 100);
+                // Euclidean rhythm check
+                switch (pattern.NextStep()) {
+                case Pattern::REST:  // Rest when active or fall back to probability
+                    hit = false;
+                    break;
+                case Pattern::HIT:  // Hit if probability is true
+                    hit &= true;
+                    break;
+                }
+                if (hit) {
                     output.High();
                 }
             }
@@ -113,16 +162,6 @@ class Channel {
     }
 
     void applyCvMod(int cv1_value, int cv2_value) {
-        if (!isCvModActive()) {
-            // If CV is off, ensure cv modded values match the base values.
-            cvmod_clock_mod_index = base_clock_mod_index;
-            cvmod_probability = base_probability;
-            cvmod_duty_cycle = base_duty_cycle;
-            cvmod_offset = base_offset;
-            cvmod_swing = base_swing;
-            return;
-        }
-
         // Use the CV value for current selected cv source.
         int value = (cv_source == CV_1) ? cv1_value : cv2_value;
 
@@ -153,6 +192,14 @@ class Channel {
             (cv_destination == CV_DEST_SWING)
                 ? constrain(base_swing + map(value, -512, 512, -25, 25), 50, 95)
                 : base_swing;
+        
+        if (cv_destination == CV_DEST_EUC_STEPS) {
+            pattern.SetSteps(map(value, -512, 512, 0, MAX_PATTERN_LEN));
+        }
+        
+        if (cv_destination == CV_DEST_EUC_HITS) {
+            pattern.SetHits(map(value, -512, 512, 0, pattern.GetSteps()));
+        }
     }
 
    private:
@@ -173,6 +220,9 @@ class Channel {
     // CV configuration
     CvSource cv_source = CV_NONE;
     CvDestination cv_destination = CV_DEST_NONE;
+
+    // Euclidean pattern
+    Pattern pattern;
 };
 
 #endif  // CHANNEL_H
