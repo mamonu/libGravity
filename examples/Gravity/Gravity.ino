@@ -58,15 +58,15 @@ void loop() {
     gravity.Process();
 
     // Read CVs and call the update function for each channel.
-    if (!app.editing_param) {
-        int cv1 = gravity.cv1.Read();
-        int cv2 = gravity.cv2.Read();
-        for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
-            // Only apply CV to the channel when the current channel has cv
-            // mod configured.
-            if (app.channel[i].isCvModActive()) {
-                app.channel[i].applyCvMod(cv1, cv2);
-            }
+    int cv1 = gravity.cv1.Read();
+    int cv2 = gravity.cv2.Read();
+
+    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
+        // Only apply CV to the channel when the current channel has cv
+        // mod configured.
+        bool editing_current_step = app.editing_param && i == app.selected_channel - 1;
+        if (app.channel[i].isCvModActive()  && !editing_current_step) {
+            app.channel[i].applyCvMod(cv1, cv2);
         }
     }
 
