@@ -62,11 +62,20 @@ void loop() {
     int cv2 = gravity.cv2.Read();
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
+        auto& ch = app.channel[i];
         // Only apply CV to the channel when the current channel has cv
         // mod configured.
-        bool editing_current_step = app.editing_param && i == app.selected_channel - 1;
-        if (app.channel[i].isCvModActive()  && !editing_current_step) {
-            app.channel[i].applyCvMod(cv1, cv2);
+        if (ch.isCvModActive()) {
+            // hack -- do not apply mod to euclidean rhythm when editing.
+            bool editing_euc;
+            editing_euc |= ch.getCvDestination() == CV_DEST_EUC_STEPS;
+            editing_euc |= ch.getCvDestination() == CV_DEST_EUC_HITS;
+            editing_euc &= (app.selected_channel - 1) == i;
+            editing_euc &= app.editing_param;
+            if (editing_euc) {
+                continue;
+            }
+            ch.applyCvMod(cv1, cv2);
         }
     }
 
