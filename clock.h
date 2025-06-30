@@ -54,8 +54,8 @@ class Clock {
         // MIDI events.
         uClock.setOnClockStart(sendMIDIStart);
         uClock.setOnClockStop(sendMIDIStop);
-        uClock.setOnSync24(sendMIDIClock);
-        uClock.setOnSync48(sendPulseOut);
+        // uClock.setOnSync24(sendMIDIClock);
+        // uClock.setOnSync48(sendPulseOut);
 
         uClock.start();
     }
@@ -75,7 +75,7 @@ class Clock {
     void SetSource(Source source) {
         bool was_playing = !IsPaused();
         uClock.stop();
-        // If source is currently MIDI, disable the serial interrupt handler.
+        // If we are changing the source from MIDI, disable the serial interrupt handler.
         if (source_ == SOURCE_EXTERNAL_MIDI) {
             NeoSerial.attachInterrupt(serialEventNoop);
         }

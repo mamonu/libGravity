@@ -14,10 +14,9 @@ Common directory locations:
 
 ## Required Third-party Libraries
 
-* [uClock](https://github.com/midilab/uClock) [MIT] - Handle clock tempo, external clock input, and internal clock timer handler.
+* [uClock](https://github.com/midilab/uClock) [MIT] - (Included with this repo) Handle clock tempo, external clock input, and internal clock timer handler.
 * [RotateEncoder](https://github.com/mathertel/RotaryEncoder) [BSD] - Library for reading and interpreting encoder rotation.
-* [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library) [BSD] - Graphics helper library.
-* [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [BSD] - Library for interacting with the SSD1306 OLED display.
+* [U8g2](https://github.com/olikraus/u8g2/) [MIT] - Graphics helper library.
 
 ## Example
 
