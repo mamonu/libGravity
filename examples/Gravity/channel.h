@@ -60,12 +60,39 @@ class Channel {
     // Setters (Set the BASE value)
 
     void setClockMod(int index) {
-        if (index >= 0 && index < MOD_CHOICE_SIZE) base_clock_mod_index = index;
+        base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
+        if (!isCvModActive()) {
+            cvmod_clock_mod_index = base_clock_mod_index;
+        }
     }
-    void setProbability(int prob) { base_probability = constrain(prob, 0, 100); }
-    void setDutyCycle(int duty) { base_duty_cycle = constrain(duty, 1, 99); }
-    void setOffset(int off) { base_offset = constrain(off, 0, 99); }
-    void setSwing(int val) { base_swing = constrain(val, 50, 95); }
+
+    void setProbability(int prob) { 
+        base_probability = constrain(prob, 0, 100);
+        if (!isCvModActive()) {
+            cvmod_probability = base_probability;
+        }
+    }
+
+    void setDutyCycle(int duty) {
+        base_duty_cycle = constrain(duty, 1, 99); 
+        if (!isCvModActive()) {
+            cvmod_duty_cycle = base_duty_cycle;
+        }
+    }
+
+    void setOffset(int off) { 
+        base_offset = constrain(off, 0, 99);
+        if (!isCvModActive()) {
+            cvmod_offset = base_offset;
+        }
+    }
+    void setSwing(int val) {
+         base_swing = constrain(val, 50, 95); 
+        if (!isCvModActive()) {
+            cvmod_swing = base_swing;
+        }
+    }
+
     void setCvSource(CvSource source) { cv_source = source; }
     void setCvDestination(CvDestination dest) { cv_destination = dest; }
 
