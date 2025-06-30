@@ -20,6 +20,8 @@ enum CvDestination {
     CV_DEST_DUTY,
     CV_DEST_OFFSET,
     CV_DEST_SWING,
+    CV_DEST_EUC_STEPS,
+    CV_DEST_EUC_HITS,
     CV_DEST_LAST,
 };
 
@@ -80,11 +82,10 @@ class Channel {
     bool isCvModActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
 
     // Euclidean
-    void setSteps(byte val) { pattern.SetSteps(val); }
-    void setHits(byte val) { pattern.SetHits(val); }
-
-    byte getSteps() { pattern.GetSteps(); }
-    byte getHits() { pattern.GetHits(); }
+    void setSteps(int val) { pattern.SetSteps(val); }
+    void setHits(int val) { pattern.SetHits(val); }
+    byte getSteps() { return pattern.GetSteps(); }
+    byte getHits() { return pattern.GetHits(); }
 
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
@@ -111,19 +112,14 @@ class Channel {
             // Step check
             if (current_tick_offset % mod_pulses == 0) {
                 bool hit = cvmod_probability >= random(0, 100);
-                if (pattern.IsActive()) {
-                    // Euclidean rhythm check
-                    switch (pattern.NextStep()) {
-                    case Pattern::REST:  // Rest when active or fall back to probability
-                        hit = pattern.IsActive() ? false : hit;
-                        break;
-                    case Pattern::HIT:  // Hit if probability is true
-                        hit &= true;
-                        break;
-                    case Pattern::PADDING:  // Padding returns only when active, always rest)
-                        hit = false;
-                        break;
-                    }
+                // Euclidean rhythm check
+                switch (pattern.NextStep()) {
+                case Pattern::REST:  // Rest when active or fall back to probability
+                    hit = false;
+                    break;
+                case Pattern::HIT:  // Hit if probability is true
+                    hit &= true;
+                    break;
                 }
                 if (hit) {
                     output.High();
@@ -139,16 +135,6 @@ class Channel {
     }
 
     void applyCvMod(int cv1_value, int cv2_value) {
-        if (!isCvModActive()) {
-            // If CV is off, ensure cv modded values match the base values.
-            cvmod_clock_mod_index = base_clock_mod_index;
-            cvmod_probability = base_probability;
-            cvmod_duty_cycle = base_duty_cycle;
-            cvmod_offset = base_offset;
-            cvmod_swing = base_swing;
-            return;
-        }
-
         // Use the CV value for current selected cv source.
         int value = (cv_source == CV_1) ? cv1_value : cv2_value;
 
@@ -179,6 +165,14 @@ class Channel {
             (cv_destination == CV_DEST_SWING)
                 ? constrain(base_swing + map(value, -512, 512, -25, 25), 50, 95)
                 : base_swing;
+        
+        if (cv_destination == CV_DEST_EUC_STEPS) {
+            pattern.SetSteps(map(value, -512, 512, 0, MAX_PATTERN_LEN));
+        }
+        
+        if (cv_destination == CV_DEST_EUC_HITS) {
+            pattern.SetHits(map(value, -512, 512, 0, pattern.GetSteps()));
+        }
     }
 
    private:
