@@ -80,6 +80,10 @@ class uClockClass {
             onOutputPPQNCallback = callback;
         }
 
+        void setOnSync24(void (*callback)(uint32_t tick)) {
+            onSync24Callback = callback;
+        }
+
         void setOnClockStart(void (*callback)()) {
             onClockStartCallback = callback;
         }
@@ -132,6 +136,7 @@ class uClockClass {
         void calculateReferencedata();
 
         void (*onOutputPPQNCallback)(uint32_t tick);
+        void (*onSync24Callback)(uint32_t tick);
         void (*onClockStartCallback)();
         void (*onClockStopCallback)();
 
@@ -143,6 +148,10 @@ class uClockClass {
         uint32_t int_clock_tick;
         uint8_t mod_clock_counter;
         uint16_t mod_clock_ref;
+
+        uint8_t mod_sync24_counter;
+        uint16_t mod_sync24_ref;
+        uint32_t sync24_tick;
 
         // external clock control
         volatile uint32_t ext_clock_us;

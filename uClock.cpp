@@ -26,7 +26,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #include "uClock.h"
-#include "platforms/avr.h"
+#include "uClock/platforms/avr.h"
 
 //
 // Platform specific timer setup/control
@@ -72,6 +72,7 @@ uClockClass::uClockClass()
     resetCounters();
 
     onOutputPPQNCallback = nullptr;
+    onSync24Callback = nullptr;
     onClockStartCallback = nullptr;
     onClockStopCallback = nullptr;
     // initialize reference data
@@ -96,6 +97,7 @@ uint32_t uClockClass::bpmToMicroSeconds(float bpm)
 void uClockClass::calculateReferencedata()
 {
     mod_clock_ref = output_ppqn / input_ppqn;
+    mod_sync24_ref = output_ppqn / PPQN_24;
 }
 
 void uClockClass::setOutputPPQN(PPQNResolution resolution)
@@ -191,13 +193,7 @@ float uClockClass::getTempo()
 }
 
 // for software timer implementation(fallback for no board support)
-void uClockClass::run()
-{
-#if !defined(UCLOCK_PLATFORM_FOUND)
-    // call software timer implementation of software
-    softwareTimerHandler(micros());
-#endif
-}
+void uClockClass::run() {}
 
 float inline uClockClass::freqToBpm(uint32_t freq)
 {
@@ -243,6 +239,10 @@ void uClockClass::resetCounters()
     tick = 0;
     int_clock_tick = 0;
     mod_clock_counter = 0;
+
+    mod_sync24_counter = 0;
+    sync24_tick = 0;
+    
     ext_clock_tick = 0;
     ext_clock_us = 0;
     ext_interval_idx = 0;
@@ -327,6 +327,17 @@ void uClockClass::handleTimerInt()
         ++int_clock_tick;
     }
     ++mod_clock_counter;
+    
+    // Sync24 callback
+    if (onSync24Callback) {
+        if (mod_sync24_counter == mod_sync24_ref)
+            mod_sync24_counter = 0;
+        if (mod_sync24_counter == 0) {
+            onSync24Callback(sync24_tick);
+            ++sync24_tick;
+        }
+        ++mod_sync24_counter;
+    }
 
     // main PPQNCallback
     if (onOutputPPQNCallback) {

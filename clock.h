@@ -13,7 +13,7 @@
 #define CLOCK_H
 
 #include <NeoHWSerial.h>
-#include <uClock.h>
+#include "uClock.h"
 
 #include "peripherials.h"
 
@@ -54,7 +54,7 @@ class Clock {
         // MIDI events.
         uClock.setOnClockStart(sendMIDIStart);
         uClock.setOnClockStop(sendMIDIStop);
-        // uClock.setOnSync24(sendMIDIClock);
+        uClock.setOnSync24(sendMIDIClock);
         // uClock.setOnSync48(sendPulseOut);
 
         uClock.start();
