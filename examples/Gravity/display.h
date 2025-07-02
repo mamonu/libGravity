@@ -68,16 +68,16 @@ static const unsigned char pause_icon[28] PROGMEM = {
     0x38, 0x0E, 0x00, 0x00};
 
 // Constants for screen layout and fonts
-constexpr int SCREEN_CENTER_X = 32;
-constexpr int MAIN_TEXT_Y = 26;
-constexpr int SUB_TEXT_Y = 40;
-constexpr int VISIBLE_MENU_ITEMS = 3;
-constexpr int MENU_ITEM_HEIGHT = 14;
-constexpr int MENU_BOX_PADDING = 4;
-constexpr int MENU_BOX_WIDTH = 64;
-constexpr int CHANNEL_BOXES_Y = 50;
-constexpr int CHANNEL_BOX_WIDTH = 18;
-constexpr int CHANNEL_BOX_HEIGHT = 14;
+constexpr uint8_t SCREEN_CENTER_X = 32;
+constexpr uint8_t MAIN_TEXT_Y = 26;
+constexpr uint8_t SUB_TEXT_Y = 40;
+constexpr uint8_t VISIBLE_MENU_ITEMS = 3;
+constexpr uint8_t MENU_ITEM_HEIGHT = 14;
+constexpr uint8_t MENU_BOX_PADDING = 4;
+constexpr uint8_t MENU_BOX_WIDTH = 64;
+constexpr uint8_t CHANNEL_BOXES_Y = 50;
+constexpr uint8_t CHANNEL_BOX_WIDTH = 18;
+constexpr uint8_t CHANNEL_BOX_HEIGHT = 14;
 
 // Helper function to draw centered text
 void drawCenteredText(const char* text, int y, const uint8_t* font) {
@@ -204,6 +204,23 @@ void DisplayMainPage() {
                     break;
             }
             break;
+        case PARAM_MAIN_PULSE:
+            mainText = F("OUT");
+            switch (app.selected_pulse) {
+                case Clock::PULSE_NONE:
+                    subText = F("PULSE OFF");
+                    break;
+                case Clock::PULSE_PPQN_24:
+                    subText = F("24 PPQN PULSE");
+                    break;
+                case Clock::PULSE_PPQN_4:
+                    subText = F("4 PPQN PULSE");
+                    break;
+                case Clock::PULSE_PPQN_1:
+                    subText = F("1 PPQN PULSE");
+                    break;
+            }
+            break;
         case PARAM_MAIN_ENCODER_DIR:
             mainText = F("DIR");
             subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("REVERSED");
@@ -218,7 +235,7 @@ void DisplayMainPage() {
     drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("ENCODER DIR"), F("RESET")};
+    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"), F("RESET")};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
@@ -329,7 +346,7 @@ void DisplayChannelPage() {
 
     // Draw Channel Page menu items
     String menu_items[PARAM_CH_LAST] = {
-        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("EUCLID STEPS"), 
+        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("EUCLID STEPS"),
         F("EUCLID HITS"), F("CV SOURCE"), F("CV DEST")};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }

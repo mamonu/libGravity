@@ -12,7 +12,7 @@
 #include "gravity.h"
 
 // Initialize the static pointer for the EncoderDir class to null. We want to
-// have a static pointer to decouple the ISR from the global gravity object. 
+// have a static pointer to decouple the ISR from the global gravity object.
 Encoder* Encoder::_instance = nullptr;
 
 void Gravity::Init() {
@@ -52,6 +52,8 @@ void Gravity::initOutputs() {
     outputs[3].Init(OUT_CH4);
     outputs[4].Init(OUT_CH5);
     outputs[5].Init(OUT_CH6);
+    // Expansion Pulse Output
+    pulse.Init(PULSE_OUT_PIN);
 }
 void Gravity::initDisplay() {
     // OLED Display configuration.

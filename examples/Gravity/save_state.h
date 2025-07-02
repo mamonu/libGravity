@@ -54,6 +54,7 @@ class StateManager {
         byte selected_param;
         byte selected_channel;
         byte selected_source;
+        byte selected_pulse;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
 

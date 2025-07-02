@@ -17,6 +17,7 @@ bool StateManager::initialize(AppState& app) {
         app.selected_param = load_data.selected_param;
         app.selected_channel = load_data.selected_channel;
         app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
+        app.selected_pulse = static_cast<Clock::Pulse>(load_data.selected_pulse);
 
         // Loop through and restore each channel's state.
         for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
@@ -54,6 +55,7 @@ void StateManager::reset(AppState& app) {
     app.selected_param = 0;
     app.selected_channel = 0;
     app.selected_source = Clock::SOURCE_INTERNAL;
+    app.selected_pulse = Clock::PULSE_PPQN_24;
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         app.channel[i].Init();
@@ -61,7 +63,7 @@ void StateManager::reset(AppState& app) {
 
     noInterrupts();
     _saveMetadata();  // Write the new metadata
-    _saveState(app);   // Write the new (default) app state
+    _saveState(app);  // Write the new (default) app state
     interrupts();
 
     _isDirty = false;
@@ -97,6 +99,7 @@ void StateManager::_saveState(const AppState& app) {
     save_data.selected_param = app.selected_param;
     save_data.selected_channel = app.selected_channel;
     save_data.selected_source = static_cast<byte>(app.selected_source);
+    save_data.selected_pulse = static_cast<byte>(app.selected_pulse);
 
     // Loop through and populate each channel's state
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {

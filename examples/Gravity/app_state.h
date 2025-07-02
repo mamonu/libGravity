@@ -16,6 +16,7 @@ struct AppState {
     byte selected_channel = 0;  // 0=tempo, 1-6=output channel
     byte selected_shuffle = 0;
     Clock::Source selected_source = Clock::SOURCE_INTERNAL;
+    Clock::Pulse selected_pulse = Clock::PULSE_PPQN_24;
     Channel channel[Gravity::OUTPUT_COUNT];
 };
 
@@ -28,6 +29,7 @@ static Channel& GetSelectedChannel() {
 enum ParamsMainPage {
     PARAM_MAIN_TEMPO,
     PARAM_MAIN_SOURCE,
+    PARAM_MAIN_PULSE,
     PARAM_MAIN_ENCODER_DIR,
     PARAM_MAIN_RESET_STATE,
     PARAM_MAIN_LAST,

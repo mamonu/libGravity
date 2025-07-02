@@ -101,6 +101,32 @@ void HandleIntClockTick(uint32_t tick) {
         }
     }
 
+    // Pulse Out gate
+    if (app.selected_pulse != Clock::PULSE_NONE) {
+        int clock_index;
+        switch (app.selected_pulse) {
+            case Clock::PULSE_PPQN_24:
+                clock_index = 0;
+                break;
+            case Clock::PULSE_PPQN_4:
+                clock_index = 4;
+                break;
+            case Clock::PULSE_PPQN_1:
+                clock_index = 7;
+                break;
+        }
+
+        const uint16_t pulse_high_ticks = clock_mod_pulses[clock_index];
+        const uint32_t pulse_low_ticks = tick + max((long)(pulse_high_ticks / 2), 1L);
+
+        if (tick % pulse_high_ticks == 0) {
+            gravity.pulse.High();
+        }
+        if (pulse_low_ticks % pulse_high_ticks == 0) {
+            gravity.pulse.Low();
+        }
+    }
+
     if (!app.editing_param) {
         app.refresh_screen |= refresh;
     }
@@ -197,6 +223,13 @@ void editMainParameter(int val) {
             gravity.clock.SetSource(app.selected_source);
             break;
         }
+        case PARAM_MAIN_PULSE:
+            byte pulse = static_cast<int>(app.selected_pulse);
+            updateSelection(pulse, val, Clock::PULSE_LAST);
+            app.selected_pulse = static_cast<Clock::Pulse>(pulse);
+            if (app.selected_pulse == Clock::PULSE_NONE) {
+                gravity.pulse.Low();
+            }
         case PARAM_MAIN_ENCODER_DIR:
             updateSelection(app.selected_sub_param, val, 2);
             break;

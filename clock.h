@@ -13,9 +13,9 @@
 #define CLOCK_H
 
 #include <NeoHWSerial.h>
-#include <uClock.h>
 
 #include "peripherials.h"
+#include "uClock.h"
 
 // MIDI clock, start, stop, and continue byte definitions - based on MIDI 1.0 Standards.
 #define MIDI_CLOCK 0xF8
@@ -39,6 +39,14 @@ class Clock {
         SOURCE_LAST,
     };
 
+    enum Pulse {
+        PULSE_NONE,
+        PULSE_PPQN_1,
+        PULSE_PPQN_4,
+        PULSE_PPQN_24,
+        PULSE_LAST,
+    };
+
     void Init() {
         NeoSerial.begin(31250);
 
@@ -55,7 +63,6 @@ class Clock {
         uClock.setOnClockStart(sendMIDIStart);
         uClock.setOnClockStop(sendMIDIStop);
         uClock.setOnSync24(sendMIDIClock);
-        uClock.setOnSync48(sendPulseOut);
 
         uClock.start();
     }
@@ -75,7 +82,7 @@ class Clock {
     void SetSource(Source source) {
         bool was_playing = !IsPaused();
         uClock.stop();
-        // If source is currently MIDI, disable the serial interrupt handler.
+        // If we are changing the source from MIDI, disable the serial interrupt handler.
         if (source_ == SOURCE_EXTERNAL_MIDI) {
             NeoSerial.attachInterrupt(serialEventNoop);
         }
@@ -174,10 +181,6 @@ class Clock {
 
     static void sendMIDIClock(uint32_t tick) {
         NeoSerial.write(MIDI_CLOCK);
-    }
-
-    static void sendPulseOut(uint32_t tick) {
-        digitalWrite(PULSE_OUT_PIN, !digitalRead(PULSE_OUT_PIN));
     }
 };
 
