@@ -63,7 +63,7 @@ void StateManager::reset(AppState& app) {
 
     noInterrupts();
     _saveMetadata();  // Write the new metadata
-    _saveState(app);   // Write the new (default) app state
+    _saveState(app);  // Write the new (default) app state
     interrupts();
 
     _isDirty = false;

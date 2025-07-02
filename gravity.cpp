@@ -12,7 +12,7 @@
 #include "gravity.h"
 
 // Initialize the static pointer for the EncoderDir class to null. We want to
-// have a static pointer to decouple the ISR from the global gravity object. 
+// have a static pointer to decouple the ISR from the global gravity object.
 Encoder* Encoder::_instance = nullptr;
 
 void Gravity::Init() {

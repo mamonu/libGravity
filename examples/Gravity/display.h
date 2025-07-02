@@ -346,7 +346,7 @@ void DisplayChannelPage() {
 
     // Draw Channel Page menu items
     String menu_items[PARAM_CH_LAST] = {
-        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("EUCLID STEPS"), 
+        F("MOD"), F("PROBABILITY"), F("DUTY"), F("OFFSET"), F("SWING"), F("EUCLID STEPS"),
         F("EUCLID HITS"), F("CV SOURCE"), F("CV DEST")};
     drawMenuItems(menu_items, PARAM_CH_LAST);
 }

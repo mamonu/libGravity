@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <gravity.h>
+
 #include "euclidean.h"
 
 // Enums for CV configuration
@@ -66,7 +67,7 @@ class Channel {
         }
     }
 
-    void setProbability(int prob) { 
+    void setProbability(int prob) {
         base_probability = constrain(prob, 0, 100);
         if (!isCvModActive()) {
             cvmod_probability = base_probability;
@@ -74,20 +75,20 @@ class Channel {
     }
 
     void setDutyCycle(int duty) {
-        base_duty_cycle = constrain(duty, 1, 99); 
+        base_duty_cycle = constrain(duty, 1, 99);
         if (!isCvModActive()) {
             cvmod_duty_cycle = base_duty_cycle;
         }
     }
 
-    void setOffset(int off) { 
+    void setOffset(int off) {
         base_offset = constrain(off, 0, 99);
         if (!isCvModActive()) {
             cvmod_offset = base_offset;
         }
     }
     void setSwing(int val) {
-         base_swing = constrain(val, 50, 95); 
+        base_swing = constrain(val, 50, 95);
         if (!isCvModActive()) {
             cvmod_swing = base_swing;
         }
@@ -141,12 +142,12 @@ class Channel {
                 bool hit = cvmod_probability >= random(0, 100);
                 // Euclidean rhythm check
                 switch (pattern.NextStep()) {
-                case Pattern::REST:  // Rest when active or fall back to probability
-                    hit = false;
-                    break;
-                case Pattern::HIT:  // Hit if probability is true
-                    hit &= true;
-                    break;
+                    case Pattern::REST:  // Rest when active or fall back to probability
+                        hit = false;
+                        break;
+                    case Pattern::HIT:  // Hit if probability is true
+                        hit &= true;
+                        break;
                 }
                 if (hit) {
                     output.High();
@@ -192,11 +193,11 @@ class Channel {
             (cv_destination == CV_DEST_SWING)
                 ? constrain(base_swing + map(value, -512, 512, -25, 25), 50, 95)
                 : base_swing;
-        
+
         if (cv_destination == CV_DEST_EUC_STEPS) {
             pattern.SetSteps(map(value, -512, 512, 0, MAX_PATTERN_LEN));
         }
-        
+
         if (cv_destination == CV_DEST_EUC_HITS) {
             pattern.SetHits(map(value, -512, 512, 0, pattern.GetSteps()));
         }
