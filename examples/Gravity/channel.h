@@ -7,14 +7,14 @@
 #include "euclidean.h"
 
 // Enums for CV configuration
-enum CvSource {
+enum CvSource : uint8_t {
     CV_NONE,
     CV_1,
     CV_2,
     CV_LAST,
 };
 
-enum CvDestination {
+enum CvDestination : uint8_t {
     CV_DEST_NONE,
     CV_DEST_MOD,
     CV_DEST_PROB,
@@ -28,9 +28,9 @@ enum CvDestination {
 
 static const int MOD_CHOICE_SIZE = 21;
 // Negative for multiply, positive for divide.
-static const int clock_mod[MOD_CHOICE_SIZE] = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
+static const int clock_mod[MOD_CHOICE_SIZE] PROGMEM = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
 // This represents the number of clock pulses for a 96 PPQN clock source that match the above div/mult mods.
-static const int clock_mod_pulses[MOD_CHOICE_SIZE] = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
+static const int clock_mod_pulses[MOD_CHOICE_SIZE] PROGMEM = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
 
 class Channel {
    public:
@@ -103,7 +103,7 @@ class Channel {
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
     int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
     int getSwing(bool withCvMod = false) const { return withCvMod ? cvmod_swing : base_swing; }
-    int getClockMod(bool withCvMod = false) const { return clock_mod[getClockModIndex(withCvMod)]; }
+    int getClockMod(bool withCvMod = false) const { return pgm_read_word_near(&clock_mod[getClockModIndex(withCvMod)]); }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
     CvSource getCvSource() { return cv_source; }
     CvDestination getCvDestination() { return cv_destination; }
@@ -117,12 +117,13 @@ class Channel {
 
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
+     * Note: this method is called from an ISR and must be kept as simple as possible.
      * @param tick The current clock tick count.
      * @param output The output object to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
         // Calculate output duty cycle state using cv modded values to determine pulse counts.
-        const uint16_t mod_pulses = clock_mod_pulses[cvmod_clock_mod_index];
+        const uint16_t mod_pulses = pgm_read_word_near(&clock_mod_pulses[cvmod_clock_mod_index]);
         const uint16_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
         const uint16_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
 

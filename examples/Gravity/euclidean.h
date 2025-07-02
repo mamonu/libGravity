@@ -15,7 +15,7 @@ class Pattern {
     Pattern() {}
     ~Pattern() {}
 
-    enum Step {
+    enum Step : uint8_t {
         REST,
         HIT,
     };

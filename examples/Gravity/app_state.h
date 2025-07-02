@@ -26,7 +26,7 @@ static Channel& GetSelectedChannel() {
     return app.channel[app.selected_channel - 1];
 }
 
-enum ParamsMainPage {
+enum ParamsMainPage : uint8_t {
     PARAM_MAIN_TEMPO,
     PARAM_MAIN_SOURCE,
     PARAM_MAIN_PULSE,
@@ -35,7 +35,7 @@ enum ParamsMainPage {
     PARAM_MAIN_LAST,
 };
 
-enum ParamsChannelPage {
+enum ParamsChannelPage : uint8_t {
     PARAM_CH_MOD,
     PARAM_CH_PROB,
     PARAM_CH_DUTY,
