@@ -63,7 +63,6 @@ class Clock {
         uClock.setOnClockStart(sendMIDIStart);
         uClock.setOnClockStop(sendMIDIStop);
         uClock.setOnSync24(sendMIDIClock);
-        // uClock.setOnSync48(sendPulseOut);
 
         uClock.start();
     }
