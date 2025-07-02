@@ -52,6 +52,8 @@ void Gravity::initOutputs() {
     outputs[3].Init(OUT_CH4);
     outputs[4].Init(OUT_CH5);
     outputs[5].Init(OUT_CH6);
+    // Expansion Pulse Output
+    pulse.Init(PULSE_OUT_PIN);
 }
 void Gravity::initDisplay() {
     // OLED Display configuration.

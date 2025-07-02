@@ -39,6 +39,14 @@ class Clock {
         SOURCE_LAST,
     };
 
+    enum Pulse {
+        PULSE_NONE,
+        PULSE_PPQN_1,
+        PULSE_PPQN_4,
+        PULSE_PPQN_24,
+        PULSE_LAST,
+    };
+
     void Init() {
         NeoSerial.begin(31250);
 
@@ -174,10 +182,6 @@ class Clock {
 
     static void sendMIDIClock(uint32_t tick) {
         NeoSerial.write(MIDI_CLOCK);
-    }
-
-    static void sendPulseOut(uint32_t tick) {
-        digitalWrite(PULSE_OUT_PIN, !digitalRead(PULSE_OUT_PIN));
     }
 };
 

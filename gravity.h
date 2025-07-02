@@ -32,7 +32,8 @@ class Gravity {
     U8G2_SSD1306_128X64_NONAME_1_HW_I2C display;  // OLED display object.
     Clock clock;                                  // Clock source wrapper.
     DigitalOutput outputs[OUTPUT_COUNT];          // An array containing each Output object.
-    Encoder encoder;                           // Rotary encoder with button instance
+    DigitalOutput pulse;                          // MIDI Expander module pulse output.
+    Encoder encoder;                              // Rotary encoder with button instance
     Button shift_button;
     Button play_button;
     AnalogInput cv1;
