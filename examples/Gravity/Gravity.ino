@@ -66,15 +66,6 @@ void loop() {
         // Only apply CV to the channel when the current channel has cv
         // mod configured.
         if (ch.isCvModActive()) {
-            // hack -- do not apply mod to euclidean rhythm when editing.
-            bool editing_euc;
-            editing_euc |= ch.getCvDestination() == CV_DEST_EUC_STEPS;
-            editing_euc |= ch.getCvDestination() == CV_DEST_EUC_HITS;
-            editing_euc &= (app.selected_channel - 1) == i;
-            editing_euc &= app.editing_param;
-            if (editing_euc) {
-                continue;
-            }
             ch.applyCvMod(cv1, cv2);
         }
     }
@@ -263,16 +254,16 @@ void editChannelParameter(int val) {
         case PARAM_CH_EUC_HITS:
             ch.setHits(ch.getHits() + val);
             break;
-        case PARAM_CH_CV_SRC: {
-            byte source = static_cast<int>(ch.getCvSource());
-            updateSelection(source, val, CV_LAST);
-            ch.setCvSource(static_cast<CvSource>(source));
+        case PARAM_CH_CV1_DEST: {
+            byte dest = static_cast<int>(ch.getCv1Dest());
+            updateSelection(dest, val, CV_DEST_LAST);
+            ch.setCv1Dest(static_cast<CvDestination>(dest));
             break;
         }
-        case PARAM_CH_CV_DEST: {
-            byte dest = static_cast<int>(ch.getCvDestination());
+        case PARAM_CH_CV2_DEST: {
+            byte dest = static_cast<int>(ch.getCv2Dest());
             updateSelection(dest, val, CV_DEST_LAST);
-            ch.setCvDestination(static_cast<CvDestination>(dest));
+            ch.setCv2Dest(static_cast<CvDestination>(dest));
             break;
         }
     }

@@ -43,8 +43,8 @@ enum ParamsChannelPage : uint8_t {
     PARAM_CH_SWING,
     PARAM_CH_EUC_STEPS,
     PARAM_CH_EUC_HITS,
-    PARAM_CH_CV_SRC,
-    PARAM_CH_CV_DEST,
+    PARAM_CH_CV1_DEST,
+    PARAM_CH_CV2_DEST,
     PARAM_CH_LAST,
 };
 

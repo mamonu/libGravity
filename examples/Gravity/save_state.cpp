@@ -29,10 +29,10 @@ bool StateManager::initialize(AppState& app) {
             ch.setDutyCycle(saved_ch_state.base_duty_cycle);
             ch.setOffset(saved_ch_state.base_offset);
             ch.setSwing(saved_ch_state.base_shuffle);
-            ch.setCvSource(static_cast<CvSource>(saved_ch_state.cv_source));
-            ch.setCvDestination(static_cast<CvDestination>(saved_ch_state.cv_destination));
-            ch.setSteps(saved_ch_state.euc_steps);
-            ch.setHits(saved_ch_state.euc_hits);
+            ch.setSteps(saved_ch_state.base_euc_steps);
+            ch.setHits(saved_ch_state.base_euc_hits);
+            ch.setCv1Dest(static_cast<CvDestination>(saved_ch_state.cv1_dest));
+            ch.setCv1Dest(static_cast<CvDestination>(saved_ch_state.cv2_dest));
         }
 
         return true;
@@ -112,10 +112,10 @@ void StateManager::_saveState(const AppState& app) {
         save_ch.base_duty_cycle = ch.getDutyCycle(false);
         save_ch.base_offset = ch.getOffset(false);
         save_ch.base_shuffle = ch.getSwing();
-        save_ch.cv_source = static_cast<byte>(ch.getCvSource());
-        save_ch.cv_destination = static_cast<byte>(ch.getCvDestination());
-        save_ch.euc_steps = ch.getSteps();
-        save_ch.euc_hits = ch.getHits();
+        save_ch.base_euc_steps = ch.getSteps();
+        save_ch.base_euc_hits = ch.getHits();
+        save_ch.cv1_dest = static_cast<byte>(ch.getCv1Dest());
+        save_ch.cv2_dest = static_cast<byte>(ch.getCv2Dest());
     }
     EEPROM.put(sizeof(Metadata), save_data);
 }

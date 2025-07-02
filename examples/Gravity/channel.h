@@ -6,14 +6,7 @@
 
 #include "euclidean.h"
 
-// Enums for CV configuration
-enum CvSource : uint8_t {
-    CV_NONE,
-    CV_1,
-    CV_2,
-    CV_LAST,
-};
-
+// Enums for CV Mod destination
 enum CvDestination : uint8_t {
     CV_DEST_NONE,
     CV_DEST_MOD,
@@ -45,9 +38,8 @@ class Channel {
         base_duty_cycle = 50;
         base_offset = 0;
         base_swing = 50;
-
-        cv_source = CV_NONE;
-        cv_destination = CV_DEST_NONE;
+        base_euc_steps = 1;
+        base_euc_hits = 1;
 
         cvmod_clock_mod_index = base_clock_mod_index;
         cvmod_probability = base_probability;
@@ -62,40 +54,56 @@ class Channel {
 
     void setClockMod(int index) {
         base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
-        if (!isCvModActive()) {
+        if (cv1_dest != CV_DEST_MOD && cv2_dest != CV_DEST_MOD) {
             cvmod_clock_mod_index = base_clock_mod_index;
         }
     }
 
     void setProbability(int prob) {
         base_probability = constrain(prob, 0, 100);
-        if (!isCvModActive()) {
+        if (cv1_dest != CV_DEST_PROB && cv2_dest != CV_DEST_PROB) {
             cvmod_probability = base_probability;
         }
     }
 
     void setDutyCycle(int duty) {
         base_duty_cycle = constrain(duty, 1, 99);
-        if (!isCvModActive()) {
+        if (cv1_dest != CV_DEST_DUTY && cv2_dest != CV_DEST_DUTY) {
             cvmod_duty_cycle = base_duty_cycle;
         }
     }
 
     void setOffset(int off) {
         base_offset = constrain(off, 0, 99);
-        if (!isCvModActive()) {
+        if (cv1_dest != CV_DEST_OFFSET && cv2_dest != CV_DEST_OFFSET) {
             cvmod_offset = base_offset;
         }
     }
     void setSwing(int val) {
         base_swing = constrain(val, 50, 95);
-        if (!isCvModActive()) {
+        if (cv1_dest != CV_DEST_SWING && cv2_dest != CV_DEST_SWING) {
             cvmod_swing = base_swing;
         }
     }
 
-    void setCvSource(CvSource source) { cv_source = source; }
-    void setCvDestination(CvDestination dest) { cv_destination = dest; }
+    // Euclidean
+    void setSteps(int val) {
+        base_euc_steps = constrain(val, 1, MAX_PATTERN_LEN);
+        if (cv1_dest != CV_DEST_EUC_STEPS && cv2_dest != CV_DEST_EUC_STEPS) {
+            pattern.SetSteps(val);
+        }
+    }
+    void setHits(int val) {
+        base_euc_hits = constrain(val, 1, base_euc_steps);
+        if (cv1_dest != CV_DEST_EUC_HITS && cv2_dest != CV_DEST_EUC_HITS) {
+            pattern.SetHits(val);
+        }
+    }
+
+    void setCv1Dest(CvDestination dest) { cv1_dest = dest; }
+    void setCv2Dest(CvDestination dest) { cv2_dest = dest; }
+    CvDestination getCv1Dest() const { return cv1_dest; }
+    CvDestination getCv2Dest() const { return cv2_dest; }
 
     // Getters (Get the BASE value for editing or cv modded value for display)
 
@@ -105,15 +113,10 @@ class Channel {
     int getSwing(bool withCvMod = false) const { return withCvMod ? cvmod_swing : base_swing; }
     int getClockMod(bool withCvMod = false) const { return pgm_read_word_near(&clock_mod[getClockModIndex(withCvMod)]); }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
-    CvSource getCvSource() { return cv_source; }
-    CvDestination getCvDestination() { return cv_destination; }
-    bool isCvModActive() const { return cv_source != CV_NONE && cv_destination != CV_DEST_NONE; }
+    bool isCvModActive() const { return cv1_dest != CV_DEST_NONE || cv2_dest != CV_DEST_NONE; }
 
-    // Euclidean
-    void setSteps(int val) { pattern.SetSteps(val); }
-    void setHits(int val) { pattern.SetHits(val); }
-    byte getSteps() { return pattern.GetSteps(); }
-    byte getHits() { return pattern.GetHits(); }
+    byte getSteps(bool withCvMod = false) const { return withCvMod ? pattern.GetSteps() : base_euc_steps; }
+    byte getHits(bool withCvMod = false) const { return withCvMod ? pattern.GetHits() : base_euc_hits; }
 
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
@@ -163,54 +166,55 @@ class Channel {
         }
     }
 
-    void applyCvMod(int cv1_value, int cv2_value) {
-        // Use the CV value for current selected cv source.
-        int value = (cv_source == CV_1) ? cv1_value : cv2_value;
-
+    void applyCvMod(int cv1_val, int cv2_val) {
         // Calculate and store cv modded values using bipolar mapping.
         // Default to base value if not the current CV destination.
 
-        cvmod_clock_mod_index =
-            (cv_destination == CV_DEST_MOD)
-                ? constrain(base_clock_mod_index + map(value, -512, 512, -10, 10), 0, MOD_CHOICE_SIZE - 1)
-                : base_clock_mod_index;
+        // Note: This is optimized for cpu performance. This method is called
+        // from the main loop and stores the cv mod values. This reduces CPU
+        // cycles inside the internal clock interrupt, which is preferrable.
+        // However, if RAM usage grows too much, we have an opportunity to
+        // refactor this to store just the CV read values, and calculate the
+        // cv mod value per channel inside the getter methods by passing cv
+        // values. This would reduce RAM usage, but would introduce a
+        // significant CPU cost, which may have undesirable performance issues.
 
-        cvmod_probability =
-            (cv_destination == CV_DEST_PROB)
-                ? constrain(base_probability + map(value, -512, 512, -50, 50), 0, 100)
-                : base_probability;
+        int dest_mod = calculateMod(CV_DEST_MOD, cv1_val, cv2_val, -10, 10);
+        cvmod_clock_mod_index = constrain(base_clock_mod_index + dest_mod, 0, 100);
 
-        cvmod_duty_cycle =
-            (cv_destination == CV_DEST_DUTY)
-                ? constrain(base_duty_cycle + map(value, -512, 512, -50, 50), 1, 99)
-                : base_duty_cycle;
+        int prob_mod = calculateMod(CV_DEST_PROB, cv1_val, cv2_val, -50, 50);
+        cvmod_probability = constrain(base_probability + prob_mod, 0, 100);
 
-        cvmod_offset =
-            (cv_destination == CV_DEST_OFFSET)
-                ? constrain(base_offset + map(value, -512, 512, -50, 50), 0, 99)
-                : base_offset;
+        int duty_mod = calculateMod(CV_DEST_DUTY, cv1_val, cv2_val, -50, 50);
+        cvmod_duty_cycle = constrain(base_duty_cycle + duty_mod, 1, 99);
 
-        cvmod_swing =
-            (cv_destination == CV_DEST_SWING)
-                ? constrain(base_swing + map(value, -512, 512, -25, 25), 50, 95)
-                : base_swing;
+        int offset_mod = calculateMod(CV_DEST_OFFSET, cv1_val, cv2_val, -50, 50);
+        cvmod_offset = constrain(base_offset + offset_mod, 0, 99);
 
-        if (cv_destination == CV_DEST_EUC_STEPS) {
-            pattern.SetSteps(map(value, -512, 512, 0, MAX_PATTERN_LEN));
-        }
+        int swing_mod = calculateMod(CV_DEST_SWING, cv1_val, cv2_val, -25, 25);
+        cvmod_swing = constrain(base_swing + swing_mod, 50, 95);
 
-        if (cv_destination == CV_DEST_EUC_HITS) {
-            pattern.SetHits(map(value, -512, 512, 0, pattern.GetSteps()));
-        }
+        int step_mod = calculateMod(CV_DEST_EUC_STEPS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
+        pattern.SetSteps(base_euc_steps + step_mod);
+
+        int hit_mod = calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
+        pattern.SetHits(base_euc_hits + hit_mod);
     }
 
    private:
+    int calculateMod(CvDestination dest, int cv1_val, int cv2_val, int min_range, int max_range) {
+        int mod1 = (cv1_dest == dest) ? map(cv1_val, -512, 512, min_range, max_range) : 0;
+        int mod2 = (cv2_dest == dest) ? map(cv2_val, -512, 512, min_range, max_range) : 0;
+        return mod1 + mod2;
+    }
     // User-settable base values.
     byte base_clock_mod_index;
     byte base_probability;
     byte base_duty_cycle;
     byte base_offset;
     byte base_swing;
+    byte base_euc_steps;
+    byte base_euc_hits;
 
     // Base value with cv mod applied.
     byte cvmod_clock_mod_index;
@@ -219,9 +223,9 @@ class Channel {
     byte cvmod_offset;
     byte cvmod_swing;
 
-    // CV configuration
-    CvSource cv_source = CV_NONE;
-    CvDestination cv_destination = CV_DEST_NONE;
+    // CV mod configuration
+    CvDestination cv1_dest;
+    CvDestination cv2_dest;
 
     // Euclidean pattern
     Pattern pattern;

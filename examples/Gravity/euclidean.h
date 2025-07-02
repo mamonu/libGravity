@@ -46,9 +46,9 @@ class Pattern {
 
     void Reset() { step_index_ = 0; }
 
-    uint8_t GetSteps() { return steps_; }
-    uint8_t GetHits() { return hits_; }
-    uint8_t GetStepIndex() { return step_index_; }
+    uint8_t GetSteps() const { return steps_; }
+    uint8_t GetHits() const { return hits_; }
+    uint8_t GetStepIndex() const { return step_index_; }
 
     Step NextStep() {
         if (steps_ == 0) return REST;

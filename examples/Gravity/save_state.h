@@ -9,7 +9,7 @@ struct AppState;
 
 // Define the constants for the current firmware.
 const char SKETCH_NAME[] = "Gravity";
-const byte SKETCH_VERSION = 5;
+const byte SKETCH_VERSION = 6;
 
 // Define the minimum amount of time between EEPROM writes.
 static const unsigned long SAVE_DELAY_MS = 2000;
@@ -42,10 +42,10 @@ class StateManager {
         byte base_duty_cycle;
         byte base_offset;
         byte base_shuffle;
-        byte cv_source;       // Cast the CvSource enum to a byte for storage
-        byte cv_destination;  // Cast the CvDestination enum as a byte for storage
-        byte euc_steps;
-        byte euc_hits;
+        byte base_euc_steps;
+        byte base_euc_hits;
+        byte cv1_dest;  // Cast the CvDestination enum as a byte for storage
+        byte cv2_dest;  // Cast the CvDestination enum as a byte for storage
     };
     // This struct holds all the parameters we want to save.
     struct EepromData {
