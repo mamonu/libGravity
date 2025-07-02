@@ -104,16 +104,16 @@ void HandleIntClockTick(uint32_t tick) {
     // Pulse Out gate
     if (app.selected_pulse != Clock::PULSE_NONE) {
         int clock_index;
-        switch(app.selected_pulse) {
-        case Clock::PULSE_PPQN_24:
-            clock_index = 0;
-            break;
-        case Clock::PULSE_PPQN_4:
-            clock_index = 4;
-            break;
-        case Clock::PULSE_PPQN_1:
-            clock_index = 7;
-            break;
+        switch (app.selected_pulse) {
+            case Clock::PULSE_PPQN_24:
+                clock_index = 0;
+                break;
+            case Clock::PULSE_PPQN_4:
+                clock_index = 4;
+                break;
+            case Clock::PULSE_PPQN_1:
+                clock_index = 7;
+                break;
         }
 
         const uint16_t pulse_high_ticks = clock_mod_pulses[clock_index];
@@ -126,7 +126,6 @@ void HandleIntClockTick(uint32_t tick) {
             gravity.pulse.Low();
         }
     }
-
 
     if (!app.editing_param) {
         app.refresh_screen |= refresh;
