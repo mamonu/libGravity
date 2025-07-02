@@ -117,7 +117,7 @@ void HandleIntClockTick(uint32_t tick) {
         }
 
         const uint16_t pulse_high_ticks = clock_mod_pulses[clock_index];
-        const uint16_t pulse_low_ticks = tick + max((long)(pulse_high_ticks * 0.5), 1L);
+        const uint32_t pulse_low_ticks = tick + max((long)(pulse_high_ticks / 2), 1L);
 
         if (tick % pulse_high_ticks == 0) {
             gravity.pulse.High();
@@ -227,6 +227,9 @@ void editMainParameter(int val) {
             byte pulse = static_cast<int>(app.selected_pulse);
             updateSelection(pulse, val, Clock::PULSE_LAST);
             app.selected_pulse = static_cast<Clock::Pulse>(pulse);
+            if (app.selected_pulse == Clock::PULSE_NONE) {
+                gravity.pulse.Low();
+            }
         case PARAM_MAIN_ENCODER_DIR:
             updateSelection(app.selected_sub_param, val, 2);
             break;
