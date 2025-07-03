@@ -176,8 +176,20 @@ void HandleEncoderPressed() {
                 bool reversed = app.selected_sub_param == 1;
                 gravity.encoder.SetReverseDirection(reversed);
             }
-            // Reset state
-            if (app.selected_param == PARAM_MAIN_RESET_STATE) {
+            else if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
+                if (app.selected_sub_param != 0) {
+                    app.selected_save_slot = app.selected_sub_param - 1;
+                    stateManager.saveData(app, app.selected_save_slot);
+                }
+            }
+            else if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
+                if (app.selected_sub_param != 0) {
+                    app.selected_save_slot = app.selected_sub_param - 1;
+                    stateManager.loadData(app, app.selected_save_slot);
+                    InitGravity(app);
+                }
+            }
+            else if (app.selected_param == PARAM_MAIN_RESET_STATE) {
                 if (app.selected_sub_param == 0) {  // Reset
                     stateManager.reset(app);
                     InitGravity(app);
@@ -239,8 +251,13 @@ void editMainParameter(int val) {
             if (app.selected_pulse == Clock::PULSE_NONE) {
                 gravity.pulse.Low();
             }
+            break;
         case PARAM_MAIN_ENCODER_DIR:
             updateSelection(app.selected_sub_param, val, 2);
+            break;
+        case PARAM_MAIN_SAVE_DATA:
+        case PARAM_MAIN_LOAD_DATA:
+            updateSelection(app.selected_sub_param, val, MAX_SAVE_SLOTS + 1);
             break;
         case PARAM_MAIN_RESET_STATE:
             updateSelection(app.selected_sub_param, val, 2);

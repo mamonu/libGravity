@@ -11,6 +11,9 @@ struct AppState;
 const char SKETCH_NAME[] = "Gravity";
 const byte SKETCH_VERSION = 6;
 
+// Number of available save slots.
+const byte MAX_SAVE_SLOTS = 16;
+
 // Define the minimum amount of time between EEPROM writes.
 static const unsigned long SAVE_DELAY_MS = 2000;
 
@@ -23,6 +26,10 @@ class StateManager {
 
     // Populate the AppState instance with values from EEPROM if they exist.
     bool initialize(AppState& app);
+    // Load data from specified slot.
+    bool loadData(AppState& app, byte slot_index);
+    // Save data to specified slot.
+    void saveData(const AppState& app, byte slot_index);
     // Reset AppState instance back to default values.
     void reset(AppState& app);
     // Call from main loop, check if state has changed and needs to be saved.
@@ -30,11 +37,12 @@ class StateManager {
     // Indicate that state has changed and we should save.
     void markDirty();
 
-   private:
+
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
-        char sketch_name[16];
         byte version;
+        byte active_slot;
+        char sketch_name[16];
     };
     struct ChannelState {
         byte base_clock_mod_index;
@@ -57,11 +65,11 @@ class StateManager {
         byte selected_pulse;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
-
-    void _save(const AppState& app);
+   private:
     bool _isDataValid();
-    void _saveState(const AppState& app);
-    void _saveMetadata();
+    void _save(const AppState& app, byte slot_index);
+    void _saveState(const AppState& app, byte slot_index);
+    void _saveMetadata(byte active_slot);
 
     bool _isDirty;
     unsigned long _lastChangeTime;
