@@ -163,10 +163,12 @@ class Clock {
                 break;
             case MIDI_STOP:
                 uClock.stop();
+                sendMIDIStop();
                 break;
             case MIDI_START:
             case MIDI_CONTINUE:
                 uClock.start();
+                sendMIDIStart();
                 break;
         }
     }
