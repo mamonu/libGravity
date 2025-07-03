@@ -19,11 +19,11 @@ enum CvDestination : uint8_t {
     CV_DEST_LAST,
 };
 
-static const int MOD_CHOICE_SIZE = 21;
+static const byte MOD_CHOICE_SIZE = 21;
 // Negative for multiply, positive for divide.
-static const int clock_mod[MOD_CHOICE_SIZE] PROGMEM = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
+static const int CLOCK_MOD[MOD_CHOICE_SIZE] PROGMEM = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
 // This represents the number of clock pulses for a 96 PPQN clock source that match the above div/mult mods.
-static const int clock_mod_pulses[MOD_CHOICE_SIZE] PROGMEM = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
+static const int CLOCK_MOD_PULSES[MOD_CHOICE_SIZE] PROGMEM = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
 
 class Channel {
    public:
@@ -111,7 +111,7 @@ class Channel {
     int getDutyCycle(bool withCvMod = false) const { return withCvMod ? cvmod_duty_cycle : base_duty_cycle; }
     int getOffset(bool withCvMod = false) const { return withCvMod ? cvmod_offset : base_offset; }
     int getSwing(bool withCvMod = false) const { return withCvMod ? cvmod_swing : base_swing; }
-    int getClockMod(bool withCvMod = false) const { return pgm_read_word_near(&clock_mod[getClockModIndex(withCvMod)]); }
+    int getClockMod(bool withCvMod = false) const { return pgm_read_word_near(&CLOCK_MOD[getClockModIndex(withCvMod)]); }
     int getClockModIndex(bool withCvMod = false) const { return withCvMod ? cvmod_clock_mod_index : base_clock_mod_index; }
     bool isCvModActive() const { return cv1_dest != CV_DEST_NONE || cv2_dest != CV_DEST_NONE; }
 
@@ -126,7 +126,7 @@ class Channel {
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
         // Calculate output duty cycle state using cv modded values to determine pulse counts.
-        const uint16_t mod_pulses = pgm_read_word_near(&clock_mod_pulses[cvmod_clock_mod_index]);
+        const uint16_t mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
         const uint16_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
         const uint16_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
 
@@ -144,7 +144,7 @@ class Channel {
             // Step check
             if (current_tick_offset % mod_pulses == 0) {
                 bool hit = cvmod_probability >= random(0, 100);
-                // Euclidean rhythm check
+                // Euclidean rhythm hit check
                 switch (pattern.NextStep()) {
                     case Pattern::REST:  // Rest when active or fall back to probability
                         hit = false;

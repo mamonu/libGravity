@@ -1,15 +1,33 @@
 /**
  * @file Gravity.ino
  * @author Adam Wonak (https://github.com/awonak/)
- * @brief Demo firmware for Sitka Instruments Gravity.
+ * @brief Alt firmware version of Gravity by Sitka Instruments.
  * @version 0.1
  * @date 2025-05-04
  *
  * @copyright Copyright (c) 2025
+ * 
+ * This version of Gravity firmware is a full rewrite that leverages the
+ * libGravity hardware abstraction library. The goal of this project was to
+ * create an open source friendly version of the firmware that makes it easy
+ * for users/developers to modify and create their own original alt firmware
+ * implementations. 
+ * 
+ * The libGravity library represents wrappers around the 
+ * hardware peripherials to make it easy to interact with and add behavior
+ * to them. The library tries not to make any assumptions about what the 
+ * firmware can or should do.
+ * 
+ * The Gravity firmware is a slightly different implementation of the original
+ * firmware. There are a few notable changes; the internal clock operates at 
+ * 96 PPQN instead of the original 24 PPQN, which allows for more granular
+ * quantization of features like duty cycle (pulse width) or offset.
+ * Additionally, this firmware replaces the sequencer with a Euclidean Rhythm
+ * generator.
  *
  * ENCODER:
- *      Press to change between selecting a parameter and editing the parameter.
- *      Hold & Rotate to change current output channel pattern.
+ *      Press: change between selecting a parameter and editing the parameter.
+ *      Hold & Rotate: change current selected output channel.
  *
  * BTN1: Play/pause the internal clock.
  *
@@ -37,7 +55,7 @@ void setup() {
 
     // Initialize the state manager. This will load settings from EEPROM
     stateManager.initialize(app);
-    InitAppState(app);
+    InitGravity(app);
 
     // Clock handlers.
     gravity.clock.AttachIntHandler(HandleIntClockTick);
@@ -107,8 +125,8 @@ void HandleIntClockTick(uint32_t tick) {
                 break;
         }
 
-        const uint16_t pulse_high_ticks = clock_mod_pulses[clock_index];
-        const uint32_t pulse_low_ticks = tick + max((long)(pulse_high_ticks / 2), 1L);
+        const uint32_t pulse_high_ticks = CLOCK_MOD_PULSES[clock_index];
+        const uint32_t pulse_low_ticks = tick + max((pulse_high_ticks / 2), 1L);
 
         if (tick % pulse_high_ticks == 0) {
             gravity.pulse.High();
@@ -162,7 +180,7 @@ void HandleEncoderPressed() {
             if (app.selected_param == PARAM_MAIN_RESET_STATE) {
                 if (app.selected_sub_param == 0) {  // Reset
                     stateManager.reset(app);
-                    InitAppState(app);
+                    InitGravity(app);
                 }
             }
         }
@@ -282,7 +300,7 @@ void updateSelection(byte& param, int change, int maxValue) {
 // App Helper functions.
 //
 
-void InitAppState(AppState& app) {
+void InitGravity(AppState& app) {
     gravity.clock.SetTempo(app.tempo);
     gravity.clock.SetSource(app.selected_source);
     gravity.encoder.SetReverseDirection(app.encoder_reversed);
