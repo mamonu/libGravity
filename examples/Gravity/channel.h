@@ -48,41 +48,49 @@ class Channel {
         cvmod_swing = base_swing;
 
         pattern.Init(DEFAULT_PATTERN);
+
+        // Calcule the clock mod pulses on init.
+        _recalculatePulses();
     }
 
     // Setters (Set the BASE value)
 
     void setClockMod(int index) {
         base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
-        if (cv1_dest != CV_DEST_MOD && cv2_dest != CV_DEST_MOD) {
+        if (!isCvModActive()) {
             cvmod_clock_mod_index = base_clock_mod_index;
+            _recalculatePulses();
         }
     }
 
     void setProbability(int prob) {
         base_probability = constrain(prob, 0, 100);
-        if (cv1_dest != CV_DEST_PROB && cv2_dest != CV_DEST_PROB) {
+        if (!isCvModActive()) {
             cvmod_probability = base_probability;
+            _recalculatePulses();
         }
     }
 
     void setDutyCycle(int duty) {
         base_duty_cycle = constrain(duty, 1, 99);
-        if (cv1_dest != CV_DEST_DUTY && cv2_dest != CV_DEST_DUTY) {
+        if (!isCvModActive()) {
             cvmod_duty_cycle = base_duty_cycle;
+            _recalculatePulses();
         }
     }
 
     void setOffset(int off) {
         base_offset = constrain(off, 0, 99);
-        if (cv1_dest != CV_DEST_OFFSET && cv2_dest != CV_DEST_OFFSET) {
+        if (!isCvModActive()) {
             cvmod_offset = base_offset;
+            _recalculatePulses();
         }
     }
     void setSwing(int val) {
         base_swing = constrain(val, 50, 95);
-        if (cv1_dest != CV_DEST_SWING && cv2_dest != CV_DEST_SWING) {
+        if (!isCvModActive()) {
             cvmod_swing = base_swing;
+            _recalculatePulses();
         }
     }
 
@@ -125,21 +133,16 @@ class Channel {
      * @param output The output object to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
-        // Calculate output duty cycle state using cv modded values to determine pulse counts.
         const uint16_t mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
-        const uint16_t duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
-        const uint16_t offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
 
+        // Conditionally apply swing on down beats.
         uint16_t swing_pulses = 0;
-        // Check step increment for odd beats.
-        if (cvmod_swing > 50 && (tick / mod_pulses) % 2 == 1) {
-            int shifted_swing = cvmod_swing - 50;
-            swing_pulses = (long)((mod_pulses * (100L - shifted_swing)) / 100L);
+        if (_swing_pulse_amount > 0 && (tick / mod_pulses) % 2 == 1) {
+            swing_pulses = _swing_pulse_amount;
         }
 
-        const uint32_t current_tick_offset = tick + offset_pulses + swing_pulses;
-
         // Duty cycle high check logic
+        const uint32_t current_tick_offset = tick + _offset_pulses + swing_pulses;
         if (!output.On()) {
             // Step check
             if (current_tick_offset % mod_pulses == 0) {
@@ -160,16 +163,20 @@ class Channel {
         }
 
         // Duty cycle low check
-        const uint32_t duty_cycle_end_tick = tick + duty_pulses + offset_pulses + swing_pulses;
+        const uint32_t duty_cycle_end_tick = tick + _duty_pulses + _offset_pulses + swing_pulses;
         if (duty_cycle_end_tick % mod_pulses == 0) {
             output.Low();
         }
     }
-
+    /**
+     * @brief Calculate and store cv modded values using bipolar mapping.
+     * Default to base value if not the current CV destination.
+     *
+     * @param cv1_val analog input reading for cv1
+     * @param cv2_val analog input reading for cv2
+     *
+     */
     void applyCvMod(int cv1_val, int cv2_val) {
-        // Calculate and store cv modded values using bipolar mapping.
-        // Default to base value if not the current CV destination.
-
         // Note: This is optimized for cpu performance. This method is called
         // from the main loop and stores the cv mod values. This reduces CPU
         // cycles inside the internal clock interrupt, which is preferrable.
@@ -178,35 +185,61 @@ class Channel {
         // cv mod value per channel inside the getter methods by passing cv
         // values. This would reduce RAM usage, but would introduce a
         // significant CPU cost, which may have undesirable performance issues.
+        if (!isCvModActive()) {
+            cvmod_clock_mod_index = base_clock_mod_index;
+            cvmod_probability = base_clock_mod_index;
+            cvmod_duty_cycle = base_clock_mod_index;
+            cvmod_offset = base_clock_mod_index;
+            cvmod_swing = base_clock_mod_index;
+            return;
+        }
 
-        int dest_mod = calculateMod(CV_DEST_MOD, cv1_val, cv2_val, -10, 10);
+        int dest_mod = _calculateMod(CV_DEST_MOD, cv1_val, cv2_val, -10, 10);
         cvmod_clock_mod_index = constrain(base_clock_mod_index + dest_mod, 0, 100);
 
-        int prob_mod = calculateMod(CV_DEST_PROB, cv1_val, cv2_val, -50, 50);
+        int prob_mod = _calculateMod(CV_DEST_PROB, cv1_val, cv2_val, -50, 50);
         cvmod_probability = constrain(base_probability + prob_mod, 0, 100);
 
-        int duty_mod = calculateMod(CV_DEST_DUTY, cv1_val, cv2_val, -50, 50);
+        int duty_mod = _calculateMod(CV_DEST_DUTY, cv1_val, cv2_val, -50, 50);
         cvmod_duty_cycle = constrain(base_duty_cycle + duty_mod, 1, 99);
 
-        int offset_mod = calculateMod(CV_DEST_OFFSET, cv1_val, cv2_val, -50, 50);
+        int offset_mod = _calculateMod(CV_DEST_OFFSET, cv1_val, cv2_val, -50, 50);
         cvmod_offset = constrain(base_offset + offset_mod, 0, 99);
 
-        int swing_mod = calculateMod(CV_DEST_SWING, cv1_val, cv2_val, -25, 25);
+        int swing_mod = _calculateMod(CV_DEST_SWING, cv1_val, cv2_val, -25, 25);
         cvmod_swing = constrain(base_swing + swing_mod, 50, 95);
 
-        int step_mod = calculateMod(CV_DEST_EUC_STEPS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
+        int step_mod = _calculateMod(CV_DEST_EUC_STEPS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
         pattern.SetSteps(base_euc_steps + step_mod);
 
-        int hit_mod = calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
+        int hit_mod = _calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
         pattern.SetHits(base_euc_hits + hit_mod);
+
+        // After all cvmod values are updated, recalculate clock pulse modifiers.
+        _recalculatePulses();
     }
 
    private:
-    int calculateMod(CvDestination dest, int cv1_val, int cv2_val, int min_range, int max_range) {
+    int _calculateMod(CvDestination dest, int cv1_val, int cv2_val, int min_range, int max_range) {
         int mod1 = (cv1_dest == dest) ? map(cv1_val, -512, 512, min_range, max_range) : 0;
         int mod2 = (cv2_dest == dest) ? map(cv2_val, -512, 512, min_range, max_range) : 0;
         return mod1 + mod2;
     }
+
+    void _recalculatePulses() {
+        const uint16_t mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
+        _duty_pulses = max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
+        _offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
+
+        // Calculate the down beat swing amount.
+        if (cvmod_swing > 50) {
+            int shifted_swing = cvmod_swing - 50;
+            _swing_pulse_amount = (long)((mod_pulses * (100L - shifted_swing)) / 100L);
+        } else {
+            _swing_pulse_amount = 0;
+        }
+    }
+
     // User-settable base values.
     byte base_clock_mod_index;
     byte base_probability;
@@ -229,6 +262,11 @@ class Channel {
 
     // Euclidean pattern
     Pattern pattern;
+
+    // Pre-calculated pulse values for ISR performance
+    uint16_t _duty_pulses;
+    uint16_t _offset_pulses;
+    uint16_t _swing_pulse_amount;
 };
 
 #endif  // CHANNEL_H
