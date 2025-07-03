@@ -19,11 +19,28 @@ enum CvDestination : uint8_t {
     CV_DEST_LAST,
 };
 
-static const byte MOD_CHOICE_SIZE = 21;
-// Negative for multiply, positive for divide.
-static const int CLOCK_MOD[MOD_CHOICE_SIZE] PROGMEM = {-24, -12, -8, -6, -4, -3, -2, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 64, 128};
-// This represents the number of clock pulses for a 96 PPQN clock source that match the above div/mult mods.
-static const int CLOCK_MOD_PULSES[MOD_CHOICE_SIZE] PROGMEM = {4, 8, 12, 16, 24, 32, 48, 96, 192, 288, 384, 480, 576, 1152, 672, 768, 1536, 2304, 3072, 6144, 12288};
+static const byte MOD_CHOICE_SIZE = 25;
+
+// Negative numbers are multipliers, positive are divisors.
+static const int CLOCK_MOD[MOD_CHOICE_SIZE] PROGMEM = {
+    // Multipliers
+    -24, -16, -12, -8, -6, -4, -3, -2, 
+    // Internal Clock Unity
+    1, 
+    // Divisors
+    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 24, 32, 64, 128
+};
+
+// This represents the number of clock pulses for a 96 PPQN clock source 
+// that match the above div/mult mods.
+static const int CLOCK_MOD_PULSES[MOD_CHOICE_SIZE] PROGMEM = {
+    // Multiplier Pulses (96 / X)
+    4, 6, 8, 12, 16, 24, 32, 48, 
+    // Internal Clock Pulses
+    96, 
+    // Divisor Pulses (96 * X)
+    192, 288, 384, 480, 576, 672, 768, 864, 960, 1056, 1152, 1536, 2304, 3072, 6144, 12288
+};
 
 class Channel {
    public:
@@ -194,7 +211,7 @@ class Channel {
             return;
         }
 
-        int dest_mod = _calculateMod(CV_DEST_MOD, cv1_val, cv2_val, -10, 10);
+        int dest_mod = _calculateMod(CV_DEST_MOD, cv1_val, cv2_val, -(MOD_CHOICE_SIZE/2), MOD_CHOICE_SIZE/2);
         cvmod_clock_mod_index = constrain(base_clock_mod_index + dest_mod, 0, 100);
 
         int prob_mod = _calculateMod(CV_DEST_PROB, cv1_val, cv2_val, -50, 50);
