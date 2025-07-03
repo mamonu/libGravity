@@ -66,6 +66,9 @@ class Channel {
         cvmod_offset = base_offset;
         cvmod_swing = base_swing;
 
+        cv1_dest = CV_DEST_NONE;
+        cv2_dest = CV_DEST_NONE;
+
         pattern.Init(DEFAULT_PATTERN);
 
         // Calcule the clock mod pulses on init.
