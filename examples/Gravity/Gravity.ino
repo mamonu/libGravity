@@ -6,20 +6,20 @@
  * @date 2025-05-04
  *
  * @copyright Copyright (c) 2025
- * 
+ *
  * This version of Gravity firmware is a full rewrite that leverages the
  * libGravity hardware abstraction library. The goal of this project was to
  * create an open source friendly version of the firmware that makes it easy
  * for users/developers to modify and create their own original alt firmware
- * implementations. 
- * 
- * The libGravity library represents wrappers around the 
+ * implementations.
+ *
+ * The libGravity library represents wrappers around the
  * hardware peripherials to make it easy to interact with and add behavior
- * to them. The library tries not to make any assumptions about what the 
+ * to them. The library tries not to make any assumptions about what the
  * firmware can or should do.
- * 
+ *
  * The Gravity firmware is a slightly different implementation of the original
- * firmware. There are a few notable changes; the internal clock operates at 
+ * firmware. There are a few notable changes; the internal clock operates at
  * 96 PPQN instead of the original 24 PPQN, which allows for more granular
  * quantization of features like duty cycle (pulse width) or offset.
  * Additionally, this firmware replaces the sequencer with a Euclidean Rhythm
@@ -172,34 +172,36 @@ void HandleEncoderPressed() {
     // Check if leaving editing mode should apply a selection.
     if (app.editing_param) {
         if (app.selected_channel == 0) {  // main page
+            // TODO: rewrite as switch
             if (app.selected_param == PARAM_MAIN_ENCODER_DIR) {
                 bool reversed = app.selected_sub_param == 1;
                 gravity.encoder.SetReverseDirection(reversed);
             }
-            else if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
-                if (app.selected_sub_param != 0) {
+            if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
+                if (app.selected_sub_param < MAX_SAVE_SLOTS) {
                     app.selected_save_slot = app.selected_sub_param - 1;
-                    stateManager.saveData(app, app.selected_save_slot);
+                    stateManager.saveData(app);
                 }
             }
-            else if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
-                if (app.selected_sub_param != 0) {
+            if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
+                if (app.selected_sub_param < MAX_SAVE_SLOTS) {
                     app.selected_save_slot = app.selected_sub_param - 1;
                     stateManager.loadData(app, app.selected_save_slot);
                     InitGravity(app);
                 }
             }
-            else if (app.selected_param == PARAM_MAIN_RESET_STATE) {
+            if (app.selected_param == PARAM_MAIN_RESET_STATE) {
                 if (app.selected_sub_param == 0) {  // Reset
                     stateManager.reset(app);
                     InitGravity(app);
                 }
             }
         }
-        // Only mark dirty when leaving editing mode.
+        // Only mark dirty and reset selected_sub_param when leaving editing mode.
         stateManager.markDirty();
+        app.selected_sub_param = 0;
     }
-    app.selected_sub_param = 0;
+
     app.editing_param = !app.editing_param;
     app.refresh_screen = true;
 }
@@ -236,7 +238,6 @@ void editMainParameter(int val) {
             gravity.clock.SetTempo(gravity.clock.Tempo() + val);
             app.tempo = gravity.clock.Tempo();
             break;
-
         case PARAM_MAIN_SOURCE: {
             byte source = static_cast<int>(app.selected_source);
             updateSelection(source, val, Clock::SOURCE_LAST);
@@ -244,7 +245,7 @@ void editMainParameter(int val) {
             gravity.clock.SetSource(app.selected_source);
             break;
         }
-        case PARAM_MAIN_PULSE:
+        case PARAM_MAIN_PULSE: {
             byte pulse = static_cast<int>(app.selected_pulse);
             updateSelection(pulse, val, Clock::PULSE_LAST);
             app.selected_pulse = static_cast<Clock::Pulse>(pulse);
@@ -252,6 +253,7 @@ void editMainParameter(int val) {
                 gravity.pulse.Low();
             }
             break;
+        }
         case PARAM_MAIN_ENCODER_DIR:
             updateSelection(app.selected_sub_param, val, 2);
             break;

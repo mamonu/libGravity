@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "app_state.h"
+#include "save_state.h"
 
 //
 // UI Display functions for drawing the UI to the OLED display.
@@ -169,6 +170,15 @@ void swingDivisionMark() {
     }
 }
 
+// Human friendly display value for save slot.
+String displaySaveSlot(int slot) {
+    if (slot >= 0 && slot <= MAX_SAVE_SLOTS / 2) {
+        return String("A") + String(slot + 1);
+    } else if (slot >= MAX_SAVE_SLOTS / 2 && slot <= MAX_SAVE_SLOTS) {
+        return String("B") + String(slot - (MAX_SAVE_SLOTS / 2));
+    }
+}
+
 // Main display functions
 
 void DisplayMainPage() {
@@ -230,27 +240,25 @@ void DisplayMainPage() {
             subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("REVERSED");
             break;
         case PARAM_MAIN_SAVE_DATA:
-            mainText = "SAVE";
-            if (app.selected_sub_param == 0) {
-                subText = F("BACK");
-            } else {
-                subText = F("TO SLOT ");
-                subText += String(app.selected_sub_param + 1);
-            }
-            break;
         case PARAM_MAIN_LOAD_DATA:
-            mainText = "LOAD";
-            if (app.selected_sub_param == 0) {
-                subText = F("BACK");
+            if (app.selected_sub_param == MAX_SAVE_SLOTS) {
+                mainText = F("x");
+                subText = F("BACK TO MAIN");
             } else {
-                subText = F("FROM SLOT ");
-                subText += String(app.selected_sub_param + 1);
+                mainText = displaySaveSlot(app.selected_sub_param);
+                subText = (app.selected_param == PARAM_MAIN_SAVE_DATA)
+                              ? F("SAVE TO SLOT")
+                              : F("LOAD FROM SLOT");
             }
             break;
         case PARAM_MAIN_RESET_STATE:
-            mainText = F("RST");
-            subText = app.selected_sub_param == 0 ? F("BACK") : F("RESET ALL");
-            break;
+            if (app.selected_sub_param == 0) {
+                mainText = F("RST");
+                subText = F("RESET ALL");
+            } else {
+                mainText = F("x");
+                subText = F("BACK TO MAIN");
+            }
     }
 
     drawCenteredText(mainText.c_str(), MAIN_TEXT_Y, LARGE_FONT);

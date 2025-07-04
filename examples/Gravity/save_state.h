@@ -9,10 +9,10 @@ struct AppState;
 
 // Define the constants for the current firmware.
 const char SKETCH_NAME[] = "Gravity";
-const byte SKETCH_VERSION = 6;
+const byte SKETCH_VERSION = 7;
 
 // Number of available save slots.
-const byte MAX_SAVE_SLOTS = 16;
+const byte MAX_SAVE_SLOTS = 8;
 
 // Define the minimum amount of time between EEPROM writes.
 static const unsigned long SAVE_DELAY_MS = 2000;
@@ -28,8 +28,8 @@ class StateManager {
     bool initialize(AppState& app);
     // Load data from specified slot.
     bool loadData(AppState& app, byte slot_index);
-    // Save data to specified slot.
-    void saveData(const AppState& app, byte slot_index);
+    // Save data to slot defined by app.
+    void saveData(const AppState& app);
     // Reset AppState instance back to default values.
     void reset(AppState& app);
     // Call from main loop, check if state has changed and needs to be saved.
@@ -49,7 +49,7 @@ class StateManager {
         byte base_probability;
         byte base_duty_cycle;
         byte base_offset;
-        byte base_shuffle;
+        byte base_swing;
         byte base_euc_steps;
         byte base_euc_hits;
         byte cv1_dest;  // Cast the CvDestination enum as a byte for storage
@@ -63,12 +63,13 @@ class StateManager {
         byte selected_channel;
         byte selected_source;
         byte selected_pulse;
+        byte selected_save_slot;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
    private:
     bool _isDataValid();
-    void _save(const AppState& app, byte slot_index);
-    void _saveState(const AppState& app, byte slot_index);
+    void _save(const AppState& app);
+    void _saveState(const AppState& app);
     void _saveMetadata(byte active_slot);
 
     bool _isDirty;

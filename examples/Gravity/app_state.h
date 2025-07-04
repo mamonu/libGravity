@@ -12,10 +12,10 @@ struct AppState {
     bool refresh_screen = true;
     bool editing_param = false;
     byte selected_param = 0;
-    byte selected_sub_param = 0;
-    byte selected_channel = 0;  // 0=tempo, 1-6=output channel
-    byte selected_shuffle = 0;
-    byte selected_save_slot = 0;     // The currently active save slot.
+    byte selected_sub_param = 0;  // Temporary value for editing params.
+    byte selected_channel = 0;    // 0=tempo, 1-6=output channel
+    byte selected_swing = 0;
+    byte selected_save_slot = 0;  // The currently active save slot.
     Clock::Source selected_source = Clock::SOURCE_INTERNAL;
     Clock::Pulse selected_pulse = Clock::PULSE_PPQN_24;
     Channel channel[Gravity::OUTPUT_COUNT];

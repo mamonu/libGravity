@@ -18,6 +18,7 @@ bool StateManager::initialize(AppState& app) {
         // Load data from the last active slot.
         return loadData(app, app.selected_save_slot);
     } else {
+        // TODO: save default state to all save slots.
         reset(app);
         return false;
     }
@@ -49,7 +50,7 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
         ch.setProbability(saved_ch_state.base_probability);
         ch.setDutyCycle(saved_ch_state.base_duty_cycle);
         ch.setOffset(saved_ch_state.base_offset);
-        ch.setSwing(saved_ch_state.base_shuffle);
+        ch.setSwing(saved_ch_state.base_swing);
         ch.setSteps(saved_ch_state.base_euc_steps);
         ch.setHits(saved_ch_state.base_euc_hits);
         ch.setCv1Dest(static_cast<CvDestination>(saved_ch_state.cv1_dest));
@@ -59,21 +60,22 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
     return true;
 }
 
-void StateManager::saveData(const AppState& app, byte slot_index) {
-    if (slot_index >= MAX_SAVE_SLOTS) return;
+void StateManager::saveData(const AppState& app) {
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
 
-    _save(app, slot_index);
+    _save(app);
     _isDirty = false;
 }
 
 void StateManager::update(const AppState& app) {
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
-        _save(app, app.selected_save_slot);
+        _save(app);
         _isDirty = false;
     }
 }
 
 void StateManager::reset(AppState& app) {
+    noInterrupts();
     app.tempo = Clock::DEFAULT_TEMPO;
     app.encoder_reversed = false;
     app.selected_param = 0;
@@ -87,6 +89,7 @@ void StateManager::reset(AppState& app) {
     }
 
     // TODO: Should this overwrite save slot 0?
+    interrupts();
 
     _isDirty = false;
 }
@@ -104,15 +107,15 @@ bool StateManager::_isDataValid() {
     return name_match && version_match;
 }
 
-void StateManager::_save(const AppState& app, byte slot_index) {
+void StateManager::_save(const AppState& app) {
     noInterrupts();
-    _saveState(app, slot_index);
-    _saveMetadata(slot_index);
+    _saveState(app);
+    _saveMetadata(app.selected_save_slot);
     interrupts();
 }
 
-void StateManager::_saveState(const AppState& app, byte slot_index) {
-    if (slot_index >= MAX_SAVE_SLOTS) return;
+void StateManager::_saveState(const AppState& app) {
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
 
     static EepromData save_data;
 
@@ -122,6 +125,7 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
     save_data.selected_channel = app.selected_channel;
     save_data.selected_source = static_cast<byte>(app.selected_source);
     save_data.selected_pulse = static_cast<byte>(app.selected_pulse);
+    save_data.selected_save_slot = app.selected_save_slot;
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         const auto& ch = app.channel[i];
@@ -130,14 +134,14 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
         save_ch.base_probability = ch.getProbability(false);
         save_ch.base_duty_cycle = ch.getDutyCycle(false);
         save_ch.base_offset = ch.getOffset(false);
-        save_ch.base_shuffle = ch.getSwing(false);
+        save_ch.base_swing = ch.getSwing(false);
         save_ch.base_euc_steps = ch.getSteps(false);
         save_ch.base_euc_hits = ch.getHits(false);
         save_ch.cv1_dest = static_cast<byte>(ch.getCv1Dest());
         save_ch.cv2_dest = static_cast<byte>(ch.getCv2Dest());
     }
 
-    int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
+    int address = EEPROM_DATA_START_ADDR + (app.selected_save_slot * sizeof(EepromData));
     EEPROM.put(address, save_data);
 }
 
