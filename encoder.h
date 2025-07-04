@@ -4,8 +4,8 @@
  * @brief Class for interacting with encoders.
  * @version 0.1
  * @date 2025-04-19
- *
- * @copyright Copyright (c) 2025
+ * 
+ * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
 #ifndef ENCODER_DIR_H

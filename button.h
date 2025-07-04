@@ -1,13 +1,11 @@
 /**
  * @file button.h
  * @author Adam Wonak (https://github.com/awonak)
- * @brief for interacting with trigger / gate inputs.
+ * @brief Wrapper class for interacting with trigger / gate inputs.
  * @version 0.1
  * @date 2025-04-20
- *
- * Provide methods to convey curent state (HIGH / LOW) and change in state (disengaged, engageing, engaged, disengaging).
- *
- * @copyright Copyright (c) 2025
+  *
+ * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
 #ifndef BUTTON_H

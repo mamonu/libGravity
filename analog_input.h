@@ -5,7 +5,7 @@
  * @version 0.1
  * @date 2025-05-23
  *
- * @copyright Copyright (c) 2025
+ * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
 #ifndef ANALOG_INPUT_H

@@ -6,6 +6,12 @@
  *  @author     Romulo Silva
  *  @date       10/06/2017
  *  @license    MIT - (c) 2024 - Romulo Silva - contact@midilab.co
+ * 
+ *  2025-06-30 - https://github.com/awonak/uClock/tree/picoClock
+ *               Modified by awonak to remove all unused sync callback
+ *               methods and associated variables to dramatically reduce
+ *               memory usage. 
+ *               See: https://github.com/midilab/uClock/issues/58
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

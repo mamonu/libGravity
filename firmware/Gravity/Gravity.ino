@@ -2,10 +2,11 @@
  * @file Gravity.ino
  * @author Adam Wonak (https://github.com/awonak/)
  * @brief Alt firmware version of Gravity by Sitka Instruments.
- * @version 0.1
- * @date 2025-05-04
+ * @version v2.0.1 - June 2025 awonak - Full rewrite 
+ * @version v1.0 - August 2023 Oleksiy H - Initial release
+ * @date 2025-07-04
  *
- * @copyright Copyright (c) 2025
+ * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  * This version of Gravity firmware is a full rewrite that leverages the
  * libGravity hardware abstraction library. The goal of this project was to

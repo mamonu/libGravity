@@ -4,10 +4,11 @@
  * @brief Arduino pin definitions for the Sitka Instruments Gravity module.
  * @version 0.1
  * @date 2025-04-19
- *
- * @copyright Copyright (c) 2025
+ * 
+ * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
+
 #ifndef PERIPHERIALS_H
 #define PERIPHERIALS_H
 

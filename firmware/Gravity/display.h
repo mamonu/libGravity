@@ -1,3 +1,14 @@
+/**
+ * @file display.h
+ * @author Adam Wonak (https://github.com/awonak/)
+ * @brief Alt firmware version of Gravity by Sitka Instruments.
+ * @version 2.0.1
+ * @date 2025-07-04
+ *
+ * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
+ *
+ */
+
 #ifndef DISPLAY_H
 #define DISPLAY_H
 

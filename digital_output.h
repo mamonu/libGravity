@@ -4,8 +4,8 @@
  * @brief Class for interacting with trigger / gate outputs.
  * @version 0.1
  * @date 2025-04-17
- *
- * @copyright Copyright (c) 2023
+ * 
+ * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
 #ifndef DIGITAL_OUTPUT_H
