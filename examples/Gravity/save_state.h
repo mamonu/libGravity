@@ -42,7 +42,6 @@ class StateManager {
     // Indicate that state has changed and we should save.
     void markDirty();
 
-
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
         byte version;
@@ -70,6 +69,7 @@ class StateManager {
         byte selected_save_slot;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
+
    private:
     bool _isDataValid();
     void _saveMetadata();
