@@ -232,13 +232,14 @@ void editMainParameter(int val) {
             gravity.clock.SetSource(app.selected_source);
             break;
         }
-        case PARAM_MAIN_PULSE:
+        case PARAM_MAIN_PULSE: {
             byte pulse = static_cast<int>(app.selected_pulse);
             updateSelection(pulse, val, Clock::PULSE_LAST);
             app.selected_pulse = static_cast<Clock::Pulse>(pulse);
             if (app.selected_pulse == Clock::PULSE_NONE) {
                 gravity.pulse.Low();
             }
+        }
         case PARAM_MAIN_ENCODER_DIR:
             updateSelection(app.selected_sub_param, val, 2);
             break;
