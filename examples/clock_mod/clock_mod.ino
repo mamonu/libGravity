@@ -33,8 +33,8 @@ struct AppState {
     bool editing_param = false;
     int selected_param = 0;
     byte selected_channel = 0;  // 0=tempo, 1-6=output channel
-    Source selected_source = SOURCE_INTERNAL;
-    Channel channel[OUTPUT_COUNT];
+    Clock::Source selected_source = Clock::SOURCE_INTERNAL;
+    Channel channel[Gravity::OUTPUT_COUNT];
 };
 AppState app;
 
@@ -123,7 +123,7 @@ void loop() {
 //
 
 void HandleIntClockTick(uint32_t tick) {
-    for (int i = 0; i < OUTPUT_COUNT; i++) {
+    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         auto& channel = app.channel[i];
         auto& output = gravity.outputs[i];
 
@@ -178,7 +178,7 @@ void HandleEncoderPressed() {
     app.refresh_screen = true;
 }
 
-void HandleRotate(Direction dir, int val) {
+void HandleRotate(int val) {
     if (!app.editing_param) {
         // Navigation Mode
         const int max_param = (app.selected_channel == 0) ? PARAM_MAIN_LAST : PARAM_CH_LAST;
@@ -188,17 +188,17 @@ void HandleRotate(Direction dir, int val) {
         if (app.selected_channel == 0) {
             editMainParameter(val);
         } else {
-            editChannelParameter(dir, val);
+            editChannelParameter(val);
         }
     }
 
     app.refresh_screen = true;
 }
 
-void HandlePressedRotate(Direction dir, int val) {
-    if (dir == DIRECTION_INCREMENT && app.selected_channel < OUTPUT_COUNT) {
+void HandlePressedRotate(int val) {
+    if (val > 0 && app.selected_channel < Gravity::OUTPUT_COUNT) {
         app.selected_channel++;
-    } else if (dir == DIRECTION_DECREMENT && app.selected_channel > 0) {
+    } else if (val < 0 && app.selected_channel > 0) {
         app.selected_channel--;
     }
     app.selected_param = 0;
@@ -216,21 +216,21 @@ void editMainParameter(int val) {
 
         case PARAM_MAIN_SOURCE: {
             int source = static_cast<int>(app.selected_source);
-            updateSelection(source, val, SOURCE_LAST);
-            app.selected_source = static_cast<Source>(source);
+            updateSelection(source, val, Clock::SOURCE_LAST);
+            app.selected_source = static_cast<Clock::Source>(source);
             gravity.clock.SetSource(app.selected_source);
             break;
         }
     }
 }
 
-void editChannelParameter(Direction dir, int val) {
+void editChannelParameter(int val) {
     auto& ch = GetSelectedChannel();
     switch (static_cast<ParamsChannelPage>(app.selected_param)) {
         case PARAM_CH_MOD:
-            if (dir == DIRECTION_INCREMENT && ch.clock_mod_index < MOD_CHOICE_SIZE - 1) {
+            if (val > 0 && ch.clock_mod_index < MOD_CHOICE_SIZE - 1) {
                 ch.clock_mod_index++;
-            } else if (dir == DIRECTION_DECREMENT && ch.clock_mod_index > 0) {
+            } else if (val < 0 && ch.clock_mod_index > 0) {
                 ch.clock_mod_index--;
             }
             break;
@@ -265,7 +265,7 @@ Channel& GetSelectedChannel() {
 }
 
 void ResetOutputs() {
-    for (int i = 0; i < OUTPUT_COUNT; i++) {
+    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         gravity.outputs[i].Low();
     }
 }
@@ -311,7 +311,7 @@ void DisplayMainPage() {
 
     if (app.selected_param == 0) {
         // Serial MIID is too unstable to display bpm in real time.
-        if (app.selected_source == SOURCE_EXTERNAL_MIDI) {
+        if (app.selected_source == Clock::SOURCE_EXTERNAL_MIDI) {
             sprintf(mainText, "%s", "EXT");
         } else {
             sprintf(mainText, "%d", gravity.clock.Tempo());
@@ -319,19 +319,19 @@ void DisplayMainPage() {
         subText = "BPM";
     } else if (app.selected_param == 1) {
         switch (app.selected_source) {
-            case SOURCE_INTERNAL:
+            case Clock::SOURCE_INTERNAL:
                 sprintf(mainText, "%s", "INT");
                 subText = "Clock";
                 break;
-            case SOURCE_EXTERNAL_PPQN_24:
+            case Clock::SOURCE_EXTERNAL_PPQN_24:
                 sprintf(mainText, "%s", "EXT");
                 subText = "24 PPQN";
                 break;
-            case SOURCE_EXTERNAL_PPQN_4:
+            case Clock::SOURCE_EXTERNAL_PPQN_4:
                 sprintf(mainText, "%s", "EXT");
                 subText = "4 PPQN";
                 break;
-            case SOURCE_EXTERNAL_MIDI:
+            case Clock::SOURCE_EXTERNAL_MIDI:
                 sprintf(mainText, "%s", "EXT");
                 subText = "MIDI";
                 break;
@@ -399,7 +399,7 @@ void DisplaySelectedChannel() {
     gravity.display.drawHLine(1, boxY, SCREEN_WIDTH - 2);
     gravity.display.drawVLine(SCREEN_WIDTH - 2, boxY, boxHeight);
 
-    for (int i = 0; i < OUTPUT_COUNT + 1; i++) {
+    for (int i = 0; i < Gravity::OUTPUT_COUNT + 1; i++) {
         // Draw box frame or filled selected box.
         gravity.display.setDrawColor(1);
         (app.selected_channel == i)
