@@ -18,6 +18,7 @@ bool StateManager::initialize(AppState& app) {
         // Initialize eeprom and save default patter to all save slots.
         reset(app);
         _saveMetadata();
+        // MAX_SAVE_SLOTS slot is reserved for transient state.
         for (int i = 0; i <= MAX_SAVE_SLOTS; i++) {
             app.selected_save_slot = i;
             _saveState(app, i);

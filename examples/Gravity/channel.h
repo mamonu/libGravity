@@ -42,7 +42,7 @@ static const int CLOCK_MOD_PULSES[MOD_CHOICE_SIZE] PROGMEM = {
     192, 288, 384, 480, 576, 672, 768, 864, 960, 1056, 1152, 1536, 2304, 3072, 6144, 12288
 };
 
-static const byte DEFAULT_CLOCK_MOD = 8;  // x1 or 96 PPQN.
+static const byte DEFAULT_CLOCK_MOD_INDEX = 8;  // x1 or 96 PPQN.
 
 class Channel {
    public:
@@ -52,7 +52,7 @@ class Channel {
 
     void Init() {
         // Reset base values to their defaults
-        base_clock_mod_index = DEFAULT_CLOCK_MOD;
+        base_clock_mod_index = DEFAULT_CLOCK_MOD_INDEX;
         base_probability = 100;
         base_duty_cycle = 50;
         base_offset = 0;

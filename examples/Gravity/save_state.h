@@ -19,6 +19,11 @@ static const unsigned long SAVE_DELAY_MS = 2000;
 
 /**
  * @brief Manages saving and loading of the application state to and from EEPROM.
+ * The number of user slots is defined by MAX_SAVE_SLOTS, and one additional slot
+ * is reseved for transient state to persist state between power cycles before
+ * state is explicitly saved to a user slot. Metadata is stored in the beginning
+ * of the memory space which stores firmware version information to validate that
+ * the data can be loaded into the current version of AppState.
  */
 class StateManager {
    public:
@@ -28,7 +33,7 @@ class StateManager {
     bool initialize(AppState& app);
     // Load data from specified slot.
     bool loadData(AppState& app, byte slot_index);
-    // Save data to slot defined by app.
+    // Save data to specified slot.
     void saveData(const AppState& app);
     // Reset AppState instance back to default values.
     void reset(AppState& app);
