@@ -66,7 +66,7 @@ class Pattern {
 
     // Update the euclidean rhythm pattern using bitmap
     void updatePattern() {
-        pattern_bitmap_ = 0; // Clear the bitmap
+        pattern_bitmap_ = 0;  // Clear the bitmap
 
         if (steps_ == 0) return;
 
