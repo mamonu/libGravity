@@ -24,14 +24,16 @@
  * quantization of features like duty cycle (pulse width) or offset.
  * Additionally, this firmware replaces the sequencer with a Euclidean Rhythm
  * generator.
- *
+ * 
  * ENCODER:
  *      Press: change between selecting a parameter and editing the parameter.
  *      Hold & Rotate: change current selected output channel.
  *
- * BTN1: Play/pause the internal clock.
+ * BTN1:
+ *      Play/pause - start or stop the internal clock.
  *
- * BTN2: Stop all clocks.
+ * BTN2: 
+ *      Shift - hold and rotate encoder to change current selected output channel.
  *
  */
 
@@ -68,7 +70,6 @@ void setup() {
 
     // Button press handlers.
     gravity.play_button.AttachPressHandler(HandlePlayPressed);
-    gravity.shift_button.AttachPressHandler(HandleShiftPressed);
 }
 
 void loop() {
@@ -162,12 +163,6 @@ void HandlePlayPressed() {
     app.refresh_screen = true;
 }
 
-void HandleShiftPressed() {
-    gravity.clock.Stop();
-    ResetOutputs();
-    app.refresh_screen = true;
-}
-
 void HandleEncoderPressed() {
     // Check if leaving editing mode should apply a selection.
     if (app.editing_param) {
@@ -193,6 +188,12 @@ void HandleEncoderPressed() {
 }
 
 void HandleRotate(int val) {
+    // Shift & Rotate check
+    if (gravity.shift_button.On()) {
+        HandlePressedRotate(val);
+        return;
+    }
+
     if (!app.editing_param) {
         // Navigation Mode
         const int max_param = (app.selected_channel == 0) ? PARAM_MAIN_LAST : PARAM_CH_LAST;
