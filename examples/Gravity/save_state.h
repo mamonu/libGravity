@@ -9,13 +9,21 @@ struct AppState;
 
 // Define the constants for the current firmware.
 const char SKETCH_NAME[] = "Gravity";
-const byte SKETCH_VERSION = 6;
+const byte SKETCH_VERSION = 7;
+
+// Number of available save slots.
+const byte MAX_SAVE_SLOTS = 10;
 
 // Define the minimum amount of time between EEPROM writes.
 static const unsigned long SAVE_DELAY_MS = 2000;
 
 /**
  * @brief Manages saving and loading of the application state to and from EEPROM.
+ * The number of user slots is defined by MAX_SAVE_SLOTS, and one additional slot
+ * is reseved for transient state to persist state between power cycles before
+ * state is explicitly saved to a user slot. Metadata is stored in the beginning
+ * of the memory space which stores firmware version information to validate that
+ * the data can be loaded into the current version of AppState.
  */
 class StateManager {
    public:
@@ -23,6 +31,10 @@ class StateManager {
 
     // Populate the AppState instance with values from EEPROM if they exist.
     bool initialize(AppState& app);
+    // Load data from specified slot.
+    bool loadData(AppState& app, byte slot_index);
+    // Save data to specified slot.
+    void saveData(const AppState& app);
     // Reset AppState instance back to default values.
     void reset(AppState& app);
     // Call from main loop, check if state has changed and needs to be saved.
@@ -30,18 +42,17 @@ class StateManager {
     // Indicate that state has changed and we should save.
     void markDirty();
 
-   private:
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
-        char sketch_name[16];
         byte version;
+        char sketch_name[16];
     };
     struct ChannelState {
         byte base_clock_mod_index;
         byte base_probability;
         byte base_duty_cycle;
         byte base_offset;
-        byte base_shuffle;
+        byte base_swing;
         byte base_euc_steps;
         byte base_euc_hits;
         byte cv1_dest;  // Cast the CvDestination enum as a byte for storage
@@ -55,13 +66,15 @@ class StateManager {
         byte selected_channel;
         byte selected_source;
         byte selected_pulse;
+        byte selected_save_slot;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
 
-    void _save(const AppState& app);
+   private:
     bool _isDataValid();
-    void _saveState(const AppState& app);
     void _saveMetadata();
+    void _saveState(const AppState& app, byte slot_index);
+    void _loadState(AppState& app, byte slot_index);
 
     bool _isDirty;
     unsigned long _lastChangeTime;

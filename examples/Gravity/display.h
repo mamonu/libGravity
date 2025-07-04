@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "app_state.h"
+#include "save_state.h"
 
 //
 // UI Display functions for drawing the UI to the OLED display.
@@ -33,32 +34,33 @@ const uint8_t TEXT_FONT[437] U8G2_FONT_SECTION("velvetscreen") PROGMEM =
 /*
  * Font: STK-L.bdf 36pt
  * https://stncrn.github.io/u8g2-unifont-helper/
- * "%/0123456789ACDEFINORSTUVXx"
+ * "%/0123456789ABCDEFILNORSTUVXx"
  */
-const uint8_t LARGE_FONT[715] U8G2_FONT_SECTION("stk-l") =
-    "\33\0\4\4\4\5\2\1\6\20\30\0\0\27\0\0\0\1\77\0\0\2\256%'\17\37\313\330R#&"
-    "\32!F\14\211I\310\24!\65\204(MF\21)Cd\304\10\62b\14\215\60Vb\334\20\0/\14"
-    "\272\336\336d\244\350\263q\343\0\60\37|\377\216!%*\10\35\263\253ChD\30\21bB\14\242S"
-    "\306lv\210\204\22Ef\0\61\24z\337\322\60R\205\314\234\31\61F\310\270\371\177\224\42\3\62\33|"
-    "\377\216)\64*\10\35\63\66r\206\304\314`c\252\34\301\221\263|\360\300\0\63\34|\377\216)\64*"
-    "\10\35\63\66r \71\332YIr\226\306\16\221P\203\312\14\0\64 |\377\226\220AC\306\20\31B"
-    "f\310\240\21\204F\214\32\61j\304(cv\366\200\305\312\371\0\65\32|\377\206\212-F\316\27\204\224"
-    "\254\30\65t\344,\215\35\42\241\6\225\31\0\66\33}\17\317\251\64+\206\235\63:/\314,aA\352"
-    "\234\335\235\42\261&\325\31\0\67\23|\377\302\212\7)\347Crt\70\345\300\221\363\16\0\70 |\377"
-    "\216)\64*\10\35\263\354\20\11\42d\20\235BC\204\4\241cvv\210\204\32Tf\0\71\32|\377"
-    "\216)\64*\10\35\263\263C$\226\250I\71_\14\42\241\6\225\31\0A\26}\17S\271Si(\31"
-    "\65d\324\210q\366\356\301w\366\273\1C\27}\17\317\251\64K\10!\63:\377\247\304F\20\42\261F"
-    "\21\22\0D\33}\17C\42\65KF\15\31\66b\330\210q\366\77;\66b\24\211%j\22\1E\21"
-    "|\377\302\7)\347%\42\214F\316/\37<\60F\20|\377\302\7)\347\313\64\331\214\234\177\11\0I"
-    "\7so\302\37$N#}\17\203@s\346\216\35C\205*Q\42\23cL\214\61\62\304\310\20\63#"
-    "\314\214\60\224\25f\327\231\33O\26}\17\317\251\64KF\215\30g\377\337\215\30\65dM\252\63\0R"
-    "\61\216\37\203\242\65L\206\221\30\67b\334\210q#\306\215\30\67b\30\211QD\230(J\65d\330\230"
-    "Qc\10\315j\314(\42\303H\214\33\61\356\340\0S\42\216\37\317\261DKH\221\30\67b\334\210\261"
-    "c)M\226-\331\301c\307\32\64\207\212D\223Uh\0T\15}\17\303\7\251\206\316\377\377\12\0U"
-    "\21|\377\302\60\373\377\317F\14\32\242\6\225\31\0V\26\177\375\302H\373\377\345\210qCH\221\241\212"
-    "\4\271\223e\207\1X)~\37\303@\203\307H\14\33B\210\14\21RC\206\241\63h\222(I\203\346"
-    "\220\15\31E\204\14!\42\303F\20;h\341\0x\24\312\336\302 CGH\240\61E\312\14\222)\6"
-    "Y\64\0\0\0\0\4\377\377\0";
+const uint8_t LARGE_FONT[766] U8G2_FONT_SECTION("stk-l") =
+    "\35\0\4\4\4\5\3\1\6\20\30\0\0\27\0\0\0\1\77\0\0\2\341%'\17;\226\261\245FL"
+    "\64B\214\30\22\223\220)Bj\10Q\232\214\42R\206\310\210\21d\304\30\32a\254\304\270!\0/\14"
+    "\272\272\275\311H\321g\343\306\1\60\37|\373\35CJT\20:fW\207\320\210\60\42\304\204\30D\247"
+    "\214\331\354\20\11%\212\314\0\61\24z\275\245a\244\12\231\71\63b\214\220q\363\377(E\6\62\33|"
+    "\373\35ShT\20:fl\344\14\211\231\301\306T\71\202#g\371\340\201\1\63\34|\373\35ShT"
+    "\20:fl\344@r\264\263\222\344,\215\35\42\241\6\225\31\0\64 |\373-!\203\206\214!\62\204"
+    "\314\220A#\10\215\30\65b\324\210Q\306\354\354\1\213\225\363\1\65\32|\373\15\25[\214\234/\10)"
+    "Y\61j\350\310Y\32;DB\15*\63\0\66\33}\33\236SiV\14;gt^\230Y\302\202\324"
+    "\71\273;EbM\252\63\0\67\23|\373\205\25\17R\316\207\344\350p\312\201#\347\35\0\70 |\373"
+    "\35ShT\20:f\331!\22D\310 :\205\206\10\11B\307\354\354\20\11\65\250\314\0\71\32|\373"
+    "\35ShT\20:fg\207H,Q\223r\276\30DB\15*\63\0A\26}\33\246r\247\322P\62"
+    "j\310\250\21\343\354\335\203\357\354w\3B$}\33\206Dj\226\214\42\61l\304\260\21\303F\14\33\61"
+    "\212\304\222MF\221\30v\316\236=\10\301b\11\0C\27}\33\236Si\226\20Bft\376O\211\215"
+    " Db\215\42$\0D\33}\33\206Dj\226\214\32\62l\304\260\21\343\354\177vl\304(\22K\324"
+    "$\2E\22|\373\205\17R\316KD\30\215\234_>x`\0F\20|\373\205\17R\316\227i\262\31"
+    "\71\377\22\0I\7s\333\204\77HL\15{\333\205\201\363\377\77|\360`\0N$}\33\6\201\346\314"
+    "\35;\206\12U\242D&\306\230\30cd\210\221!fF\230\31a(+\314\256\63\67\0O\26}\33"
+    "\236Si\226\214\32\61\316\376\277\33\61j\310\232Tg\0R\61\216;\6Ek\230\14#\61n\304\270"
+    "\21\343F\214\33\61n\304\60\22\243\210\60Q\224j\310\260\61\243\306\20\232\325\230QD\206\221\30\67b"
+    "\334\301\1S\42\216;\236c\211\226\220\42\61n\304\270\21c\307R\232,[\262\203\307\216\65h\16\25"
+    "\21&\253\320\0T\15}\33\206\17R\15\235\377\377\25\0U\21|\373\205a\366\377\237\215\30\64D\15"
+    "*\63\0V\26\177\371\205\221\366\377\313\21\343\206\220\42C\25\11r'\313\16\3X)~;\206\201\6"
+    "\217\221\30\66\204\20\31\42\244\206\14Cg\320$Q\222\6\315!\33\62\212\10\31BD\206\215 v\320"
+    "\302\1x\24\312\272\205A\206\216\220@c\212\224\31$S\14\262h\0\0\0\0\4\377\377\0";
 
 #define play_icon_width 14
 #define play_icon_height 14
@@ -151,6 +153,10 @@ void drawMenuItems(String menu_items[], int menu_size) {
     }
 }
 
+// Visual indicators for main section of screen.
+inline void solidTick() { gravity.display.drawBox(56, 4, 4, 4); }
+inline void hollowTick() { gravity.display.drawBox(56, 4, 4, 4); }
+
 // Display an indicator when swing percentage matches a musical note.
 void swingDivisionMark() {
     auto& ch = GetSelectedChannel();
@@ -158,14 +164,22 @@ void swingDivisionMark() {
         case 58:  // 1/32nd
         case 66:  // 1/16th
         case 75:  // 1/8th
-            gravity.display.drawBox(56, 4, 4, 4);
+            solidTick();
             break;
         case 54:  // 1/32nd tripplet
         case 62:  // 1/16th tripplet
         case 71:  // 1/8th tripplet
-            gravity.display.drawBox(56, 4, 4, 4);
-            gravity.display.drawBox(57, 5, 2, 2);
+            hollowTick();
             break;
+    }
+}
+
+// Human friendly display value for save slot.
+String displaySaveSlot(int slot) {
+    if (slot >= 0 && slot < MAX_SAVE_SLOTS / 2) {
+        return String("A") + String(slot + 1);
+    } else if (slot >= MAX_SAVE_SLOTS / 2 && slot <= MAX_SAVE_SLOTS) {
+        return String("B") + String(slot - (MAX_SAVE_SLOTS / 2) + 1);
     }
 }
 
@@ -229,17 +243,37 @@ void DisplayMainPage() {
             mainText = F("DIR");
             subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("REVERSED");
             break;
-        case PARAM_MAIN_RESET_STATE:
-            mainText = F("RST");
-            subText = app.selected_sub_param == 0 ? F("RESET ALL") : F("BACK");
+        case PARAM_MAIN_SAVE_DATA:
+        case PARAM_MAIN_LOAD_DATA:
+            if (app.selected_sub_param == MAX_SAVE_SLOTS) {
+                mainText = F("x");
+                subText = F("BACK TO MAIN");
+            } else {
+                // Indicate currently active slot.
+                if (app.selected_sub_param == app.selected_save_slot) {
+                    solidTick();
+                }
+                mainText = displaySaveSlot(app.selected_sub_param);
+                subText = (app.selected_param == PARAM_MAIN_SAVE_DATA)
+                              ? F("SAVE TO SLOT")
+                              : F("LOAD FROM SLOT");
+            }
             break;
+        case PARAM_MAIN_RESET_STATE:
+            if (app.selected_sub_param == 0) {
+                mainText = F("RST");
+                subText = F("RESET ALL");
+            } else {
+                mainText = F("x");
+                subText = F("BACK TO MAIN");
+            }
     }
 
     drawCenteredText(mainText.c_str(), MAIN_TEXT_Y, LARGE_FONT);
     drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"), F("RESET")};
+    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"), F("LOAD"), F("RESET")};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
