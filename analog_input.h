@@ -17,15 +17,18 @@ const int MAX_INPUT = (1 << 10) - 1;  // Max 10 bit analog read resolution.
 const int CALIBRATED_LOW = -566;
 const int CALIBRATED_HIGH = 512;
 
+/**
+ * @brief Class for interacting with analog inputs (CV).
+ */
 class AnalogInput {
    public:
     AnalogInput() {}
     ~AnalogInput() {}
 
     /**
-     * Initializes a analog input object.
+     * @brief Initializes an analog input object.
      *
-     * @param pin gpio pin for the analog input.
+     * @param pin The GPIO pin for the analog input.
      */
     void Init(uint8_t pin) {
         pinMode(pin, INPUT);
@@ -33,8 +36,11 @@ class AnalogInput {
     }
 
     /**
-     * Read the value of the analog input and set instance state.
+     * @brief Reads and processes the analog input.
      *
+     * This method reads the raw value from the ADC, applies the current
+     * calibration, offset, and attenuation/inversion settings. It should be
+     * called regularly in the main loop to update the input's state.
      */
     void Process() {
         old_read_ = read_;
@@ -44,14 +50,38 @@ class AnalogInput {
         if (inverted_) read_ = -read_;
     }
 
-    // Set calibration values.
-
+    /**
+     * @brief Adjusts the low calibration point.
+     *
+     * This is used to fine-tune the mapping of the raw analog input to the output range.
+     *
+     * @param amount The amount to add to the current low calibration value.
+     */
     void AdjustCalibrationLow(int amount) { low_ += amount; }
 
+    /**
+     * @brief Adjusts the high calibration point.
+     *
+     * This is used to fine-tune the mapping of the raw analog input to the output range.
+     *
+     * @param amount The amount to add to the current high calibration value.
+     */
     void AdjustCalibrationHigh(int amount) { high_ += amount; }
 
+    /**
+     * @brief Sets a DC offset for the input.
+     *
+     * @param percent A percentage (e.g., 0.5 for 50%) to shift the signal.
+     */
     void SetOffset(float percent) { offset_ = -(percent)*512; }
 
+    /**
+     * @brief Sets the attenuation (scaling) of the input signal.
+     *
+     * This scales the input signal. A negative percentage will also invert the signal.
+     *
+     * @param percent The attenuation level, typically from 0.0 to 1.0.
+     */
     void SetAttenuation(float percent) {
         low_ = abs(percent) * CALIBRATED_LOW;
         high_ = abs(percent) * CALIBRATED_HIGH;
@@ -59,18 +89,16 @@ class AnalogInput {
     }
 
     /**
-     * Get the current value of the analog input within a range of +/-512.
+     * @brief Get the current processed value of the analog input.
      *
-     * @return read value within a range of +/-512.
-     *
+     * @return The read value within a range of +/-512.
      */
     inline int16_t Read() { return read_; }
 
     /**
-     * Return the analog read value as voltage.
+     * @brief Return the analog read value as a voltage.
      *
-     * @return A float representing the voltage (-5.0 to +5.0).
-     *
+     * @return A float representing the calculated voltage (-5.0 to +5.0).
      */
     inline float Voltage() { return ((read_ / 512.0) * 5.0); }
 

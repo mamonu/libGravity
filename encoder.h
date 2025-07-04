@@ -4,10 +4,11 @@
  * @brief Class for interacting with encoders.
  * @version 0.1
  * @date 2025-04-19
- * 
+ *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
+
 #ifndef ENCODER_DIR_H
 #define ENCODER_DIR_H
 
@@ -16,6 +17,9 @@
 #include "button.h"
 #include "peripherials.h"
 
+/**
+ * @brief Class for interacting with a rotary encoder that has a push button.
+ */
 class Encoder {
    protected:
     typedef void (*CallbackFunction)(void);
@@ -32,22 +36,57 @@ class Encoder {
     }
     ~Encoder() {}
 
-    // Set to true if the encoder read direction should be reversed.
+    /**
+     * @brief Set the direction of the encoder.
+     *
+     * @param reversed Set to true to reverse the direction of rotation.
+     */
     void SetReverseDirection(bool reversed) {
         reversed_ = reversed;
     }
+
+    /**
+     * @brief Attach a handler for the encoder button press.
+     *
+     * This callback is triggered on a simple press and release of the button,
+     * without any rotation occurring during the press.
+     *
+     * @param f The callback function to execute when a button press.
+     */
     void AttachPressHandler(CallbackFunction f) {
         on_press = f;
     }
 
+    /**
+     * @brief Attach a handler for encoder rotation.
+     *
+     * This callback is triggered when the encoder is rotated while the button is not pressed.
+     *
+     * @param f The callback function to execute on rotation. It receives an integer
+     * representing the change in position (can be positive or negative).
+     */
     void AttachRotateHandler(RotateCallbackFunction f) {
         on_rotate = f;
     }
 
+    /**
+     * @brief Attach a handler for rotation while the button is pressed.
+     *
+     * This callback is triggered when the encoder is rotated while the button is being held down.
+     *
+     * @param f The callback function to execute. It receives an integer
+     * representing the change in position.
+     */
     void AttachPressRotateHandler(RotateCallbackFunction f) {
         on_press_rotate = f;
     }
 
+    /**
+     * @brief Processes encoder and button events.
+     *
+     * This method should be called repeatedly in the main loop to check for state
+     * changes (rotation, button presses) and dispatch the appropriate callbacks.
+     */
     void Process() {
         // Get encoder position change amount.
         int encoder_rotated = _rotate_change() != 0;
@@ -91,7 +130,6 @@ class Encoder {
         int position = encoder_.getPosition();
         unsigned long ms = encoder_.getMillisBetweenRotations();
 
-        // Validation (TODO: add debounce check).
         if (previous_pos_ == position) {
             return 0;
         }

@@ -4,7 +4,7 @@
  * @brief Wrapper Class for clock timing functions.
  * @version 0.1
  * @date 2025-05-04
- * 
+ *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
@@ -27,6 +27,9 @@ typedef void (*ExtCallback)(void);
 static ExtCallback extUserCallback = nullptr;
 static void serialEventNoop(uint8_t msg, uint8_t status) {}
 
+/**
+ * @brief Wrapper Class for clock timing functions.
+ */
 class Clock {
    public:
     static constexpr int DEFAULT_TEMPO = 120;
@@ -47,6 +50,9 @@ class Clock {
         PULSE_LAST,
     };
 
+    /**
+     * @brief Initializes the clock, MIDI serial, and sets default values.
+     */
     void Init() {
         NeoSerial.begin(31250);
 
@@ -67,18 +73,36 @@ class Clock {
         uClock.start();
     }
 
-    // Handle external clock tick and call user callback when receiving clock trigger (PPQN_4, PPQN_24, or MIDI).
+    /**
+     * @brief Attach a handler for external clock ticks.
+     *
+     * This function attaches a user-defined callback to the external clock input pin interrupt.
+     * It is also called for incoming MIDI clock events.
+     *
+     * @param callback Function to call on an external clock event.
+     */
     void AttachExtHandler(void (*callback)()) {
         extUserCallback = callback;
         attachInterrupt(digitalPinToInterrupt(EXT_PIN), callback, RISING);
     }
 
-    // Internal PPQN96 callback for all clock timer operations.
+    /**
+     * @brief Attach a handler for the internal high-resolution clock.
+     *
+     * Sets a callback function that is triggered at the internal PPQN_96 rate. This is the
+     * main internal timing callback for all clock operations.
+     *
+     * @param callback Function to call on every internal clock tick. It receives the tick count as a parameter.
+     */
     void AttachIntHandler(void (*callback)(uint32_t)) {
         uClock.setOnOutputPPQN(callback);
     }
 
-    // Set the source of the clock mode.
+    /**
+     * @brief Set the source of the clock.
+     *
+     * @param source The new source for driving the clock. See the `Source` enum.
+     */
     void SetSource(Source source) {
         bool was_playing = !IsPaused();
         uClock.stop();
@@ -110,47 +134,81 @@ class Clock {
         }
     }
 
-    // Return true if the current selected source is externl (PPQN_4, PPQN_24, or MIDI).
+    /**
+     * @brief Checks if the clock source is external.
+     *
+     * @return true if the current source is external (PPQN_4, PPQN_24, or MIDI).
+     * @return false if the source is internal.
+     */
     bool ExternalSource() {
         return uClock.getClockMode() == uClock.EXTERNAL_CLOCK;
     }
 
-    // Return true if the current selected source is the internal master clock.
+    /**
+     * @brief Checks if the clock source is internal.
+     *
+     * @return true if the current source is the internal master clock.
+     * @return false if the source is external.
+     */
     bool InternalSource() {
         return uClock.getClockMode() == uClock.INTERNAL_CLOCK;
     }
 
-    // Returns the current BPM tempo.
+    /**
+     * @brief Gets the current tempo.
+     *
+     * @return int The current tempo in beats per minute (BPM).
+     */
     int Tempo() {
         return uClock.getTempo();
     }
 
-    // Set the clock tempo to a int between 1 and 400.
+    /**
+     * @brief Set the clock tempo.
+     *
+     * @param tempo The new tempo in beats per minute (BPM).
+     */
     void SetTempo(int tempo) {
         return uClock.setTempo(tempo);
     }
 
-    // Record an external clock tick received to process external/internal syncronization.
+    /**
+     * @brief Manually trigger a clock tick.
+     *
+     * This should be called when in an external clock mode to register an incoming
+     * clock pulse and drive the internal timing.
+     */
     void Tick() {
         uClock.clockMe();
     }
 
-    // Start the internal clock.
+    /**
+     * @brief Starts the clock.
+     */
     void Start() {
         uClock.start();
     }
 
-    // Stop internal clock clock.
+    /**
+     * @brief Stops (pauses) the clock.
+     */
     void Stop() {
         uClock.stop();
     }
 
-    // Reset all clock counters to 0.
+    /**
+     * @brief Resets all clock counters to zero.
+     */
     void Reset() {
         uClock.resetCounters();
     }
 
-    // Returns true if the clock is not running.
+    /**
+     * @brief Checks if the clock is currently paused.
+     *
+     * @return true if the clock is stopped/paused.
+     * @return false if the clock is running.
+     */
     bool IsPaused() {
         return uClock.clock_state == uClock.PAUSED;
     }
