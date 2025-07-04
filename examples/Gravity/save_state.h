@@ -12,7 +12,7 @@ const char SKETCH_NAME[] = "Gravity";
 const byte SKETCH_VERSION = 7;
 
 // Number of available save slots.
-const byte MAX_SAVE_SLOTS = 8;
+const byte MAX_SAVE_SLOTS = 10;
 
 // Define the minimum amount of time between EEPROM writes.
 static const unsigned long SAVE_DELAY_MS = 2000;
@@ -41,7 +41,6 @@ class StateManager {
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
         byte version;
-        byte active_slot;
         char sketch_name[16];
     };
     struct ChannelState {
@@ -68,9 +67,9 @@ class StateManager {
     };
    private:
     bool _isDataValid();
-    void _save(const AppState& app);
-    void _saveState(const AppState& app);
-    void _saveMetadata(byte active_slot);
+    void _saveMetadata();
+    void _saveState(const AppState& app, byte slot_index);
+    void _loadState(AppState& app, byte slot_index);
 
     bool _isDirty;
     unsigned long _lastChangeTime;

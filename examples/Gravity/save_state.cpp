@@ -11,15 +11,17 @@ StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 
 bool StateManager::initialize(AppState& app) {
     if (_isDataValid()) {
-        Metadata load_meta;
-        EEPROM.get(0, load_meta);
-        app.selected_save_slot = load_meta.active_slot;
-
-        // Load data from the last active slot.
-        return loadData(app, app.selected_save_slot);
+        // Load data from the transient slot.
+        return loadData(app, MAX_SAVE_SLOTS);
     } else {
-        // TODO: save default state to all save slots.
+        // EEPROM does not contain save data for this firmware & version.
+        // Initialize eeprom and save default patter to all save slots.
         reset(app);
+        _saveMetadata();
+        for (int i = 0; i <= MAX_SAVE_SLOTS; i++) {
+            app.selected_save_slot = i;
+            _saveState(app, i);
+        }
         return false;
     }
 }
@@ -27,35 +29,7 @@ bool StateManager::initialize(AppState& app) {
 bool StateManager::loadData(AppState& app, byte slot_index) {
     if (slot_index >= MAX_SAVE_SLOTS) return false;
 
-    static EepromData load_data;
-    int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
-    EEPROM.get(address, load_data);
-
-    // TODO: Validate loaded data.
-
-    // Restore app state from loaded data.
-    app.tempo = load_data.tempo;
-    app.encoder_reversed = load_data.encoder_reversed;
-    app.selected_param = load_data.selected_param;
-    app.selected_channel = load_data.selected_channel;
-    app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
-    app.selected_pulse = static_cast<Clock::Pulse>(load_data.selected_pulse);
-    app.selected_save_slot = slot_index;
-
-    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
-        auto& ch = app.channel[i];
-        const auto& saved_ch_state = load_data.channel_data[i];
-
-        ch.setClockMod(saved_ch_state.base_clock_mod_index);
-        ch.setProbability(saved_ch_state.base_probability);
-        ch.setDutyCycle(saved_ch_state.base_duty_cycle);
-        ch.setOffset(saved_ch_state.base_offset);
-        ch.setSwing(saved_ch_state.base_swing);
-        ch.setSteps(saved_ch_state.base_euc_steps);
-        ch.setHits(saved_ch_state.base_euc_hits);
-        ch.setCv1Dest(static_cast<CvDestination>(saved_ch_state.cv1_dest));
-        ch.setCv2Dest(static_cast<CvDestination>(saved_ch_state.cv2_dest));
-    }
+    _loadState(app, slot_index);
 
     return true;
 }
@@ -63,19 +37,19 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
 void StateManager::saveData(const AppState& app) {
     if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
 
-    _save(app);
+    _saveState(app, app.selected_save_slot);
     _isDirty = false;
 }
 
 void StateManager::update(const AppState& app) {
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
-        _save(app);
+        // MAX_SAVE_SLOTS slot is reserved for transient state.
+        _saveState(app, MAX_SAVE_SLOTS);
         _isDirty = false;
     }
 }
 
 void StateManager::reset(AppState& app) {
-    noInterrupts();
     app.tempo = Clock::DEFAULT_TEMPO;
     app.encoder_reversed = false;
     app.selected_param = 0;
@@ -87,9 +61,6 @@ void StateManager::reset(AppState& app) {
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         app.channel[i].Init();
     }
-
-    // TODO: Should this overwrite save slot 0?
-    interrupts();
 
     _isDirty = false;
 }
@@ -107,16 +78,10 @@ bool StateManager::_isDataValid() {
     return name_match && version_match;
 }
 
-void StateManager::_save(const AppState& app) {
-    noInterrupts();
-    _saveState(app);
-    _saveMetadata(app.selected_save_slot);
-    interrupts();
-}
-
-void StateManager::_saveState(const AppState& app) {
+void StateManager::_saveState(const AppState& app, byte slot_index) {
     if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
 
+    noInterrupts();
     static EepromData save_data;
 
     save_data.tempo = app.tempo;
@@ -141,14 +106,48 @@ void StateManager::_saveState(const AppState& app) {
         save_ch.cv2_dest = static_cast<byte>(ch.getCv2Dest());
     }
 
-    int address = EEPROM_DATA_START_ADDR + (app.selected_save_slot * sizeof(EepromData));
+    int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
     EEPROM.put(address, save_data);
+    interrupts();
 }
 
-void StateManager::_saveMetadata(byte active_slot) {
+void StateManager::_loadState(AppState& app, byte slot_index) {
+    noInterrupts();
+    static EepromData load_data;
+    int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
+    EEPROM.get(address, load_data);
+
+    // Restore app state from loaded data.
+    app.tempo = load_data.tempo;
+    app.encoder_reversed = load_data.encoder_reversed;
+    app.selected_param = load_data.selected_param;
+    app.selected_channel = load_data.selected_channel;
+    app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
+    app.selected_pulse = static_cast<Clock::Pulse>(load_data.selected_pulse);
+    app.selected_save_slot = slot_index;
+
+    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
+        auto& ch = app.channel[i];
+        const auto& saved_ch_state = load_data.channel_data[i];
+
+        ch.setClockMod(saved_ch_state.base_clock_mod_index);
+        ch.setProbability(saved_ch_state.base_probability);
+        ch.setDutyCycle(saved_ch_state.base_duty_cycle);
+        ch.setOffset(saved_ch_state.base_offset);
+        ch.setSwing(saved_ch_state.base_swing);
+        ch.setSteps(saved_ch_state.base_euc_steps);
+        ch.setHits(saved_ch_state.base_euc_hits);
+        ch.setCv1Dest(static_cast<CvDestination>(saved_ch_state.cv1_dest));
+        ch.setCv2Dest(static_cast<CvDestination>(saved_ch_state.cv2_dest));
+    }
+    interrupts();
+}
+
+void StateManager::_saveMetadata() {
+    noInterrupts();
     Metadata current_meta;
     strcpy(current_meta.sketch_name, SKETCH_NAME);
     current_meta.version = SKETCH_VERSION;
-    current_meta.active_slot = active_slot;
     EEPROM.put(0, current_meta);
+    interrupts();
 }

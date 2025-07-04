@@ -153,6 +153,10 @@ void drawMenuItems(String menu_items[], int menu_size) {
     }
 }
 
+// Visual indicators for main section of screen.
+inline void solidTick() { gravity.display.drawBox(56, 4, 4, 4); }
+inline void hollowTick() { gravity.display.drawBox(56, 4, 4, 4); }
+
 // Display an indicator when swing percentage matches a musical note.
 void swingDivisionMark() {
     auto& ch = GetSelectedChannel();
@@ -160,13 +164,12 @@ void swingDivisionMark() {
         case 58:  // 1/32nd
         case 66:  // 1/16th
         case 75:  // 1/8th
-            gravity.display.drawBox(56, 4, 4, 4);
+            solidTick();
             break;
         case 54:  // 1/32nd tripplet
         case 62:  // 1/16th tripplet
         case 71:  // 1/8th tripplet
-            gravity.display.drawBox(56, 4, 4, 4);
-            gravity.display.drawBox(57, 5, 2, 2);
+            hollowTick();
             break;
     }
 }
@@ -246,6 +249,10 @@ void DisplayMainPage() {
                 mainText = F("x");
                 subText = F("BACK TO MAIN");
             } else {
+                // Indicate currently active slot.
+                if (app.selected_sub_param == app.selected_save_slot) {
+                    solidTick();
+                }
                 mainText = displaySaveSlot(app.selected_sub_param);
                 subText = (app.selected_param == PARAM_MAIN_SAVE_DATA)
                               ? F("SAVE TO SLOT")

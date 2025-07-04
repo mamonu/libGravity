@@ -179,13 +179,13 @@ void HandleEncoderPressed() {
             }
             if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
                 if (app.selected_sub_param < MAX_SAVE_SLOTS) {
-                    app.selected_save_slot = app.selected_sub_param - 1;
+                    app.selected_save_slot = app.selected_sub_param;
                     stateManager.saveData(app);
                 }
             }
             if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
                 if (app.selected_sub_param < MAX_SAVE_SLOTS) {
-                    app.selected_save_slot = app.selected_sub_param - 1;
+                    app.selected_save_slot = app.selected_sub_param;
                     stateManager.loadData(app, app.selected_save_slot);
                     InitGravity(app);
                 }
