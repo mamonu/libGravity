@@ -145,6 +145,11 @@ class Clock {
         uClock.stop();
     }
 
+    // Reset all clock counters to 0.
+    void Reset() {
+        uClock.resetCounters();
+    }
+
     // Returns true if the clock is not running.
     bool IsPaused() {
         return uClock.clock_state == uClock.PAUSED;

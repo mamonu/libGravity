@@ -35,6 +35,14 @@
  * BTN2: 
  *      Shift - hold and rotate encoder to change current selected output channel.
  *
+ * EXT:
+ *      External clock input. When Gravity is set to INTERNAL clock mode, this
+ *      input is used to reset clocks.
+ * 
+ * CV1:
+ * CV2:
+ *      External analog input used to provide modulation to any channel parameter.
+ * 
  */
 
 #include <gravity.h>
@@ -143,11 +151,14 @@ void HandleIntClockTick(uint32_t tick) {
 }
 
 void HandleExtClockTick() {
-    // Ignore tick if not using external source.
-    if (!gravity.clock.ExternalSource()) {
-        return;
+    if (gravity.clock.InternalSource()) {
+        // Use EXT as Reset when internally clocked.
+        ResetOutputs();
+        gravity.clock.Reset();
+    } else {
+        // Register clock tick.
+        gravity.clock.Tick();
     }
-    gravity.clock.Tick();
     app.refresh_screen = true;
 }
 
