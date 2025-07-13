@@ -125,13 +125,13 @@ void HandleIntClockTick(uint32_t tick) {
         int clock_index;
         switch (app.selected_pulse) {
             case Clock::PULSE_PPQN_24:
-                clock_index = 0;
+                clock_index = PULSE_PPQN_24_CLOCK_MOD_INDEX;
                 break;
             case Clock::PULSE_PPQN_4:
-                clock_index = 4;
+                clock_index = PULSE_PPQN_4_CLOCK_MOD_INDEX;
                 break;
             case Clock::PULSE_PPQN_1:
-                clock_index = 7;
+                clock_index = PULSE_PPQN_1_CLOCK_MOD_INDEX;
                 break;
         }
 

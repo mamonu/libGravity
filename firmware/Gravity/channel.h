@@ -53,6 +53,10 @@ static const int CLOCK_MOD_PULSES[MOD_CHOICE_SIZE] PROGMEM = {
 
 static const byte DEFAULT_CLOCK_MOD_INDEX = 8;  // x1 or 96 PPQN.
 
+static const byte PULSE_PPQN_24_CLOCK_MOD_INDEX = 0;
+static const byte PULSE_PPQN_4_CLOCK_MOD_INDEX = 4;
+static const byte PULSE_PPQN_1_CLOCK_MOD_INDEX = 8;
+
 class Channel {
    public:
     Channel() {

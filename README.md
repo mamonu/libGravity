@@ -111,3 +111,8 @@ void UpdateDisplay() {
 }
 ```
 
+### Build for release
+
+```
+$ arduino-cli compile -v -b  arduino:avr:nano ./firmware/Gravity/Gravity.ino -e --output-dir=./build/
+```
