@@ -50,9 +50,6 @@ class Clock {
     void Init() {
         NeoSerial.begin(31250);
 
-        // Static pin definition for pulse out.
-        pinMode(PULSE_OUT_PIN, OUTPUT);
-
         // Initialize the clock library
         uClock.init();
         uClock.setClockMode(uClock.INTERNAL_CLOCK);
