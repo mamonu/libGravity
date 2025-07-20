@@ -181,8 +181,8 @@ void HandleEncoderPressed() {
         if (app.selected_channel == 0) {  // main page
             // TODO: rewrite as switch
             if (app.selected_param == PARAM_MAIN_ENCODER_DIR) {
-                bool reversed = app.selected_sub_param == 1;
-                gravity.encoder.SetReverseDirection(reversed);
+                app.encoder_reversed = app.selected_sub_param == 1;
+                gravity.encoder.SetReverseDirection(app.encoder_reversed);
             }
             if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
                 if (app.selected_sub_param < MAX_SAVE_SLOTS) {

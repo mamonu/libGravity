@@ -16,6 +16,7 @@
 #include "app_state.h"
 
 // Calculate the starting address for EepromData, leaving space for metadata.
+static const int METADATA_START_ADDR = 0;
 static const int EEPROM_DATA_START_ADDR = sizeof(StateManager::Metadata);
 
 StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
@@ -27,8 +28,8 @@ bool StateManager::initialize(AppState& app) {
     } else {
         // EEPROM does not contain save data for this firmware & version.
         // Initialize eeprom and save default patter to all save slots.
+        _saveMetadata(app);
         reset(app);
-        _saveMetadata();
         // MAX_SAVE_SLOTS slot is reserved for transient state.
         for (int i = 0; i <= MAX_SAVE_SLOTS; i++) {
             app.selected_save_slot = i;
@@ -42,10 +43,12 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
     if (slot_index >= MAX_SAVE_SLOTS) return false;
 
     _loadState(app, slot_index);
+    _loadMetadata(app);
 
     return true;
 }
 
+// Save app state to user specified save slot.
 void StateManager::saveData(const AppState& app) {
     if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
 
@@ -53,17 +56,18 @@ void StateManager::saveData(const AppState& app) {
     _isDirty = false;
 }
 
+// Save transient state if it has changed and enough time has passed since last save.
 void StateManager::update(const AppState& app) {
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
         // MAX_SAVE_SLOTS slot is reserved for transient state.
         _saveState(app, MAX_SAVE_SLOTS);
+        _saveMetadata(app);
         _isDirty = false;
     }
 }
 
 void StateManager::reset(AppState& app) {
     app.tempo = Clock::DEFAULT_TEMPO;
-    app.encoder_reversed = false;
     app.selected_param = 0;
     app.selected_channel = 0;
     app.selected_source = Clock::SOURCE_INTERNAL;
@@ -73,6 +77,9 @@ void StateManager::reset(AppState& app) {
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         app.channel[i].Init();
     }
+
+    // Load global settings from Metadata
+    _loadMetadata(app);
 
     _isDirty = false;
 }
@@ -84,7 +91,7 @@ void StateManager::markDirty() {
 
 bool StateManager::_isDataValid() {
     Metadata load_meta;
-    EEPROM.get(0, load_meta);
+    EEPROM.get(METADATA_START_ADDR, load_meta);
     bool name_match = (strcmp(load_meta.sketch_name, SKETCH_NAME) == 0);
     bool version_match = (load_meta.version == SKETCH_VERSION);
     return name_match && version_match;
@@ -104,6 +111,10 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
     save_data.selected_pulse = static_cast<byte>(app.selected_pulse);
     save_data.selected_save_slot = app.selected_save_slot;
 
+    // TODO: break this out into a separate function. Save State should be
+    // broken out into global / per-channel save methods. When saving via
+    // "update" only save state for the current channel since other channels
+    // will not have changed when saving user edits.
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         const auto& ch = app.channel[i];
         auto& save_ch = save_data.channel_data[i];
@@ -131,7 +142,6 @@ void StateManager::_loadState(AppState& app, byte slot_index) {
 
     // Restore app state from loaded data.
     app.tempo = load_data.tempo;
-    app.encoder_reversed = load_data.encoder_reversed;
     app.selected_param = load_data.selected_param;
     app.selected_channel = load_data.selected_channel;
     app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
@@ -155,11 +165,23 @@ void StateManager::_loadState(AppState& app, byte slot_index) {
     interrupts();
 }
 
-void StateManager::_saveMetadata() {
+void StateManager::_saveMetadata(const AppState& app) {
     noInterrupts();
     Metadata current_meta;
     strcpy(current_meta.sketch_name, SKETCH_NAME);
     current_meta.version = SKETCH_VERSION;
-    EEPROM.put(0, current_meta);
+
+    // Global user settings
+    current_meta.encoder_reversed = app.encoder_reversed;
+
+    EEPROM.put(METADATA_START_ADDR, current_meta);
+    interrupts();
+}
+
+void StateManager::_loadMetadata(AppState& app) {
+    noInterrupts();
+    Metadata metadata;
+    EEPROM.get(METADATA_START_ADDR, metadata);
+    app.encoder_reversed = metadata.encoder_reversed;
     interrupts();
 }
