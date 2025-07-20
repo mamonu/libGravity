@@ -26,7 +26,8 @@ bool StateManager::initialize(AppState& app) {
         return loadData(app, MAX_SAVE_SLOTS);
     } else {
         // EEPROM does not contain save data for this firmware & version.
-        // Initialize eeprom and save default patter to all save slots.
+        // Erase EEPROM and initialize state. Save default pattern to all save slots.
+        factoryReset();
         reset(app);
         _saveMetadata();
         // MAX_SAVE_SLOTS slot is reserved for transient state.
@@ -80,6 +81,15 @@ void StateManager::reset(AppState& app) {
 void StateManager::markDirty() {
     _isDirty = true;
     _lastChangeTime = millis();
+}
+
+// Erases all data in the EEPROM by writing 0 to every address.
+void StateManager::factoryReset() {
+    noInterrupts();
+    for (unsigned int i = 0 ; i < EEPROM.length() ; i++) {
+        EEPROM.write(i, 0);
+    }
+    interrupts();
 }
 
 bool StateManager::_isDataValid() {
