@@ -38,28 +38,4 @@ static Channel& GetSelectedChannel() {
     return app.channel[app.selected_channel - 1];
 }
 
-enum ParamsMainPage : uint8_t {
-    PARAM_MAIN_TEMPO,
-    PARAM_MAIN_SOURCE,
-    PARAM_MAIN_PULSE,
-    PARAM_MAIN_ENCODER_DIR,
-    PARAM_MAIN_SAVE_DATA,
-    PARAM_MAIN_LOAD_DATA,
-    PARAM_MAIN_RESET_STATE,
-    PARAM_MAIN_LAST,
-};
-
-enum ParamsChannelPage : uint8_t {
-    PARAM_CH_MOD,
-    PARAM_CH_PROB,
-    PARAM_CH_DUTY,
-    PARAM_CH_OFFSET,
-    PARAM_CH_SWING,
-    PARAM_CH_EUC_STEPS,
-    PARAM_CH_EUC_HITS,
-    PARAM_CH_CV1_DEST,
-    PARAM_CH_CV2_DEST,
-    PARAM_CH_LAST,
-};
-
 #endif  // APP_STATE_H

@@ -203,6 +203,12 @@ void HandleEncoderPressed() {
                     InitGravity(app);
                 }
             }
+            if (app.selected_param == PARAM_MAIN_FACTORY_RESET) {
+                if (app.selected_sub_param == 0) {  // Reset
+                    stateManager.factoryReset();
+                    InitGravity(app);
+                }
+            }
         }
         // Only mark dirty and reset selected_sub_param when leaving editing mode.
         stateManager.markDirty();
@@ -275,6 +281,9 @@ void editMainParameter(int val) {
             updateSelection(app.selected_sub_param, val, MAX_SAVE_SLOTS + 1);
             break;
         case PARAM_MAIN_RESET_STATE:
+            updateSelection(app.selected_sub_param, val, 2);
+            break;
+        case PARAM_MAIN_FACTORY_RESET:
             updateSelection(app.selected_sub_param, val, 2);
             break;
     }
