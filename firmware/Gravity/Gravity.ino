@@ -2,7 +2,7 @@
  * @file Gravity.ino
  * @author Adam Wonak (https://github.com/awonak/)
  * @brief Alt firmware version of Gravity by Sitka Instruments.
- * @version v2.0.1 - June 2025 awonak - Full rewrite 
+ * @version v2.0.1 - June 2025 awonak - Full rewrite
  * @version v1.0 - August 2023 Oleksiy H - Initial release
  * @date 2025-07-04
  *
@@ -25,7 +25,7 @@
  * quantization of features like duty cycle (pulse width) or offset.
  * Additionally, this firmware replaces the sequencer with a Euclidean Rhythm
  * generator.
- * 
+ *
  * ENCODER:
  *      Press: change between selecting a parameter and editing the parameter.
  *      Hold & Rotate: change current selected output channel.
@@ -33,17 +33,17 @@
  * BTN1:
  *      Play/pause - start or stop the internal clock.
  *
- * BTN2: 
+ * BTN2:
  *      Shift - hold and rotate encoder to change current selected output channel.
  *
  * EXT:
  *      External clock input. When Gravity is set to INTERNAL clock mode, this
  *      input is used to reset clocks.
- * 
+ *
  * CV1:
  * CV2:
  *      External analog input used to provide modulation to any channel parameter.
- * 
+ *
  */
 
 #include <gravity.h>
@@ -168,6 +168,21 @@ void HandleExtClockTick() {
 //
 
 void HandlePlayPressed() {
+    // Check if SHIFT is pressed to mute all/current channel.
+    if (gravity.shift_button.On()) {
+        if (app.selected_channel == 0) {
+            // Mute all channels
+            for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
+                app.channel[i].toggleMute();
+            }
+        } else {
+            // Mute selected channel
+            auto& ch = GetSelectedChannel();
+            ch.toggleMute();
+        }
+        return;
+    }
+
     gravity.clock.IsPaused()
         ? gravity.clock.Start()
         : gravity.clock.Stop();
