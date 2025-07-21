@@ -161,6 +161,8 @@ class Channel {
     byte getSteps(bool withCvMod = false) const { return withCvMod ? pattern.GetSteps() : base_euc_steps; }
     byte getHits(bool withCvMod = false) const { return withCvMod ? pattern.GetHits() : base_euc_hits; }
 
+    void toggleMute() { mute = !mute; }
+
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
      * Note: this method is called from an ISR and must be kept as simple as possible.
@@ -168,6 +170,12 @@ class Channel {
      * @param output The output object to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
+        // Mute check
+        if (mute) {
+            output.Low();
+            return;
+        }
+
         const uint16_t mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
 
         // Conditionally apply swing on down beats.
@@ -297,6 +305,9 @@ class Channel {
 
     // Euclidean pattern
     Pattern pattern;
+
+    // Mute channel flag
+    bool mute;
 
     // Pre-calculated pulse values for ISR performance
     uint16_t _duty_pulses;
