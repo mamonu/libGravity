@@ -137,8 +137,11 @@ void HandleIntClockTick(uint32_t tick) {
 
         const uint16_t pulse_high_ticks = pgm_read_word_near(&CLOCK_MOD_PULSES[clock_index]);
         const uint32_t pulse_low_ticks = tick + max((pulse_high_ticks / 2), 1L);
-        if (pulse_low_ticks % pulse_high_ticks == 0) {
-            gravity.pulse.Update(!gravity.pulse.On());
+
+        if (tick % pulse_high_ticks == 0) {
+            gravity.pulse.High();
+        } else if (pulse_low_ticks % pulse_high_ticks == 0) {
+           gravity.pulse.Low();
         }
     }
 
