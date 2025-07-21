@@ -59,6 +59,8 @@ class StateManager {
     struct Metadata {
         byte version;
         char sketch_name[16];
+        // Additional global/hardware settings
+        bool encoder_reversed;
     };
     struct ChannelState {
         byte base_clock_mod_index;
@@ -85,7 +87,8 @@ class StateManager {
 
    private:
     bool _isDataValid();
-    void _saveMetadata();
+    void _saveMetadata(const AppState& app);
+    void _loadMetadata(AppState& app);
     void _saveState(const AppState& app, byte slot_index);
     void _loadState(AppState& app, byte slot_index);
 
