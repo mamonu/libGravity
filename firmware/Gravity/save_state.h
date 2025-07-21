@@ -19,8 +19,8 @@
 struct AppState;
 
 // Define the constants for the current firmware.
-const char SKETCH_NAME[] = "Gravity";
-const byte SKETCH_VERSION = 8;
+const char SKETCH_NAME[] = "AltGravity";
+const byte SKETCH_VERSION = 1;
 
 // Number of available save slots.
 const byte MAX_SAVE_SLOTS = 10;
@@ -52,6 +52,8 @@ class StateManager {
     void update(const AppState& app);
     // Indicate that state has changed and we should save.
     void markDirty();
+    // Erase all data stored in the EEPROM.
+    void factoryReset();
 
     // This struct holds the data that identifies the firmware version.
     struct Metadata {

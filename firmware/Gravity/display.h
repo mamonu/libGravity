@@ -96,6 +96,33 @@ constexpr uint8_t CHANNEL_BOXES_Y = 50;
 constexpr uint8_t CHANNEL_BOX_WIDTH = 18;
 constexpr uint8_t CHANNEL_BOX_HEIGHT = 14;
 
+// Menu items for editing global parameters.
+enum ParamsMainPage : uint8_t {
+    PARAM_MAIN_TEMPO,
+    PARAM_MAIN_SOURCE,
+    PARAM_MAIN_PULSE,
+    PARAM_MAIN_ENCODER_DIR,
+    PARAM_MAIN_SAVE_DATA,
+    PARAM_MAIN_LOAD_DATA,
+    PARAM_MAIN_RESET_STATE,
+    PARAM_MAIN_FACTORY_RESET,
+    PARAM_MAIN_LAST,
+};
+
+// Menu items for editing channel parameters.
+enum ParamsChannelPage : uint8_t {
+    PARAM_CH_MOD,
+    PARAM_CH_PROB,
+    PARAM_CH_DUTY,
+    PARAM_CH_OFFSET,
+    PARAM_CH_SWING,
+    PARAM_CH_EUC_STEPS,
+    PARAM_CH_EUC_HITS,
+    PARAM_CH_CV1_DEST,
+    PARAM_CH_CV2_DEST,
+    PARAM_CH_LAST,
+};
+
 // Helper function to draw centered text
 void drawCenteredText(const char* text, int y, const uint8_t* font) {
     gravity.display.setFont(font);
@@ -278,13 +305,23 @@ void DisplayMainPage() {
                 mainText = F("x");
                 subText = F("BACK TO MAIN");
             }
+            break;
+        case PARAM_MAIN_FACTORY_RESET:
+            if (app.selected_sub_param == 0) {
+                mainText = F("DEL");
+                subText = F("FACTORY RESET");
+            } else {
+                mainText = F("x");
+                subText = F("BACK TO MAIN");
+            }
+            break;
     }
 
     drawCenteredText(mainText.c_str(), MAIN_TEXT_Y, LARGE_FONT);
     drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"), F("LOAD"), F("RESET")};
+    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"), F("LOAD"), F("RESET"), F("ERASE")};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
