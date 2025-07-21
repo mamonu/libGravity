@@ -20,7 +20,7 @@ struct AppState;
 
 // Define the constants for the current firmware.
 const char SKETCH_NAME[] = "ALT GRAVITY";
-const char SEMANTIC_VERSION[] = "V2.0.0BETA1";
+const char SEMANTIC_VERSION[] = "V2.0.0BETA2";
 
 // Number of available save slots.
 const byte MAX_SAVE_SLOTS = 10;  // Count of save slots 0 - 9 to save/load  presets.
