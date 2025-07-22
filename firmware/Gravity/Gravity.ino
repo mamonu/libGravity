@@ -141,7 +141,7 @@ void HandleIntClockTick(uint32_t tick) {
         if (tick % pulse_high_ticks == 0) {
             gravity.pulse.High();
         } else if (pulse_low_ticks % pulse_high_ticks == 0) {
-           gravity.pulse.Low();
+            gravity.pulse.Low();
         }
     }
 
