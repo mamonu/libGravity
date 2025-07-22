@@ -469,4 +469,21 @@ void UpdateDisplay() {
     } while (gravity.display.nextPage());
 }
 
+void Bootsplash() {
+    gravity.display.firstPage();
+    do {
+        int textWidth;
+        gravity.display.setFont(TEXT_FONT);
+
+        textWidth = gravity.display.getStrWidth(SKETCH_NAME);
+        gravity.display.drawStr(24 + (textWidth / 2), 24, SKETCH_NAME);
+
+        textWidth = gravity.display.getStrWidth(SEMANTIC_VERSION);
+        gravity.display.drawStr(24 + (textWidth / 2), 36, SEMANTIC_VERSION);
+
+        textWidth = gravity.display.getStrWidth("LOADING....");
+        gravity.display.drawStr(34 + (textWidth / 2), 48, "LOADING....");
+    } while (gravity.display.nextPage());
+}
+
 #endif  // DISPLAY_H
