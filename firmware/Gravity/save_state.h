@@ -19,8 +19,8 @@
 struct AppState;
 
 // Define the constants for the current firmware.
-const char SKETCH_NAME[] = "AltGravity";
-const byte SKETCH_VERSION = 1;
+const char SKETCH_NAME[] = "ALT GRAVITY";
+const char SEMANTIC_VERSION[] = "V2.0.0BETA1";
 
 // Number of available save slots.
 const byte MAX_SAVE_SLOTS = 10;  // Count of save slots 0 - 9 to save/load  presets.
@@ -58,8 +58,8 @@ class StateManager {
 
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
-        byte version;
         char sketch_name[16];
+        char version[16];
         // Additional global/hardware settings
         byte selected_save_slot;
         bool encoder_reversed;

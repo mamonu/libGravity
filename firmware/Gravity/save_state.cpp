@@ -105,7 +105,7 @@ bool StateManager::_isDataValid() {
     Metadata load_meta;
     EEPROM.get(METADATA_START_ADDR, load_meta);
     bool name_match = (strcmp(load_meta.sketch_name, SKETCH_NAME) == 0);
-    bool version_match = (load_meta.version == SKETCH_VERSION);
+    bool version_match = (strcmp(load_meta.version, SEMANTIC_VERSION) == 0);
     return name_match && version_match;
 }
 
@@ -184,7 +184,7 @@ void StateManager::_saveMetadata(const AppState& app) {
     noInterrupts();
     Metadata current_meta;
     strcpy(current_meta.sketch_name, SKETCH_NAME);
-    current_meta.version = SKETCH_VERSION;
+    strcpy(current_meta.version, SEMANTIC_VERSION);
 
     // Global user settings
     current_meta.selected_save_slot = app.selected_save_slot;
