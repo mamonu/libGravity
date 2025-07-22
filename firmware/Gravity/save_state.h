@@ -23,7 +23,8 @@ const char SKETCH_NAME[] = "AltGravity";
 const byte SKETCH_VERSION = 1;
 
 // Number of available save slots.
-const byte MAX_SAVE_SLOTS = 10;
+const byte MAX_SAVE_SLOTS = 10;  // Count of save slots 0 - 9 to save/load  presets.
+const byte TRANSIENT_SLOT = 10;  // Transient slot index to persist state when powered off.
 
 // Define the minimum amount of time between EEPROM writes.
 static const unsigned long SAVE_DELAY_MS = 2000;
@@ -60,6 +61,7 @@ class StateManager {
         byte version;
         char sketch_name[16];
         // Additional global/hardware settings
+        byte selected_save_slot;
         bool encoder_reversed;
     };
     struct ChannelState {
@@ -81,7 +83,6 @@ class StateManager {
         byte selected_channel;
         byte selected_source;
         byte selected_pulse;
-        byte selected_save_slot;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
 

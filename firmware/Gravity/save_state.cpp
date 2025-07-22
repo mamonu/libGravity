@@ -24,7 +24,7 @@ StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 bool StateManager::initialize(AppState& app) {
     if (_isDataValid()) {
         // Load data from the transient slot.
-        return loadData(app, MAX_SAVE_SLOTS);
+        return loadData(app, TRANSIENT_SLOT);
     }
     // EEPROM does not contain save data for this firmware & version.
     else {
@@ -33,17 +33,17 @@ bool StateManager::initialize(AppState& app) {
         // Initialize eeprom and save default patter to all save slots.
         _saveMetadata(app);
         reset(app);
-        // MAX_SAVE_SLOTS slot is reserved for transient state.
-        for (int i = 0; i <= MAX_SAVE_SLOTS; i++) {
-            app.selected_save_slot = i;
+        for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
             _saveState(app, i);
         }
+        _saveState(app, TRANSIENT_SLOT);
         return false;
     }
 }
 
 bool StateManager::loadData(AppState& app, byte slot_index) {
-    if (slot_index >= MAX_SAVE_SLOTS) return false;
+    // Check if slot_index is within max range + 1 for transient.
+    if (slot_index >= MAX_SAVE_SLOTS + 1) return false;
 
     _loadState(app, slot_index);
     _loadMetadata(app);
@@ -53,7 +53,8 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
 
 // Save app state to user specified save slot.
 void StateManager::saveData(const AppState& app) {
-    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
+    // Check if slot_index is within max range + 1 for transient.
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     _saveState(app, app.selected_save_slot);
     _isDirty = false;
@@ -62,8 +63,7 @@ void StateManager::saveData(const AppState& app) {
 // Save transient state if it has changed and enough time has passed since last save.
 void StateManager::update(const AppState& app) {
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
-        // MAX_SAVE_SLOTS slot is reserved for transient state.
-        _saveState(app, MAX_SAVE_SLOTS);
+        _saveState(app, TRANSIENT_SLOT);
         _saveMetadata(app);
         _isDirty = false;
     }
@@ -110,7 +110,8 @@ bool StateManager::_isDataValid() {
 }
 
 void StateManager::_saveState(const AppState& app, byte slot_index) {
-    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
+    // Check if slot_index is within max range + 1 for transient.
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     noInterrupts();
     static EepromData save_data;
@@ -121,7 +122,6 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
     save_data.selected_channel = app.selected_channel;
     save_data.selected_source = static_cast<byte>(app.selected_source);
     save_data.selected_pulse = static_cast<byte>(app.selected_pulse);
-    save_data.selected_save_slot = app.selected_save_slot;
 
     // TODO: break this out into a separate function. Save State should be
     // broken out into global / per-channel save methods. When saving via
@@ -147,6 +147,9 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
 }
 
 void StateManager::_loadState(AppState& app, byte slot_index) {
+    // Check if slot_index is within max range + 1 for transient.
+    if (slot_index >= MAX_SAVE_SLOTS + 1) return;
+
     noInterrupts();
     static EepromData load_data;
     int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
@@ -184,6 +187,7 @@ void StateManager::_saveMetadata(const AppState& app) {
     current_meta.version = SKETCH_VERSION;
 
     // Global user settings
+    current_meta.selected_save_slot = app.selected_save_slot;
     current_meta.encoder_reversed = app.encoder_reversed;
 
     EEPROM.put(METADATA_START_ADDR, current_meta);
@@ -194,6 +198,7 @@ void StateManager::_loadMetadata(AppState& app) {
     noInterrupts();
     Metadata metadata;
     EEPROM.get(METADATA_START_ADDR, metadata);
+    app.selected_save_slot = metadata.selected_save_slot;
     app.encoder_reversed = metadata.encoder_reversed;
     interrupts();
 }
