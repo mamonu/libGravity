@@ -24,7 +24,7 @@ StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 bool StateManager::initialize(AppState& app) {
     if (_isDataValid()) {
         // Load data from the transient slot.
-        return loadData(app, MAX_SAVE_SLOTS);
+        return loadData(app, TRANSIENT_SLOT);
     }
     // EEPROM does not contain save data for this firmware & version.
     else {
@@ -33,8 +33,7 @@ bool StateManager::initialize(AppState& app) {
         // Initialize eeprom and save default patter to all save slots.
         _saveMetadata(app);
         reset(app);
-        // MAX_SAVE_SLOTS slot is reserved for transient state.
-        for (int i = 0; i <= MAX_SAVE_SLOTS; i++) {
+        for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
             app.selected_save_slot = i;
             _saveState(app, i);
         }
@@ -43,7 +42,8 @@ bool StateManager::initialize(AppState& app) {
 }
 
 bool StateManager::loadData(AppState& app, byte slot_index) {
-    if (slot_index >= MAX_SAVE_SLOTS) return false;
+    // Check if slot_index is within max range + 1 for transient.
+    if (slot_index >= MAX_SAVE_SLOTS + 1) return false;
 
     _loadState(app, slot_index);
     _loadMetadata(app);
@@ -53,7 +53,8 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
 
 // Save app state to user specified save slot.
 void StateManager::saveData(const AppState& app) {
-    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
+    // Check if slot_index is within max range + 1 for transient.
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     _saveState(app, app.selected_save_slot);
     _isDirty = false;
@@ -62,8 +63,7 @@ void StateManager::saveData(const AppState& app) {
 // Save transient state if it has changed and enough time has passed since last save.
 void StateManager::update(const AppState& app) {
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
-        // MAX_SAVE_SLOTS slot is reserved for transient state.
-        _saveState(app, MAX_SAVE_SLOTS);
+        _saveState(app, TRANSIENT_SLOT);
         _saveMetadata(app);
         _isDirty = false;
     }
@@ -110,7 +110,8 @@ bool StateManager::_isDataValid() {
 }
 
 void StateManager::_saveState(const AppState& app, byte slot_index) {
-    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
+    // Check if slot_index is within max range + 1 for transient.
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     noInterrupts();
     static EepromData save_data;
@@ -147,6 +148,9 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
 }
 
 void StateManager::_loadState(AppState& app, byte slot_index) {
+    // Check if slot_index is within max range + 1 for transient.
+    if (slot_index >=  MAX_SAVE_SLOTS + 1) return;
+
     noInterrupts();
     static EepromData load_data;
     int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
