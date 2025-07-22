@@ -61,6 +61,7 @@ class StateManager {
         byte version;
         char sketch_name[16];
         // Additional global/hardware settings
+        byte selected_save_slot;
         bool encoder_reversed;
     };
     struct ChannelState {
@@ -82,7 +83,6 @@ class StateManager {
         byte selected_channel;
         byte selected_source;
         byte selected_pulse;
-        byte selected_save_slot;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
 

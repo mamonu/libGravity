@@ -34,9 +34,9 @@ bool StateManager::initialize(AppState& app) {
         _saveMetadata(app);
         reset(app);
         for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
-            app.selected_save_slot = i;
             _saveState(app, i);
         }
+        _saveState(app, TRANSIENT_SLOT);
         return false;
     }
 }
@@ -122,7 +122,6 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
     save_data.selected_channel = app.selected_channel;
     save_data.selected_source = static_cast<byte>(app.selected_source);
     save_data.selected_pulse = static_cast<byte>(app.selected_pulse);
-    save_data.selected_save_slot = app.selected_save_slot;
 
     // TODO: break this out into a separate function. Save State should be
     // broken out into global / per-channel save methods. When saving via
@@ -149,7 +148,7 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
 
 void StateManager::_loadState(AppState& app, byte slot_index) {
     // Check if slot_index is within max range + 1 for transient.
-    if (slot_index >=  MAX_SAVE_SLOTS + 1) return;
+    if (slot_index >= MAX_SAVE_SLOTS + 1) return;
 
     noInterrupts();
     static EepromData load_data;
@@ -188,6 +187,7 @@ void StateManager::_saveMetadata(const AppState& app) {
     current_meta.version = SKETCH_VERSION;
 
     // Global user settings
+    current_meta.selected_save_slot = app.selected_save_slot;
     current_meta.encoder_reversed = app.encoder_reversed;
 
     EEPROM.put(METADATA_START_ADDR, current_meta);
@@ -198,6 +198,7 @@ void StateManager::_loadMetadata(AppState& app) {
     noInterrupts();
     Metadata metadata;
     EEPROM.get(METADATA_START_ADDR, metadata);
+    app.selected_save_slot = metadata.selected_save_slot;
     app.encoder_reversed = metadata.encoder_reversed;
     interrupts();
 }
