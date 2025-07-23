@@ -222,10 +222,9 @@ void HandleEncoderPressed() {
                 }
             }
             if (app.selected_param == PARAM_MAIN_FACTORY_RESET) {
-                if (app.selected_sub_param == 0) {  // Reset
+                if (app.selected_sub_param == 0) {  // Erase
                     Bootsplash();
-                    stateManager.factoryReset();
-                    stateManager.reset(app);
+                    stateManager.factoryReset(app);
                     InitGravity(app);
                 }
             }
