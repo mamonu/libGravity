@@ -20,7 +20,7 @@ struct AppState;
 
 // Define the constants for the current firmware.
 const char SKETCH_NAME[] = "ALT GRAVITY";
-const char SEMANTIC_VERSION[] = "V2.0.0BETA1";
+const char SEMANTIC_VERSION[] = "V2.0.0BETA2";
 
 // Number of available save slots.
 const byte MAX_SAVE_SLOTS = 10;  // Count of save slots 0 - 9 to save/load  presets.
@@ -54,7 +54,7 @@ class StateManager {
     // Indicate that state has changed and we should save.
     void markDirty();
     // Erase all data stored in the EEPROM.
-    void factoryReset();
+    void factoryReset(AppState& app);
 
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
@@ -78,7 +78,6 @@ class StateManager {
     // This struct holds all the parameters we want to save.
     struct EepromData {
         int tempo;
-        bool encoder_reversed;
         byte selected_param;
         byte selected_channel;
         byte selected_source;
