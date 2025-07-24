@@ -23,20 +23,16 @@ StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 
 bool StateManager::initialize(AppState& app) {
     if (_isDataValid()) {
-        // Load data from the transient slot.
-        return loadData(app, TRANSIENT_SLOT);
+        // Load global settings.
+        _loadMetadata(app);
+        // Load app data from the transient slot.
+        _loadState(app, TRANSIENT_SLOT);
+        return true;
     }
     // EEPROM does not contain save data for this firmware & version.
     else {
         // Erase EEPROM and initialize state. Save default pattern to all save slots.
-        factoryReset();
-        // Initialize eeprom and save default patter to all save slots.
-        _saveMetadata(app);
-        reset(app);
-        for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
-            _saveState(app, i);
-        }
-        _saveState(app, TRANSIENT_SLOT);
+        factoryReset(app);
         return false;
     }
 }
@@ -45,8 +41,11 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
     // Check if slot_index is within max range + 1 for transient.
     if (slot_index >= MAX_SAVE_SLOTS + 1) return false;
 
+    // Load the state data from the specified EEPROM slot and update the app state save slot.
     _loadState(app, slot_index);
-    _loadMetadata(app);
+    app.selected_save_slot = slot_index;
+    // Persist this change in the global metadata.
+    _saveMetadata(app);
 
     return true;
 }
@@ -57,6 +56,7 @@ void StateManager::saveData(const AppState& app) {
     if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     _saveState(app, app.selected_save_slot);
+    _saveMetadata(app);
     _isDirty = false;
 }
 
@@ -70,12 +70,12 @@ void StateManager::update(const AppState& app) {
 }
 
 void StateManager::reset(AppState& app) {
-    app.tempo = Clock::DEFAULT_TEMPO;
-    app.selected_param = 0;
-    app.selected_channel = 0;
-    app.selected_source = Clock::SOURCE_INTERNAL;
-    app.selected_pulse = Clock::PULSE_PPQN_24;
-    app.selected_save_slot = 0;
+    AppState default_app;
+    app.tempo = default_app.tempo;
+    app.selected_param = default_app.selected_param;
+    app.selected_channel = default_app.selected_channel;
+    app.selected_source = default_app.selected_source;
+    app.selected_pulse = default_app.selected_pulse;
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         app.channel[i].Init();
@@ -93,19 +93,27 @@ void StateManager::markDirty() {
 }
 
 // Erases all data in the EEPROM by writing 0 to every address.
-void StateManager::factoryReset() {
+void StateManager::factoryReset(AppState& app) {
     noInterrupts();
     for (unsigned int i = 0; i < EEPROM.length(); i++) {
         EEPROM.write(i, 0);
     }
+    // Initialize eeprom and save default patter to all save slots.
+    _saveMetadata(app);
+    reset(app);
+    for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
+        app.selected_save_slot = i;
+        _saveState(app, i);
+    }
+    _saveState(app, TRANSIENT_SLOT);
     interrupts();
 }
 
 bool StateManager::_isDataValid() {
-    Metadata load_meta;
-    EEPROM.get(METADATA_START_ADDR, load_meta);
-    bool name_match = (strcmp(load_meta.sketch_name, SKETCH_NAME) == 0);
-    bool version_match = (strcmp(load_meta.version, SEMANTIC_VERSION) == 0);
+    Metadata metadata;
+    EEPROM.get(METADATA_START_ADDR, metadata);
+    bool name_match = (strcmp(metadata.sketch_name, SKETCH_NAME) == 0);
+    bool version_match = (strcmp(metadata.version, SEMANTIC_VERSION) == 0);
     return name_match && version_match;
 }
 
@@ -117,7 +125,6 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
     static EepromData save_data;
 
     save_data.tempo = app.tempo;
-    save_data.encoder_reversed = app.encoder_reversed;
     save_data.selected_param = app.selected_param;
     save_data.selected_channel = app.selected_channel;
     save_data.selected_source = static_cast<byte>(app.selected_source);
@@ -161,7 +168,6 @@ void StateManager::_loadState(AppState& app, byte slot_index) {
     app.selected_channel = load_data.selected_channel;
     app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
     app.selected_pulse = static_cast<Clock::Pulse>(load_data.selected_pulse);
-    app.selected_save_slot = slot_index;
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         auto& ch = app.channel[i];

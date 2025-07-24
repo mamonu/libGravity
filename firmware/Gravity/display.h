@@ -476,13 +476,13 @@ void Bootsplash() {
         gravity.display.setFont(TEXT_FONT);
 
         textWidth = gravity.display.getStrWidth(SKETCH_NAME);
-        gravity.display.drawStr(24 + (textWidth / 2), 24, SKETCH_NAME);
+        gravity.display.drawStr(16 + (textWidth / 2), 20, SKETCH_NAME);
 
         textWidth = gravity.display.getStrWidth(SEMANTIC_VERSION);
-        gravity.display.drawStr(24 + (textWidth / 2), 36, SEMANTIC_VERSION);
+        gravity.display.drawStr(16 + (textWidth / 2), 32, SEMANTIC_VERSION);
 
         textWidth = gravity.display.getStrWidth("LOADING....");
-        gravity.display.drawStr(34 + (textWidth / 2), 48, "LOADING....");
+        gravity.display.drawStr(26 + (textWidth / 2), 44, "LOADING....");
     } while (gravity.display.nextPage());
 }
 
