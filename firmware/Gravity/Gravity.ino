@@ -37,10 +37,12 @@
  *      Shift - hold and rotate encoder to change current selected output channel.
  *
  * EXT:
- *      External clock input. When Gravity is set to INTERNAL clock mode, this
- *      input is used to reset clocks.
+ *      External clock input. When Gravity is set to INTERNAL or MIDI clock
+ *      source, this input is used to reset clocks.
  *
  * CV1:
+ *      External analog input used to provide modulation to any channel parameter.
+ * 
  * CV2:
  *      External analog input used to provide modulation to any channel parameter.
  *
@@ -155,13 +157,16 @@ void HandleIntClockTick(uint32_t tick) {
 }
 
 void HandleExtClockTick() {
-    if (gravity.clock.InternalSource()) {
-        // Use EXT as Reset when internally clocked.
-        ResetOutputs();
-        gravity.clock.Reset();
-    } else {
-        // Register clock tick.
-        gravity.clock.Tick();
+    switch (app.selected_source) {
+        case Clock::SOURCE_INTERNAL:
+        case Clock::SOURCE_EXTERNAL_MIDI:
+            // Use EXT as Reset when not used for clock source.
+            ResetOutputs();
+            gravity.clock.Reset();
+            break;
+        default:
+            // Register EXT cv clock tick.
+            gravity.clock.Tick();
     }
     app.refresh_screen = true;
 }
