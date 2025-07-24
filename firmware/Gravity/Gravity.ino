@@ -203,13 +203,13 @@ void HandleEncoderPressed() {
                 gravity.encoder.SetReverseDirection(app.encoder_reversed);
             }
             if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
-                if (app.selected_sub_param < MAX_SAVE_SLOTS) {
+                if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
                     app.selected_save_slot = app.selected_sub_param;
                     stateManager.saveData(app);
                 }
             }
             if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
-                if (app.selected_sub_param < MAX_SAVE_SLOTS) {
+                if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
                     app.selected_save_slot = app.selected_sub_param;
                     stateManager.loadData(app, app.selected_save_slot);
                     InitGravity(app);
@@ -223,6 +223,7 @@ void HandleEncoderPressed() {
             }
             if (app.selected_param == PARAM_MAIN_FACTORY_RESET) {
                 if (app.selected_sub_param == 0) {  // Erase
+                    // Show bootsplash during slow erase operation.
                     Bootsplash();
                     stateManager.factoryReset(app);
                     InitGravity(app);
@@ -297,7 +298,7 @@ void editMainParameter(int val) {
             break;
         case PARAM_MAIN_SAVE_DATA:
         case PARAM_MAIN_LOAD_DATA:
-            updateSelection(app.selected_sub_param, val, MAX_SAVE_SLOTS + 1);
+            updateSelection(app.selected_sub_param, val, StateManager::MAX_SAVE_SLOTS + 1);
             break;
         case PARAM_MAIN_RESET_STATE:
             updateSelection(app.selected_sub_param, val, 2);
