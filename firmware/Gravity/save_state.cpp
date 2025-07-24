@@ -17,7 +17,7 @@
 
 // Define the constants for the current firmware.
 const char StateManager::SKETCH_NAME[] = "ALT GRAVITY";
-const char StateManager::SEMANTIC_VERSION[] = "V2.0.0BETA2";
+const char StateManager::SEMANTIC_VERSION[] = "V2.0.0BETA2";  // NOTE: This should match the version in the library.properties file.
 
 // Number of available save slots.
 const byte StateManager::MAX_SAVE_SLOTS = 10;

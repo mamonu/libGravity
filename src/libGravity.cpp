@@ -1,5 +1,5 @@
 /**
- * @file gravity.cpp
+ * @file libGravity.cpp
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Library for building custom scripts for the Sitka Instruments Gravity module.
  * @version 0.1
@@ -9,7 +9,7 @@
  *
  */
 
-#include "gravity.h"
+#include "libGravity.h"
 
 // Initialize the static pointer for the EncoderDir class to null. We want to
 // have a static pointer to decouple the ISR from the global gravity object.

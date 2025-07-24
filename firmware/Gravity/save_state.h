@@ -13,7 +13,7 @@
 #define SAVE_STATE_H
 
 #include <Arduino.h>
-#include <gravity.h>
+#include <libGravity.h>
 
 // Forward-declare AppState to avoid circular dependencies.
 struct AppState;

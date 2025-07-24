@@ -17,7 +17,7 @@
  *
  */
 
-#include "gravity.h"
+#include <libGravity.h>
 
 // Firmware state variables.
 struct Channel {

@@ -13,7 +13,7 @@
 #define CHANNEL_H
 
 #include <Arduino.h>
-#include <gravity.h>
+#include <libGravity.h>
 
 #include "euclidean.h"
 

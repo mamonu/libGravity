@@ -12,7 +12,7 @@
 #ifndef APP_STATE_H
 #define APP_STATE_H
 
-#include <gravity.h>
+#include <libGravity.h>
 
 #include "channel.h"
 
