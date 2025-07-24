@@ -18,17 +18,6 @@
 // Forward-declare AppState to avoid circular dependencies.
 struct AppState;
 
-// Define the constants for the current firmware.
-const char SKETCH_NAME[] = "ALT GRAVITY";
-const char SEMANTIC_VERSION[] = "V2.0.0BETA2";  // NOTE: This should match the version in the library.properties file.
-
-// Number of available save slots.
-const byte MAX_SAVE_SLOTS = 10;  // Count of save slots 0 - 9 to save/load  presets.
-const byte TRANSIENT_SLOT = 10;  // Transient slot index to persist state when powered off.
-
-// Define the minimum amount of time between EEPROM writes.
-static const unsigned long SAVE_DELAY_MS = 2000;
-
 /**
  * @brief Manages saving and loading of the application state to and from EEPROM.
  * The number of user slots is defined by MAX_SAVE_SLOTS, and one additional slot
@@ -39,6 +28,11 @@ static const unsigned long SAVE_DELAY_MS = 2000;
  */
 class StateManager {
    public:
+    static const char SKETCH_NAME[];
+    static const char SEMANTIC_VERSION[];
+    static const byte MAX_SAVE_SLOTS;
+    static const byte TRANSIENT_SLOT;
+
     StateManager();
 
     // Populate the AppState instance with values from EEPROM if they exist.
@@ -91,6 +85,10 @@ class StateManager {
     void _loadMetadata(AppState& app);
     void _saveState(const AppState& app, byte slot_index);
     void _loadState(AppState& app, byte slot_index);
+
+    static const unsigned long SAVE_DELAY_MS;
+    static const int METADATA_START_ADDR;
+    static const int EEPROM_DATA_START_ADDR;
 
     bool _isDirty;
     unsigned long _lastChangeTime;

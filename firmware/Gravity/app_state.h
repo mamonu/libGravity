@@ -19,9 +19,7 @@
 // Global state for settings and app behavior.
 struct AppState {
     int tempo = Clock::DEFAULT_TEMPO;
-    bool encoder_reversed = false;
-    bool refresh_screen = true;
-    bool editing_param = false;
+    Channel channel[Gravity::OUTPUT_COUNT];
     byte selected_param = 0;
     byte selected_sub_param = 0;  // Temporary value for editing params.
     byte selected_channel = 0;    // 0=tempo, 1-6=output channel
@@ -29,7 +27,9 @@ struct AppState {
     byte selected_save_slot = 0;  // The currently active save slot.
     Clock::Source selected_source = Clock::SOURCE_INTERNAL;
     Clock::Pulse selected_pulse = Clock::PULSE_PPQN_24;
-    Channel channel[Gravity::OUTPUT_COUNT];
+    bool editing_param = false;
+    bool encoder_reversed = false;
+    bool refresh_screen = true;
 };
 
 extern AppState app;

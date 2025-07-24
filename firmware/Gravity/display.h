@@ -214,10 +214,10 @@ void swingDivisionMark() {
 
 // Human friendly display value for save slot.
 String displaySaveSlot(int slot) {
-    if (slot >= 0 && slot < MAX_SAVE_SLOTS / 2) {
+    if (slot >= 0 && slot < StateManager::MAX_SAVE_SLOTS / 2) {
         return String("A") + String(slot + 1);
-    } else if (slot >= MAX_SAVE_SLOTS / 2 && slot <= MAX_SAVE_SLOTS) {
-        return String("B") + String(slot - (MAX_SAVE_SLOTS / 2) + 1);
+    } else if (slot >= StateManager::MAX_SAVE_SLOTS / 2 && slot <= StateManager::MAX_SAVE_SLOTS) {
+        return String("B") + String(slot - (StateManager::MAX_SAVE_SLOTS / 2) + 1);
     }
 }
 
@@ -283,7 +283,7 @@ void DisplayMainPage() {
             break;
         case PARAM_MAIN_SAVE_DATA:
         case PARAM_MAIN_LOAD_DATA:
-            if (app.selected_sub_param == MAX_SAVE_SLOTS) {
+            if (app.selected_sub_param == StateManager::MAX_SAVE_SLOTS) {
                 mainText = F("x");
                 subText = F("BACK TO MAIN");
             } else {
@@ -465,7 +465,7 @@ void UpdateDisplay() {
             DisplayChannelPage();
         }
         // Global channel select UI.
-        DisplaySelectedChannel();
+            DisplaySelectedChannel();
     } while (gravity.display.nextPage());
 }
 
@@ -473,16 +473,17 @@ void Bootsplash() {
     gravity.display.firstPage();
     do {
         int textWidth;
+        String loadingText = F("LOADING....");
         gravity.display.setFont(TEXT_FONT);
 
-        textWidth = gravity.display.getStrWidth(SKETCH_NAME);
-        gravity.display.drawStr(16 + (textWidth / 2), 20, SKETCH_NAME);
+        textWidth = gravity.display.getStrWidth(StateManager::SKETCH_NAME);
+        gravity.display.drawStr(16 + (textWidth / 2), 20, StateManager::SKETCH_NAME);
 
-        textWidth = gravity.display.getStrWidth(SEMANTIC_VERSION);
-        gravity.display.drawStr(16 + (textWidth / 2), 32, SEMANTIC_VERSION);
+        textWidth = gravity.display.getStrWidth(StateManager::SEMANTIC_VERSION);
+        gravity.display.drawStr(16 + (textWidth / 2), 32, StateManager::SEMANTIC_VERSION);
 
-        textWidth = gravity.display.getStrWidth("LOADING....");
-        gravity.display.drawStr(26 + (textWidth / 2), 44, "LOADING....");
+        textWidth = gravity.display.getStrWidth(loadingText.c_str());
+        gravity.display.drawStr(26 + (textWidth / 2), 44, loadingText.c_str());
     } while (gravity.display.nextPage());
 }
 

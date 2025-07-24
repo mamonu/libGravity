@@ -15,9 +15,20 @@
 
 #include "app_state.h"
 
+// Define the constants for the current firmware.
+const char StateManager::SKETCH_NAME[] = "ALT GRAVITY";
+const char StateManager::SEMANTIC_VERSION[] = "V2.0.0BETA2";  // NOTE: This should match the version in the library.properties file.
+
+// Number of available save slots.
+const byte StateManager::MAX_SAVE_SLOTS = 10;
+const byte StateManager::TRANSIENT_SLOT = 10;
+
+// Define the minimum amount of time between EEPROM writes.
+const unsigned long StateManager::SAVE_DELAY_MS = 2000;
+
 // Calculate the starting address for EepromData, leaving space for metadata.
-static const int METADATA_START_ADDR = 0;
-static const int EEPROM_DATA_START_ADDR = sizeof(StateManager::Metadata);
+const int StateManager::METADATA_START_ADDR = 0;
+const int StateManager::EEPROM_DATA_START_ADDR = sizeof(StateManager::Metadata);
 
 StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 
