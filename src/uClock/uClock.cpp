@@ -32,7 +32,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #include "uClock.h"
-#include "uClock/platforms/avr.h"
+#include "platforms/avr.h"
 
 //
 // Platform specific timer setup/control

@@ -13,14 +13,14 @@
 #define SAVE_STATE_H
 
 #include <Arduino.h>
-#include <gravity.h>
+#include <libGravity.h>
 
 // Forward-declare AppState to avoid circular dependencies.
 struct AppState;
 
 // Define the constants for the current firmware.
 const char SKETCH_NAME[] = "ALT GRAVITY";
-const char SEMANTIC_VERSION[] = "V2.0.0BETA2";
+const char SEMANTIC_VERSION[] = "V2.0.0BETA2";  // NOTE: This should match the version in the library.properties file.
 
 // Number of available save slots.
 const byte MAX_SAVE_SLOTS = 10;  // Count of save slots 0 - 9 to save/load  presets.
