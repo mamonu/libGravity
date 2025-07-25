@@ -255,7 +255,7 @@ class Channel {
         int step_mod = _calculateMod(CV_DEST_EUC_STEPS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
         pattern.SetSteps(base_euc_steps + step_mod);
 
-        int hit_mod = _calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
+        int hit_mod = _calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0, pattern.GetSteps());
         pattern.SetHits(base_euc_hits + hit_mod);
 
         // After all cvmod values are updated, recalculate clock pulse modifiers.
