@@ -2,7 +2,7 @@
  * @file Gravity.ino
  * @author Adam Wonak (https://github.com/awonak/)
  * @brief Alt firmware version of Gravity by Sitka Instruments.
- * @version v2.0.1 - June 2025 awonak - Full rewrite 
+ * @version v2.0.0 - June 2025 awonak - Full rewrite
  * @version v1.0 - August 2023 Oleksiy H - Initial release
  * @date 2025-07-04
  *
@@ -25,7 +25,7 @@
  * quantization of features like duty cycle (pulse width) or offset.
  * Additionally, this firmware replaces the sequencer with a Euclidean Rhythm
  * generator.
- * 
+ *
  * ENCODER:
  *      Press: change between selecting a parameter and editing the parameter.
  *      Hold & Rotate: change current selected output channel.
@@ -33,20 +33,22 @@
  * BTN1:
  *      Play/pause - start or stop the internal clock.
  *
- * BTN2: 
+ * BTN2:
  *      Shift - hold and rotate encoder to change current selected output channel.
  *
  * EXT:
- *      External clock input. When Gravity is set to INTERNAL clock mode, this
- *      input is used to reset clocks.
- * 
+ *      External clock input. When Gravity is set to INTERNAL or MIDI clock
+ *      source, this input is used to reset clocks.
+ *
  * CV1:
- * CV2:
  *      External analog input used to provide modulation to any channel parameter.
  * 
+ * CV2:
+ *      External analog input used to provide modulation to any channel parameter.
+ *
  */
 
-#include <gravity.h>
+#include <libGravity.h>
 
 #include "app_state.h"
 #include "channel.h"
@@ -63,6 +65,10 @@ StateManager stateManager;
 void setup() {
     // Start Gravity.
     gravity.Init();
+
+    // Show bootsplash when initializing firmware.
+    Bootsplash();
+    delay(2000);
 
     // Initialize the state manager. This will load settings from EEPROM
     stateManager.initialize(app);
@@ -125,23 +131,22 @@ void HandleIntClockTick(uint32_t tick) {
         int clock_index;
         switch (app.selected_pulse) {
             case Clock::PULSE_PPQN_24:
-                clock_index = 0;
+                clock_index = PULSE_PPQN_24_CLOCK_MOD_INDEX;
                 break;
             case Clock::PULSE_PPQN_4:
-                clock_index = 4;
+                clock_index = PULSE_PPQN_4_CLOCK_MOD_INDEX;
                 break;
             case Clock::PULSE_PPQN_1:
-                clock_index = 7;
+                clock_index = PULSE_PPQN_1_CLOCK_MOD_INDEX;
                 break;
         }
 
-        const uint32_t pulse_high_ticks = CLOCK_MOD_PULSES[clock_index];
+        const uint16_t pulse_high_ticks = pgm_read_word_near(&CLOCK_MOD_PULSES[clock_index]);
         const uint32_t pulse_low_ticks = tick + max((pulse_high_ticks / 2), 1L);
 
         if (tick % pulse_high_ticks == 0) {
             gravity.pulse.High();
-        }
-        if (pulse_low_ticks % pulse_high_ticks == 0) {
+        } else if (pulse_low_ticks % pulse_high_ticks == 0) {
             gravity.pulse.Low();
         }
     }
@@ -152,13 +157,16 @@ void HandleIntClockTick(uint32_t tick) {
 }
 
 void HandleExtClockTick() {
-    if (gravity.clock.InternalSource()) {
-        // Use EXT as Reset when internally clocked.
-        ResetOutputs();
-        gravity.clock.Reset();
-    } else {
-        // Register clock tick.
-        gravity.clock.Tick();
+    switch (app.selected_source) {
+        case Clock::SOURCE_INTERNAL:
+        case Clock::SOURCE_EXTERNAL_MIDI:
+            // Use EXT as Reset when not used for clock source.
+            ResetOutputs();
+            gravity.clock.Reset();
+            break;
+        default:
+            // Register EXT cv clock tick.
+            gravity.clock.Tick();
     }
     app.refresh_screen = true;
 }
@@ -168,6 +176,21 @@ void HandleExtClockTick() {
 //
 
 void HandlePlayPressed() {
+    // Check if SHIFT is pressed to mute all/current channel.
+    if (gravity.shift_button.On()) {
+        if (app.selected_channel == 0) {
+            // Mute all channels
+            for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
+                app.channel[i].toggleMute();
+            }
+        } else {
+            // Mute selected channel
+            auto& ch = GetSelectedChannel();
+            ch.toggleMute();
+        }
+        return;
+    }
+
     gravity.clock.IsPaused()
         ? gravity.clock.Start()
         : gravity.clock.Stop();
@@ -181,17 +204,17 @@ void HandleEncoderPressed() {
         if (app.selected_channel == 0) {  // main page
             // TODO: rewrite as switch
             if (app.selected_param == PARAM_MAIN_ENCODER_DIR) {
-                bool reversed = app.selected_sub_param == 1;
-                gravity.encoder.SetReverseDirection(reversed);
+                app.encoder_reversed = app.selected_sub_param == 1;
+                gravity.encoder.SetReverseDirection(app.encoder_reversed);
             }
             if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
-                if (app.selected_sub_param < MAX_SAVE_SLOTS) {
+                if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
                     app.selected_save_slot = app.selected_sub_param;
                     stateManager.saveData(app);
                 }
             }
             if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
-                if (app.selected_sub_param < MAX_SAVE_SLOTS) {
+                if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
                     app.selected_save_slot = app.selected_sub_param;
                     stateManager.loadData(app, app.selected_save_slot);
                     InitGravity(app);
@@ -200,6 +223,14 @@ void HandleEncoderPressed() {
             if (app.selected_param == PARAM_MAIN_RESET_STATE) {
                 if (app.selected_sub_param == 0) {  // Reset
                     stateManager.reset(app);
+                    InitGravity(app);
+                }
+            }
+            if (app.selected_param == PARAM_MAIN_FACTORY_RESET) {
+                if (app.selected_sub_param == 0) {  // Erase
+                    // Show bootsplash during slow erase operation.
+                    Bootsplash();
+                    stateManager.factoryReset(app);
                     InitGravity(app);
                 }
             }
@@ -272,9 +303,12 @@ void editMainParameter(int val) {
             break;
         case PARAM_MAIN_SAVE_DATA:
         case PARAM_MAIN_LOAD_DATA:
-            updateSelection(app.selected_sub_param, val, MAX_SAVE_SLOTS + 1);
+            updateSelection(app.selected_sub_param, val, StateManager::MAX_SAVE_SLOTS + 1);
             break;
         case PARAM_MAIN_RESET_STATE:
+            updateSelection(app.selected_sub_param, val, 2);
+            break;
+        case PARAM_MAIN_FACTORY_RESET:
             updateSelection(app.selected_sub_param, val, 2);
             break;
     }

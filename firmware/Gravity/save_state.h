@@ -13,20 +13,10 @@
 #define SAVE_STATE_H
 
 #include <Arduino.h>
-#include <gravity.h>
+#include <libGravity.h>
 
 // Forward-declare AppState to avoid circular dependencies.
 struct AppState;
-
-// Define the constants for the current firmware.
-const char SKETCH_NAME[] = "Gravity";
-const byte SKETCH_VERSION = 7;
-
-// Number of available save slots.
-const byte MAX_SAVE_SLOTS = 10;
-
-// Define the minimum amount of time between EEPROM writes.
-static const unsigned long SAVE_DELAY_MS = 2000;
 
 /**
  * @brief Manages saving and loading of the application state to and from EEPROM.
@@ -38,6 +28,11 @@ static const unsigned long SAVE_DELAY_MS = 2000;
  */
 class StateManager {
    public:
+    static const char SKETCH_NAME[];
+    static const char SEMANTIC_VERSION[];
+    static const byte MAX_SAVE_SLOTS;
+    static const byte TRANSIENT_SLOT;
+
     StateManager();
 
     // Populate the AppState instance with values from EEPROM if they exist.
@@ -52,11 +47,16 @@ class StateManager {
     void update(const AppState& app);
     // Indicate that state has changed and we should save.
     void markDirty();
+    // Erase all data stored in the EEPROM.
+    void factoryReset(AppState& app);
 
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
-        byte version;
         char sketch_name[16];
+        char version[16];
+        // Additional global/hardware settings
+        byte selected_save_slot;
+        bool encoder_reversed;
     };
     struct ChannelState {
         byte base_clock_mod_index;
@@ -72,20 +72,23 @@ class StateManager {
     // This struct holds all the parameters we want to save.
     struct EepromData {
         int tempo;
-        bool encoder_reversed;
         byte selected_param;
         byte selected_channel;
         byte selected_source;
         byte selected_pulse;
-        byte selected_save_slot;
         ChannelState channel_data[Gravity::OUTPUT_COUNT];
     };
 
    private:
     bool _isDataValid();
-    void _saveMetadata();
+    void _saveMetadata(const AppState& app);
+    void _loadMetadata(AppState& app);
     void _saveState(const AppState& app, byte slot_index);
     void _loadState(AppState& app, byte slot_index);
+
+    static const unsigned long SAVE_DELAY_MS;
+    static const int METADATA_START_ADDR;
+    static const int EEPROM_DATA_START_ADDR;
 
     bool _isDirty;
     unsigned long _lastChangeTime;

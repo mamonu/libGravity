@@ -15,7 +15,7 @@
 #include <NeoHWSerial.h>
 
 #include "peripherials.h"
-#include "uClock.h"
+#include "uClock/uClock.h"
 
 // MIDI clock, start, stop, and continue byte definitions - based on MIDI 1.0 Standards.
 #define MIDI_CLOCK 0xF8
@@ -55,9 +55,6 @@ class Clock {
      */
     void Init() {
         NeoSerial.begin(31250);
-
-        // Static pin definition for pulse out.
-        pinMode(PULSE_OUT_PIN, OUTPUT);
 
         // Initialize the clock library
         uClock.init();

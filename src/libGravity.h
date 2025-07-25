@@ -1,5 +1,5 @@
 /**
- * @file gravity.h
+ * @file libGravity.h
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Library for building custom scripts for the Sitka Instruments Gravity module.
  * @version 0.1

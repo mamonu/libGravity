@@ -12,16 +12,14 @@
 #ifndef APP_STATE_H
 #define APP_STATE_H
 
-#include <gravity.h>
+#include <libGravity.h>
 
 #include "channel.h"
 
 // Global state for settings and app behavior.
 struct AppState {
     int tempo = Clock::DEFAULT_TEMPO;
-    bool encoder_reversed = false;
-    bool refresh_screen = true;
-    bool editing_param = false;
+    Channel channel[Gravity::OUTPUT_COUNT];
     byte selected_param = 0;
     byte selected_sub_param = 0;  // Temporary value for editing params.
     byte selected_channel = 0;    // 0=tempo, 1-6=output channel
@@ -29,7 +27,9 @@ struct AppState {
     byte selected_save_slot = 0;  // The currently active save slot.
     Clock::Source selected_source = Clock::SOURCE_INTERNAL;
     Clock::Pulse selected_pulse = Clock::PULSE_PPQN_24;
-    Channel channel[Gravity::OUTPUT_COUNT];
+    bool editing_param = false;
+    bool encoder_reversed = false;
+    bool refresh_screen = true;
 };
 
 extern AppState app;
@@ -37,29 +37,5 @@ extern AppState app;
 static Channel& GetSelectedChannel() {
     return app.channel[app.selected_channel - 1];
 }
-
-enum ParamsMainPage : uint8_t {
-    PARAM_MAIN_TEMPO,
-    PARAM_MAIN_SOURCE,
-    PARAM_MAIN_PULSE,
-    PARAM_MAIN_ENCODER_DIR,
-    PARAM_MAIN_SAVE_DATA,
-    PARAM_MAIN_LOAD_DATA,
-    PARAM_MAIN_RESET_STATE,
-    PARAM_MAIN_LAST,
-};
-
-enum ParamsChannelPage : uint8_t {
-    PARAM_CH_MOD,
-    PARAM_CH_PROB,
-    PARAM_CH_DUTY,
-    PARAM_CH_OFFSET,
-    PARAM_CH_SWING,
-    PARAM_CH_EUC_STEPS,
-    PARAM_CH_EUC_HITS,
-    PARAM_CH_CV1_DEST,
-    PARAM_CH_CV2_DEST,
-    PARAM_CH_LAST,
-};
 
 #endif  // APP_STATE_H

@@ -15,64 +15,85 @@
 
 #include "app_state.h"
 
+// Define the constants for the current firmware.
+const char StateManager::SKETCH_NAME[] = "ALT GRAVITY";
+const char StateManager::SEMANTIC_VERSION[] = "V2.0.0BETA3";  // NOTE: This should match the version in the library.properties file.
+
+// Number of available save slots.
+const byte StateManager::MAX_SAVE_SLOTS = 10;
+const byte StateManager::TRANSIENT_SLOT = 10;
+
+// Define the minimum amount of time between EEPROM writes.
+const unsigned long StateManager::SAVE_DELAY_MS = 2000;
+
 // Calculate the starting address for EepromData, leaving space for metadata.
-static const int EEPROM_DATA_START_ADDR = sizeof(StateManager::Metadata);
+const int StateManager::METADATA_START_ADDR = 0;
+const int StateManager::EEPROM_DATA_START_ADDR = sizeof(StateManager::Metadata);
 
 StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 
 bool StateManager::initialize(AppState& app) {
     if (_isDataValid()) {
-        // Load data from the transient slot.
-        return loadData(app, MAX_SAVE_SLOTS);
-    } else {
-        // EEPROM does not contain save data for this firmware & version.
-        // Initialize eeprom and save default patter to all save slots.
-        reset(app);
-        _saveMetadata();
-        // MAX_SAVE_SLOTS slot is reserved for transient state.
-        for (int i = 0; i <= MAX_SAVE_SLOTS; i++) {
-            app.selected_save_slot = i;
-            _saveState(app, i);
-        }
+        // Load global settings.
+        _loadMetadata(app);
+        // Load app data from the transient slot.
+        _loadState(app, TRANSIENT_SLOT);
+        return true;
+    }
+    // EEPROM does not contain save data for this firmware & version.
+    else {
+        // Erase EEPROM and initialize state. Save default pattern to all save slots.
+        factoryReset(app);
         return false;
     }
 }
 
 bool StateManager::loadData(AppState& app, byte slot_index) {
-    if (slot_index >= MAX_SAVE_SLOTS) return false;
+    // Check if slot_index is within max range + 1 for transient.
+    if (slot_index >= MAX_SAVE_SLOTS + 1) return false;
 
+    // Load the state data from the specified EEPROM slot and update the app state save slot.
     _loadState(app, slot_index);
+    app.selected_save_slot = slot_index;
+    // Persist this change in the global metadata.
+    _saveMetadata(app);
 
     return true;
 }
 
+// Save app state to user specified save slot.
 void StateManager::saveData(const AppState& app) {
-    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
+    // Check if slot_index is within max range + 1 for transient.
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     _saveState(app, app.selected_save_slot);
+    _saveMetadata(app);
     _isDirty = false;
 }
 
+// Save transient state if it has changed and enough time has passed since last save.
 void StateManager::update(const AppState& app) {
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
-        // MAX_SAVE_SLOTS slot is reserved for transient state.
-        _saveState(app, MAX_SAVE_SLOTS);
+        _saveState(app, TRANSIENT_SLOT);
+        _saveMetadata(app);
         _isDirty = false;
     }
 }
 
 void StateManager::reset(AppState& app) {
-    app.tempo = Clock::DEFAULT_TEMPO;
-    app.encoder_reversed = false;
-    app.selected_param = 0;
-    app.selected_channel = 0;
-    app.selected_source = Clock::SOURCE_INTERNAL;
-    app.selected_pulse = Clock::PULSE_PPQN_24;
-    app.selected_save_slot = 0;
+    AppState default_app;
+    app.tempo = default_app.tempo;
+    app.selected_param = default_app.selected_param;
+    app.selected_channel = default_app.selected_channel;
+    app.selected_source = default_app.selected_source;
+    app.selected_pulse = default_app.selected_pulse;
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         app.channel[i].Init();
     }
+
+    // Load global settings from Metadata
+    _loadMetadata(app);
 
     _isDirty = false;
 }
@@ -82,28 +103,48 @@ void StateManager::markDirty() {
     _lastChangeTime = millis();
 }
 
+// Erases all data in the EEPROM by writing 0 to every address.
+void StateManager::factoryReset(AppState& app) {
+    noInterrupts();
+    for (unsigned int i = 0; i < EEPROM.length(); i++) {
+        EEPROM.write(i, 0);
+    }
+    // Initialize eeprom and save default patter to all save slots.
+    _saveMetadata(app);
+    reset(app);
+    for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
+        app.selected_save_slot = i;
+        _saveState(app, i);
+    }
+    _saveState(app, TRANSIENT_SLOT);
+    interrupts();
+}
+
 bool StateManager::_isDataValid() {
-    Metadata load_meta;
-    EEPROM.get(0, load_meta);
-    bool name_match = (strcmp(load_meta.sketch_name, SKETCH_NAME) == 0);
-    bool version_match = (load_meta.version == SKETCH_VERSION);
+    Metadata metadata;
+    EEPROM.get(METADATA_START_ADDR, metadata);
+    bool name_match = (strcmp(metadata.sketch_name, SKETCH_NAME) == 0);
+    bool version_match = (strcmp(metadata.version, SEMANTIC_VERSION) == 0);
     return name_match && version_match;
 }
 
 void StateManager::_saveState(const AppState& app, byte slot_index) {
-    if (app.selected_save_slot >= MAX_SAVE_SLOTS) return;
+    // Check if slot_index is within max range + 1 for transient.
+    if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     noInterrupts();
     static EepromData save_data;
 
     save_data.tempo = app.tempo;
-    save_data.encoder_reversed = app.encoder_reversed;
     save_data.selected_param = app.selected_param;
     save_data.selected_channel = app.selected_channel;
     save_data.selected_source = static_cast<byte>(app.selected_source);
     save_data.selected_pulse = static_cast<byte>(app.selected_pulse);
-    save_data.selected_save_slot = app.selected_save_slot;
 
+    // TODO: break this out into a separate function. Save State should be
+    // broken out into global / per-channel save methods. When saving via
+    // "update" only save state for the current channel since other channels
+    // will not have changed when saving user edits.
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         const auto& ch = app.channel[i];
         auto& save_ch = save_data.channel_data[i];
@@ -124,6 +165,9 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
 }
 
 void StateManager::_loadState(AppState& app, byte slot_index) {
+    // Check if slot_index is within max range + 1 for transient.
+    if (slot_index >= MAX_SAVE_SLOTS + 1) return;
+
     noInterrupts();
     static EepromData load_data;
     int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
@@ -131,12 +175,10 @@ void StateManager::_loadState(AppState& app, byte slot_index) {
 
     // Restore app state from loaded data.
     app.tempo = load_data.tempo;
-    app.encoder_reversed = load_data.encoder_reversed;
     app.selected_param = load_data.selected_param;
     app.selected_channel = load_data.selected_channel;
     app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
     app.selected_pulse = static_cast<Clock::Pulse>(load_data.selected_pulse);
-    app.selected_save_slot = slot_index;
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         auto& ch = app.channel[i];
@@ -155,11 +197,25 @@ void StateManager::_loadState(AppState& app, byte slot_index) {
     interrupts();
 }
 
-void StateManager::_saveMetadata() {
+void StateManager::_saveMetadata(const AppState& app) {
     noInterrupts();
     Metadata current_meta;
     strcpy(current_meta.sketch_name, SKETCH_NAME);
-    current_meta.version = SKETCH_VERSION;
-    EEPROM.put(0, current_meta);
+    strcpy(current_meta.version, SEMANTIC_VERSION);
+
+    // Global user settings
+    current_meta.selected_save_slot = app.selected_save_slot;
+    current_meta.encoder_reversed = app.encoder_reversed;
+
+    EEPROM.put(METADATA_START_ADDR, current_meta);
+    interrupts();
+}
+
+void StateManager::_loadMetadata(AppState& app) {
+    noInterrupts();
+    Metadata metadata;
+    EEPROM.get(METADATA_START_ADDR, metadata);
+    app.selected_save_slot = metadata.selected_save_slot;
+    app.encoder_reversed = metadata.encoder_reversed;
     interrupts();
 }

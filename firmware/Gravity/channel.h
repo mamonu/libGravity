@@ -13,7 +13,7 @@
 #define CHANNEL_H
 
 #include <Arduino.h>
-#include <gravity.h>
+#include <libGravity.h>
 
 #include "euclidean.h"
 
@@ -34,24 +34,28 @@ static const byte MOD_CHOICE_SIZE = 25;
 
 // Negative numbers are multipliers, positive are divisors.
 static const int CLOCK_MOD[MOD_CHOICE_SIZE] PROGMEM = {
-    // Multipliers
-    -24, -16, -12, -8, -6, -4, -3, -2,
-    // Internal Clock Unity
-    1,
     // Divisors
-    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 24, 32, 64, 128};
+    128, 64, 32, 24, 16, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2,
+    // Internal Clock Unity (quarter note)
+    1,
+    // Multipliers
+    -2, -3, -4, -6, -8, -12, -16, -24};
 
 // This represents the number of clock pulses for a 96 PPQN clock source
 // that match the above div/mult mods.
 static const int CLOCK_MOD_PULSES[MOD_CHOICE_SIZE] PROGMEM = {
-    // Multiplier Pulses (96 / X)
-    4, 6, 8, 12, 16, 24, 32, 48,
+    // Divisor Pulses (96 * X)
+    12288, 6144, 3072, 2304, 1536, 1152, 1056, 960, 864, 768, 672, 576, 480, 384, 288, 192,
     // Internal Clock Pulses
     96,
-    // Divisor Pulses (96 * X)
-    192, 288, 384, 480, 576, 672, 768, 864, 960, 1056, 1152, 1536, 2304, 3072, 6144, 12288};
+    // Multiplier Pulses (96 / X)
+    48, 32, 24, 16, 12, 8, 6, 4};
 
-static const byte DEFAULT_CLOCK_MOD_INDEX = 8;  // x1 or 96 PPQN.
+static const byte DEFAULT_CLOCK_MOD_INDEX = 16;  // x1 or 96 PPQN.
+
+static const byte PULSE_PPQN_24_CLOCK_MOD_INDEX = MOD_CHOICE_SIZE - 1;
+static const byte PULSE_PPQN_4_CLOCK_MOD_INDEX = MOD_CHOICE_SIZE - 6;
+static const byte PULSE_PPQN_1_CLOCK_MOD_INDEX = MOD_CHOICE_SIZE - 9;
 
 class Channel {
    public:
@@ -157,6 +161,8 @@ class Channel {
     byte getSteps(bool withCvMod = false) const { return withCvMod ? pattern.GetSteps() : base_euc_steps; }
     byte getHits(bool withCvMod = false) const { return withCvMod ? pattern.GetHits() : base_euc_hits; }
 
+    void toggleMute() { mute = !mute; }
+
     /**
      * @brief Processes a clock tick and determines if the output should be high or low.
      * Note: this method is called from an ISR and must be kept as simple as possible.
@@ -164,6 +170,12 @@ class Channel {
      * @param output The output object to be modified.
      */
     void processClockTick(uint32_t tick, DigitalOutput& output) {
+        // Mute check
+        if (mute) {
+            output.Low();
+            return;
+        }
+
         const uint16_t mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
 
         // Conditionally apply swing on down beats.
@@ -243,7 +255,7 @@ class Channel {
         int step_mod = _calculateMod(CV_DEST_EUC_STEPS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
         pattern.SetSteps(base_euc_steps + step_mod);
 
-        int hit_mod = _calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
+        int hit_mod = _calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0, pattern.GetSteps());
         pattern.SetHits(base_euc_hits + hit_mod);
 
         // After all cvmod values are updated, recalculate clock pulse modifiers.
@@ -293,6 +305,9 @@ class Channel {
 
     // Euclidean pattern
     Pattern pattern;
+
+    // Mute channel flag
+    bool mute;
 
     // Pre-calculated pulse values for ISR performance
     uint16_t _duty_pulses;
