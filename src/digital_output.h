@@ -13,10 +13,10 @@
 
 #include <Arduino.h>
 
-const byte DEFAULT_TRIGGER_DURATION_MS = 5;
-
 class DigitalOutput {
    public:
+    static const byte DEFAULT_TRIGGER_DURATION_MS = 5;
+
     /**
      * Initializes an CV Output paired object.
      *

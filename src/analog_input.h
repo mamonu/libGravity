@@ -13,7 +13,8 @@
 
 const int MAX_INPUT = (1 << 10) - 1;  // Max 10 bit analog read resolution.
 
-// estimated default calibration value
+// Estimated default calibration value
+// TODO: This should be set by metadata via calibration.
 const int CALIBRATED_LOW = -566;
 const int CALIBRATED_HIGH = 512;
 

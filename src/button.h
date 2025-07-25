@@ -4,7 +4,7 @@
  * @brief Wrapper class for interacting with trigger / gate inputs.
  * @version 0.1
  * @date 2025-04-20
-  *
+ *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
  */
@@ -13,14 +13,14 @@
 
 #include <Arduino.h>
 
-const uint8_t DEBOUNCE_MS = 10;
-const uint16_t LONG_PRESS_DURATION_MS = 750;
-
 class Button {
    protected:
     typedef void (*CallbackFunction)(void);
 
    public:
+    static const uint8_t DEBOUNCE_MS = 10;
+    static const uint16_t LONG_PRESS_DURATION_MS = 750;
+
     // Enum constants for active change in button state.
     enum ButtonChange {
         CHANGE_UNCHANGED,
@@ -84,7 +84,7 @@ class Button {
                 if (on_long_press_ != NULL) on_long_press_();
             }
         }
-        
+
         // Update variables for next loop
         last_press_ = (pressed || released) ? millis() : last_press_;
         old_read_ = read;
