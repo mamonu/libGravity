@@ -238,7 +238,7 @@ class Channel {
         }
 
         int dest_mod = _calculateMod(CV_DEST_MOD, cv1_val, cv2_val, -(MOD_CHOICE_SIZE / 2), MOD_CHOICE_SIZE / 2);
-        cvmod_clock_mod_index = constrain(base_clock_mod_index + dest_mod, 0, 100);
+        cvmod_clock_mod_index = constrain(base_clock_mod_index + dest_mod, 0, MOD_CHOICE_SIZE - 1);
 
         int prob_mod = _calculateMod(CV_DEST_PROB, cv1_val, cv2_val, -50, 50);
         cvmod_probability = constrain(base_probability + prob_mod, 0, 100);
