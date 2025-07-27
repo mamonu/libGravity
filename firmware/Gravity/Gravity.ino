@@ -91,19 +91,6 @@ void loop() {
     // Process change in state of inputs and outputs.
     gravity.Process();
 
-    // Read CVs and call the update function for each channel.
-    int cv1 = gravity.cv1.Read();
-    int cv2 = gravity.cv2.Read();
-
-    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
-        auto& ch = app.channel[i];
-        // Only apply CV to the channel when the current channel has cv
-        // mod configured.
-        if (ch.isCvModActive()) {
-            ch.applyCvMod(cv1, cv2);
-        }
-    }
-
     // Check for dirty state eligible to be saved.
     stateManager.update(app);
 
