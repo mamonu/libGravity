@@ -42,7 +42,7 @@
  *
  * CV1:
  *      External analog input used to provide modulation to any channel parameter.
- * 
+ *
  * CV2:
  *      External analog input used to provide modulation to any channel parameter.
  *
@@ -94,6 +94,8 @@ void loop() {
     // Read CVs and call the update function for each channel.
     int cv1 = gravity.cv1.Read();
     int cv2 = gravity.cv2.Read();
+
+    CheckRunReset(cv1, cv2);
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         auto& ch = app.channel[i];
@@ -169,6 +171,25 @@ void HandleExtClockTick() {
             gravity.clock.Tick();
     }
     app.refresh_screen = true;
+}
+
+void CheckRunReset(int cv1, int cv2) {
+    if (app.cv_run == 1 && cv1 > 255 && !gravity.clock.IsPaused()) {
+        gravity.clock.Stop();
+    } else if (app.cv_run == 1 && cv1 < 255 && gravity.clock.IsPaused()) {
+        gravity.clock.Start();
+    } else if (app.cv_run == 2 && cv2 > 255 && !gravity.clock.IsPaused()) {
+        gravity.clock.Stop();
+    } else if (app.cv_run == 2 && cv2 < 255 && gravity.clock.IsPaused()) {
+        gravity.clock.Start();
+    }
+
+    // Clock Reset
+    if (app.cv_reset == 1 && cv1 > 255) {
+        gravity.clock.Reset();
+    } else if (app.cv_reset == 2 && cv2 < 255) {
+        gravity.clock.Reset();
+    }
 }
 
 //
@@ -281,6 +302,14 @@ void editMainParameter(int val) {
             }
             gravity.clock.SetTempo(gravity.clock.Tempo() + val);
             app.tempo = gravity.clock.Tempo();
+            break;
+        case PARAM_MAIN_RUN:
+            updateSelection(app.selected_sub_param, val, 3);
+            app.cv_run = app.selected_sub_param;
+            break;
+        case PARAM_MAIN_RESET:
+            updateSelection(app.selected_sub_param, val, 3);
+            app.cv_reset = app.selected_sub_param;
             break;
         case PARAM_MAIN_SOURCE: {
             byte source = static_cast<int>(app.selected_source);

@@ -25,6 +25,8 @@ struct AppState {
     byte selected_channel = 0;    // 0=tempo, 1-6=output channel
     byte selected_swing = 0;
     byte selected_save_slot = 0;  // The currently active save slot.
+    byte cv_run = 0;
+    byte cv_reset = 0;
     Clock::Source selected_source = Clock::SOURCE_INTERNAL;
     Clock::Pulse selected_pulse = Clock::PULSE_PPQN_24;
     bool editing_param = false;
