@@ -82,7 +82,6 @@ class DigitalOutput {
     unsigned long last_triggered_;
     uint8_t trigger_duration_;
     uint8_t cv_pin_;
-    uint8_t led_pin_;
     bool on_;
 
     void update(uint8_t state) {

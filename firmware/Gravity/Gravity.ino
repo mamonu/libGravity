@@ -91,18 +91,15 @@ void loop() {
     // Process change in state of inputs and outputs.
     gravity.Process();
 
-    // Read CVs and call the update function for each channel.
-    int cv1 = gravity.cv1.Read();
-    int cv2 = gravity.cv2.Read();
-
-    CheckRunReset(cv1, cv2);
+    // Check if cv run or reset is active and read cv.
+    CheckRunReset(gravity.cv1, gravity.cv2);
 
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         auto& ch = app.channel[i];
         // Only apply CV to the channel when the current channel has cv
         // mod configured.
         if (ch.isCvModActive()) {
-            ch.applyCvMod(cv1, cv2);
+            ch.applyCvMod(gravity.cv1.Read(), gravity.cv2.Read());
         }
     }
 
@@ -173,21 +170,21 @@ void HandleExtClockTick() {
     app.refresh_screen = true;
 }
 
-void CheckRunReset(int cv1, int cv2) {
-    if (app.cv_run == 1 && cv1 > 255 && !gravity.clock.IsPaused()) {
-        gravity.clock.Stop();
-    } else if (app.cv_run == 1 && cv1 < 255 && gravity.clock.IsPaused()) {
-        gravity.clock.Start();
-    } else if (app.cv_run == 2 && cv2 > 255 && !gravity.clock.IsPaused()) {
-        gravity.clock.Stop();
-    } else if (app.cv_run == 2 && cv2 < 255 && gravity.clock.IsPaused()) {
-        gravity.clock.Start();
+void CheckRunReset(AnalogInput& cv1, AnalogInput& cv2) {
+    // Clock Run
+    if (app.cv_run == 1 || app.cv_run == 2) {
+        const int val = (app.cv_run == 1) ? cv1.Read() : cv2.Read();
+        if (val > AnalogInput::GATE_THRESHOLD && gravity.clock.IsPaused()) {
+            gravity.clock.Start();
+        } else if (val < AnalogInput::GATE_THRESHOLD && !gravity.clock.IsPaused()) {
+            gravity.clock.Stop();
+            ResetOutputs();
+        }
     }
 
     // Clock Reset
-    if (app.cv_reset == 1 && cv1 > 255) {
-        gravity.clock.Reset();
-    } else if (app.cv_reset == 2 && cv2 < 255) {
+    if ((app.cv_reset == 1 && cv1.IsRisingEdge(AnalogInput::GATE_THRESHOLD)) ||
+        (app.cv_reset == 2 && cv2.IsRisingEdge(AnalogInput::GATE_THRESHOLD))) {
         gravity.clock.Reset();
     }
 }
