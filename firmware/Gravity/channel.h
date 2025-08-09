@@ -86,26 +86,21 @@ class Channel {
 
     void setClockMod(int index) {
         base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
-        _recalculatePulses();
     }
 
     void setProbability(int prob) {
         base_probability = constrain(prob, 0, 100);
-        _recalculatePulses();
     }
 
     void setDutyCycle(int duty) {
         base_duty_cycle = constrain(duty, 1, 99);
-        _recalculatePulses();
     }
 
     void setOffset(int off) {
         base_offset = constrain(off, 0, 99);
-        _recalculatePulses();
     }
     void setSwing(int val) {
         base_swing = constrain(val, 50, 95);
-        _recalculatePulses();
     }
 
     // Euclidean
@@ -188,6 +183,8 @@ class Channel {
             output.Low();
             return;
         }
+
+        if (isCvModActive()) _recalculatePulses();
 
         int cv1 = gravity.cv1.Read();
         int cv2 = gravity.cv2.Read();
