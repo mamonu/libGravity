@@ -47,7 +47,7 @@ const uint8_t TEXT_FONT[437] U8G2_FONT_SECTION("velvetscreen") PROGMEM =
  * https://stncrn.github.io/u8g2-unifont-helper/
  * "%/0123456789ABCDEFILNORSTUVXx"
  */
-const uint8_t LARGE_FONT[766] U8G2_FONT_SECTION("stk-l") =
+const uint8_t LARGE_FONT[766] U8G2_FONT_SECTION("stk-l") PROGMEM =
     "\35\0\4\4\4\5\3\1\6\20\30\0\0\27\0\0\0\1\77\0\0\2\341%'\17;\226\261\245FL"
     "\64B\214\30\22\223\220)Bj\10Q\232\214\42R\206\310\210\21d\304\30\32a\254\304\270!\0/\14"
     "\272\272\275\311H\321g\343\306\1\60\37|\373\35CJT\20:fW\207\320\210\60\42\304\204\30D\247"
@@ -104,7 +104,6 @@ enum ParamsMainPage : uint8_t {
     PARAM_MAIN_ENCODER_DIR,
     PARAM_MAIN_SAVE_DATA,
     PARAM_MAIN_LOAD_DATA,
-    PARAM_MAIN_RESET_STATE,
     PARAM_MAIN_FACTORY_RESET,
     PARAM_MAIN_LAST,
 };
@@ -297,15 +296,6 @@ void DisplayMainPage() {
                               : F("LOAD FROM SLOT");
             }
             break;
-        case PARAM_MAIN_RESET_STATE:
-            if (app.selected_sub_param == 0) {
-                mainText = F("RST");
-                subText = F("RESET ALL");
-            } else {
-                mainText = F("x");
-                subText = F("BACK TO MAIN");
-            }
-            break;
         case PARAM_MAIN_FACTORY_RESET:
             if (app.selected_sub_param == 0) {
                 mainText = F("DEL");
@@ -321,7 +311,7 @@ void DisplayMainPage() {
     drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"), F("LOAD"), F("RESET"), F("ERASE")};
+    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"), F("LOAD"), F("ERASE")};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
