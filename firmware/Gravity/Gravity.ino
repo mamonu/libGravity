@@ -220,12 +220,6 @@ void HandleEncoderPressed() {
                     InitGravity(app);
                 }
             }
-            if (app.selected_param == PARAM_MAIN_RESET_STATE) {
-                if (app.selected_sub_param == 0) {  // Reset
-                    stateManager.reset(app);
-                    InitGravity(app);
-                }
-            }
             if (app.selected_param == PARAM_MAIN_FACTORY_RESET) {
                 if (app.selected_sub_param == 0) {  // Erase
                     // Show bootsplash during slow erase operation.
@@ -304,9 +298,6 @@ void editMainParameter(int val) {
         case PARAM_MAIN_SAVE_DATA:
         case PARAM_MAIN_LOAD_DATA:
             updateSelection(app.selected_sub_param, val, StateManager::MAX_SAVE_SLOTS + 1);
-            break;
-        case PARAM_MAIN_RESET_STATE:
-            updateSelection(app.selected_sub_param, val, 2);
             break;
         case PARAM_MAIN_FACTORY_RESET:
             updateSelection(app.selected_sub_param, val, 2);
