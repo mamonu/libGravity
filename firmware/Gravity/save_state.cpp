@@ -148,13 +148,13 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
         const auto& ch = app.channel[i];
         auto& save_ch = save_data.channel_data[i];
-        save_ch.base_clock_mod_index = ch.getClockModIndex(false);
-        save_ch.base_probability = ch.getProbability(false);
-        save_ch.base_duty_cycle = ch.getDutyCycle(false);
-        save_ch.base_offset = ch.getOffset(false);
-        save_ch.base_swing = ch.getSwing(false);
-        save_ch.base_euc_steps = ch.getSteps(false);
-        save_ch.base_euc_hits = ch.getHits(false);
+        save_ch.base_clock_mod_index = ch.getClockModIndex();
+        save_ch.base_probability = ch.getProbability();
+        save_ch.base_duty_cycle = ch.getDutyCycle();
+        save_ch.base_offset = ch.getOffset();
+        save_ch.base_swing = ch.getSwing();
+        save_ch.base_euc_steps = ch.getSteps();
+        save_ch.base_euc_hits = ch.getHits();
         save_ch.cv1_dest = static_cast<byte>(ch.getCv1Dest());
         save_ch.cv2_dest = static_cast<byte>(ch.getCv2Dest());
     }
