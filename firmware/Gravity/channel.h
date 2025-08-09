@@ -111,8 +111,14 @@ class Channel {
         pattern.SetHits(val);
     }
 
-    void setCv1Dest(CvDestination dest) { cv1_dest = dest; }
-    void setCv2Dest(CvDestination dest) { cv2_dest = dest; }
+    void setCv1Dest(CvDestination dest) {
+        cv1_dest = dest;
+        _recalculatePulses();
+    }
+    void setCv2Dest(CvDestination dest) {
+        cv2_dest = dest;
+        _recalculatePulses();
+    }
     CvDestination getCv1Dest() const { return cv1_dest; }
     CvDestination getCv2Dest() const { return cv2_dest; }
 
