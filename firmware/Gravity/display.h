@@ -104,6 +104,7 @@ enum ParamsMainPage : uint8_t {
     PARAM_MAIN_RESET,
     PARAM_MAIN_PULSE,
     PARAM_MAIN_ENCODER_DIR,
+    PARAM_MAIN_ROTATE_DISP,
     PARAM_MAIN_SAVE_DATA,
     PARAM_MAIN_LOAD_DATA,
     PARAM_MAIN_FACTORY_RESET,
@@ -256,9 +257,6 @@ void DisplayMainPage() {
                 case Clock::SOURCE_EXTERNAL_PPQN_4:
                     subText = F("4 PPQN");
                     break;
-                case Clock::SOURCE_EXTERNAL_PPQN_2:
-                    subText = F("2 PPQN");
-                    break;
                 case Clock::SOURCE_EXTERNAL_PPQN_1:
                     subText = F("1 PPQN");
                     break;
@@ -316,6 +314,10 @@ void DisplayMainPage() {
             mainText = F("DIR");
             subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("REVERSED");
             break;
+        case PARAM_MAIN_ROTATE_DISP:
+            mainText = F("ROT");
+            subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("FLIPPED");
+            break;
         case PARAM_MAIN_SAVE_DATA:
         case PARAM_MAIN_LOAD_DATA:
             if (app.selected_sub_param == StateManager::MAX_SAVE_SLOTS) {
@@ -347,7 +349,7 @@ void DisplayMainPage() {
     drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("CLK RUN"), F("CLK RESET"), F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"), F("LOAD"), F("ERASE")};
+    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("CLK RUN"), F("CLK RESET"), F("PULSE OUT"), F("ENCODER DIR"), F("ROTATE DISP"), F("SAVE"), F("LOAD"), F("ERASE")};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
@@ -369,7 +371,7 @@ void DisplayChannelPage() {
 
     switch (app.selected_param) {
         case PARAM_CH_MOD: {
-            int mod_value = withCvMod ? ch.getClockModWithMod(cv1, cv2): ch.getClockMod();
+            int mod_value = withCvMod ? ch.getClockModWithMod(cv1, cv2) : ch.getClockMod();
             if (mod_value > 1) {
                 mainText = F("/");
                 mainText += String(mod_value);
@@ -494,24 +496,6 @@ void UpdateDisplay() {
         }
         // Global channel select UI.
         DisplaySelectedChannel();
-    } while (gravity.display.nextPage());
-}
-
-void Bootsplash() {
-    gravity.display.firstPage();
-    do {
-        int textWidth;
-        String loadingText = F("LOADING....");
-        gravity.display.setFont(TEXT_FONT);
-
-        textWidth = gravity.display.getStrWidth(StateManager::SKETCH_NAME);
-        gravity.display.drawStr(16 + (textWidth / 2), 20, StateManager::SKETCH_NAME);
-
-        textWidth = gravity.display.getStrWidth(StateManager::SEMANTIC_VERSION);
-        gravity.display.drawStr(16 + (textWidth / 2), 32, StateManager::SEMANTIC_VERSION);
-
-        textWidth = gravity.display.getStrWidth(loadingText.c_str());
-        gravity.display.drawStr(26 + (textWidth / 2), 44, loadingText.c_str());
     } while (gravity.display.nextPage());
 }
 

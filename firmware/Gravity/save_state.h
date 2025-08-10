@@ -52,11 +52,12 @@ class StateManager {
 
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
-        char sketch_name[16];
-        char version[16];
+        char sketch_name[12];
+        char version[5];
         // Additional global/hardware settings
         byte selected_save_slot;
         bool encoder_reversed;
+        bool rotate_display;
     };
     struct ChannelState {
         byte base_clock_mod_index;
