@@ -42,7 +42,7 @@
  *
  * CV1:
  *      External analog input used to provide modulation to any channel parameter.
- * 
+ *
  * CV2:
  *      External analog input used to provide modulation to any channel parameter.
  *
@@ -90,6 +90,9 @@ void setup() {
 void loop() {
     // Process change in state of inputs and outputs.
     gravity.Process();
+
+    // Check if cv run or reset is active and read cv.
+    CheckRunReset(gravity.cv1, gravity.cv2);
 
     // Check for dirty state eligible to be saved.
     stateManager.update(app);
@@ -156,6 +159,27 @@ void HandleExtClockTick() {
             gravity.clock.Tick();
     }
     app.refresh_screen = true;
+}
+
+void CheckRunReset(AnalogInput& cv1, AnalogInput& cv2) {
+    // Clock Run
+    if (app.cv_run == 1 || app.cv_run == 2) {
+        const int val = (app.cv_run == 1) ? cv1.Read() : cv2.Read();
+        if (val > AnalogInput::GATE_THRESHOLD && gravity.clock.IsPaused()) {
+            gravity.clock.Start();
+            app.refresh_screen = true;
+        } else if (val < AnalogInput::GATE_THRESHOLD && !gravity.clock.IsPaused()) {
+            gravity.clock.Stop();
+            ResetOutputs();
+            app.refresh_screen = true;
+        }
+    }
+
+    // Clock Reset
+    if ((app.cv_reset == 1 && cv1.IsRisingEdge(AnalogInput::GATE_THRESHOLD)) ||
+        (app.cv_reset == 2 && cv2.IsRisingEdge(AnalogInput::GATE_THRESHOLD))) {
+        gravity.clock.Reset();
+    }
 }
 
 //
@@ -263,6 +287,14 @@ void editMainParameter(int val) {
             gravity.clock.SetTempo(gravity.clock.Tempo() + val);
             app.tempo = gravity.clock.Tempo();
             break;
+        case PARAM_MAIN_RUN:
+            updateSelection(app.selected_sub_param, val, 3);
+            app.cv_run = app.selected_sub_param;
+            break;
+        case PARAM_MAIN_RESET:
+            updateSelection(app.selected_sub_param, val, 3);
+            app.cv_reset = app.selected_sub_param;
+            break;
         case PARAM_MAIN_SOURCE: {
             byte source = static_cast<int>(app.selected_source);
             updateSelection(source, val, Clock::SOURCE_LAST);
@@ -279,6 +311,7 @@ void editMainParameter(int val) {
             }
             break;
         }
+        // These changes are applied upon encoder button press.
         case PARAM_MAIN_ENCODER_DIR:
             updateSelection(app.selected_sub_param, val, 2);
             break;

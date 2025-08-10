@@ -19,6 +19,8 @@ const int CALIBRATED_HIGH = 512;
 
 class AnalogInput {
    public:
+    static const int GATE_THRESHOLD = 0;
+
     AnalogInput() {}
     ~AnalogInput() {}
 
@@ -73,6 +75,18 @@ class AnalogInput {
      *
      */
     inline float Voltage() { return ((read_ / 512.0) * 5.0); }
+
+    /**
+     * Checks for a rising edge transition across a threshold.
+     *
+     * @param threshold The value that the input must cross.
+     * @return True if the value just crossed the threshold from below, false otherwise.
+     */
+    inline bool IsRisingEdge(int16_t threshold) const {
+        bool was_high = old_read_ > threshold;
+        bool is_high = read_ > threshold;
+        return is_high && !was_high;
+    }
 
    private:
     uint8_t pin_;
