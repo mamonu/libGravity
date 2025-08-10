@@ -256,6 +256,12 @@ void DisplayMainPage() {
                 case Clock::SOURCE_EXTERNAL_PPQN_4:
                     subText = F("4 PPQN");
                     break;
+                case Clock::SOURCE_EXTERNAL_PPQN_2:
+                    subText = F("2 PPQN");
+                    break;
+                case Clock::SOURCE_EXTERNAL_PPQN_1:
+                    subText = F("1 PPQN");
+                    break;
                 case Clock::SOURCE_EXTERNAL_MIDI:
                     subText = F("MIDI");
                     break;

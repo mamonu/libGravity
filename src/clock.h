@@ -35,6 +35,8 @@ class Clock {
         SOURCE_INTERNAL,
         SOURCE_EXTERNAL_PPQN_24,
         SOURCE_EXTERNAL_PPQN_4,
+        SOURCE_EXTERNAL_PPQN_2,
+        SOURCE_EXTERNAL_PPQN_1,
         SOURCE_EXTERNAL_MIDI,
         SOURCE_LAST,
     };
@@ -95,6 +97,14 @@ class Clock {
             case SOURCE_EXTERNAL_PPQN_4:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
                 uClock.setInputPPQN(uClock.PPQN_4);
+                break;
+            case SOURCE_EXTERNAL_PPQN_2:
+                uClock.setClockMode(uClock.EXTERNAL_CLOCK);
+                uClock.setInputPPQN(uClock.PPQN_2);
+                break;
+            case SOURCE_EXTERNAL_PPQN_1:
+                uClock.setClockMode(uClock.EXTERNAL_CLOCK);
+                uClock.setInputPPQN(uClock.PPQN_1);
                 break;
             case SOURCE_EXTERNAL_MIDI:
                 uClock.setClockMode(uClock.EXTERNAL_CLOCK);
