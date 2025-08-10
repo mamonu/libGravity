@@ -86,6 +86,7 @@ class Channel {
 
     void setClockMod(int index) {
         base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
+        _recalculatePulses();
     }
 
     void setProbability(int prob) {
@@ -94,13 +95,16 @@ class Channel {
 
     void setDutyCycle(int duty) {
         base_duty_cycle = constrain(duty, 1, 99);
+        _recalculatePulses();
     }
 
     void setOffset(int off) {
         base_offset = constrain(off, 0, 99);
+        _recalculatePulses();
     }
     void setSwing(int val) {
         base_swing = constrain(val, 50, 95);
+        _recalculatePulses();
     }
 
     // Euclidean
