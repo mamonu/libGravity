@@ -17,7 +17,7 @@
 
 // Define the constants for the current firmware.
 const char StateManager::SKETCH_NAME[] = "ALT GRAVITY";
-const char StateManager::SEMANTIC_VERSION[] = "V2.0.0BETA4";  // NOTE: This should match the version in the library.properties file.
+const char StateManager::SEMANTIC_VERSION[] = "2.0.1";  // NOTE: This should match the version in the library.properties file.
 
 // Number of available save slots.
 const byte StateManager::MAX_SAVE_SLOTS = 10;
@@ -212,6 +212,7 @@ void StateManager::_saveMetadata(const AppState& app) {
     // Global user settings
     current_meta.selected_save_slot = app.selected_save_slot;
     current_meta.encoder_reversed = app.encoder_reversed;
+    current_meta.rotate_display = app.rotate_display;
 
     EEPROM.put(METADATA_START_ADDR, current_meta);
     interrupts();

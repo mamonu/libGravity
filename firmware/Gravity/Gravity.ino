@@ -66,10 +66,6 @@ void setup() {
     // Start Gravity.
     gravity.Init();
 
-    // Show bootsplash when initializing firmware.
-    Bootsplash();
-    delay(2000);
-
     // Initialize the state manager. This will load settings from EEPROM
     stateManager.initialize(app);
     InitGravity(app);
@@ -237,8 +233,6 @@ void HandleEncoderPressed() {
                     break;
                 case PARAM_MAIN_FACTORY_RESET:
                     if (app.selected_sub_param == 0) {  // Erase
-                        // Show bootsplash during slow erase operation.
-                        Bootsplash();
                         stateManager.factoryReset(app);
                         InitGravity(app);
                     }
@@ -387,6 +381,7 @@ void InitGravity(AppState& app) {
     gravity.clock.SetTempo(app.tempo);
     gravity.clock.SetSource(app.selected_source);
     gravity.encoder.SetReverseDirection(app.encoder_reversed);
+    gravity.display.setFlipMode(app.rotate_display ? 1 : 0);
 }
 
 void ResetOutputs() {
