@@ -262,8 +262,8 @@ void DisplayMainPage() {
             }
             break;
         case PARAM_MAIN_RUN:
-            mainText = F("RUN SRC");
-            switch (app.selected_sub_param) {
+            mainText = F("RUN");
+            switch (app.cv_run) {
                 case 0:
                     subText = F("NONE");
                     break;
@@ -276,8 +276,8 @@ void DisplayMainPage() {
             }
             break;
         case PARAM_MAIN_RESET:
-            mainText = F("RST SRC");
-            switch (app.selected_sub_param) {
+            mainText = F("RST");
+            switch (app.cv_reset) {
                 case 0:
                     subText = F("NONE");
                     break;

@@ -94,15 +94,6 @@ void loop() {
     // Check if cv run or reset is active and read cv.
     CheckRunReset(gravity.cv1, gravity.cv2);
 
-    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
-        auto& ch = app.channel[i];
-        // Only apply CV to the channel when the current channel has cv
-        // mod configured.
-        if (ch.isCvModActive()) {
-            ch.applyCvMod(gravity.cv1.Read(), gravity.cv2.Read());
-        }
-    }
-
     // Check for dirty state eligible to be saved.
     stateManager.update(app);
 
@@ -176,9 +167,11 @@ void CheckRunReset(AnalogInput& cv1, AnalogInput& cv2) {
         const int val = (app.cv_run == 1) ? cv1.Read() : cv2.Read();
         if (val > AnalogInput::GATE_THRESHOLD && gravity.clock.IsPaused()) {
             gravity.clock.Start();
+            app.refresh_screen = true;
         } else if (val < AnalogInput::GATE_THRESHOLD && !gravity.clock.IsPaused()) {
             gravity.clock.Stop();
             ResetOutputs();
+            app.refresh_screen = true;
         }
     }
 
@@ -318,6 +311,7 @@ void editMainParameter(int val) {
             }
             break;
         }
+        // These changes are applied upon encoder button press.
         case PARAM_MAIN_ENCODER_DIR:
             updateSelection(app.selected_sub_param, val, 2);
             break;
