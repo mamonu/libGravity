@@ -104,6 +104,7 @@ enum ParamsMainPage : uint8_t {
     PARAM_MAIN_RESET,
     PARAM_MAIN_PULSE,
     PARAM_MAIN_ENCODER_DIR,
+    PARAM_MAIN_ROTATE_DISP,
     PARAM_MAIN_SAVE_DATA,
     PARAM_MAIN_LOAD_DATA,
     PARAM_MAIN_FACTORY_RESET,
@@ -123,6 +124,22 @@ enum ParamsChannelPage : uint8_t {
     PARAM_CH_CV2_DEST,
     PARAM_CH_LAST,
 };
+
+// Common/resused strings stored as const to save on flash memory.
+const char* const STR_24_PPQN = "24 PPQN";
+const char* const STR_4_PPQN = "4 PPQN";
+const char* const STR_1_PPQN = "1 PPQN";
+const char* const STR_CV_1 = "CV 1";
+const char* const STR_CV_2 = "CV 2";
+const char* const STR_NONE = "NONE";
+const char* const STR_EXT = "EXT";
+const char* const STR_X = "X";
+const char* const STR_DEFAULT = "DEFAULT";
+const char* const STR_REVERSED = "REVERSED";
+const char* const STR_FLIPPED = "FLIPPED";
+const char* const STR_BACK = "BACK TO MAIN";
+const char* const STR_EUC_STEPS = "EUCLID STEPS";
+const char* const STR_EUC_HITS = "EUCLID HITS";
 
 // Helper function to draw centered text
 void drawCenteredText(const char* text, int y, const uint8_t* font) {
@@ -237,30 +254,27 @@ void DisplayMainPage() {
         case PARAM_MAIN_TEMPO:
             // Serial MIDI is too unstable to display bpm in real time.
             if (app.selected_source == Clock::SOURCE_EXTERNAL_MIDI) {
-                mainText = F("EXT");
+                mainText = STR_EXT;
             } else {
                 mainText = String(gravity.clock.Tempo());
             }
             subText = F("BPM");
             break;
         case PARAM_MAIN_SOURCE:
-            mainText = F("EXT");
+            mainText = STR_EXT;
             switch (app.selected_source) {
                 case Clock::SOURCE_INTERNAL:
                     mainText = F("INT");
                     subText = F("CLOCK");
                     break;
                 case Clock::SOURCE_EXTERNAL_PPQN_24:
-                    subText = F("24 PPQN");
+                    subText = STR_24_PPQN;
                     break;
                 case Clock::SOURCE_EXTERNAL_PPQN_4:
-                    subText = F("4 PPQN");
-                    break;
-                case Clock::SOURCE_EXTERNAL_PPQN_2:
-                    subText = F("2 PPQN");
+                    subText = STR_4_PPQN;
                     break;
                 case Clock::SOURCE_EXTERNAL_PPQN_1:
-                    subText = F("1 PPQN");
+                    subText = STR_1_PPQN;
                     break;
                 case Clock::SOURCE_EXTERNAL_MIDI:
                     subText = F("MIDI");
@@ -271,13 +285,13 @@ void DisplayMainPage() {
             mainText = F("RUN");
             switch (app.cv_run) {
                 case 0:
-                    subText = F("NONE");
+                    subText = STR_NONE;
                     break;
                 case 1:
-                    subText = F("CV 1");
+                    subText = STR_CV_1;
                     break;
                 case 2:
-                    subText = F("CV 2");
+                    subText = STR_CV_2;
                     break;
             }
             break;
@@ -285,13 +299,13 @@ void DisplayMainPage() {
             mainText = F("RST");
             switch (app.cv_reset) {
                 case 0:
-                    subText = F("NONE");
+                    subText = STR_NONE;
                     break;
                 case 1:
-                    subText = F("CV 1");
+                    subText = STR_CV_1;
                     break;
                 case 2:
-                    subText = F("CV 2");
+                    subText = STR_CV_2;
                     break;
             }
             break;
@@ -302,25 +316,29 @@ void DisplayMainPage() {
                     subText = F("PULSE OFF");
                     break;
                 case Clock::PULSE_PPQN_24:
-                    subText = F("24 PPQN PULSE");
+                    subText = STR_24_PPQN;
                     break;
                 case Clock::PULSE_PPQN_4:
-                    subText = F("4 PPQN PULSE");
+                    subText = STR_4_PPQN;
                     break;
                 case Clock::PULSE_PPQN_1:
-                    subText = F("1 PPQN PULSE");
+                    subText = STR_1_PPQN;
                     break;
             }
             break;
         case PARAM_MAIN_ENCODER_DIR:
             mainText = F("DIR");
-            subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("REVERSED");
+            subText = app.selected_sub_param == 0 ? STR_DEFAULT : STR_REVERSED;
+            break;
+        case PARAM_MAIN_ROTATE_DISP:
+            mainText = F("ROT");
+            subText = app.selected_sub_param == 0 ? STR_DEFAULT : STR_FLIPPED;
             break;
         case PARAM_MAIN_SAVE_DATA:
         case PARAM_MAIN_LOAD_DATA:
             if (app.selected_sub_param == StateManager::MAX_SAVE_SLOTS) {
-                mainText = F("x");
-                subText = F("BACK TO MAIN");
+                mainText = STR_X;
+                subText = STR_BACK;
             } else {
                 // Indicate currently active slot.
                 if (app.selected_sub_param == app.selected_save_slot) {
@@ -337,8 +355,8 @@ void DisplayMainPage() {
                 mainText = F("DEL");
                 subText = F("FACTORY RESET");
             } else {
-                mainText = F("x");
-                subText = F("BACK TO MAIN");
+                mainText = STR_X;
+                subText = STR_BACK;
             }
             break;
     }
@@ -347,7 +365,7 @@ void DisplayMainPage() {
     drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
     // Draw Main Page menu items
-    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("CLK RUN"), F("CLK RESET"), F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"), F("LOAD"), F("ERASE")};
+    String menu_items[PARAM_MAIN_LAST] = {F("TEMPO"), F("SOURCE"), F("CLK RUN"), F("CLK RESET"), F("PULSE OUT"), F("ENCODER DIR"), F("ROTATE DISP"), F("SAVE"), F("LOAD"), F("ERASE")};
     drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 
@@ -397,16 +415,16 @@ void DisplayChannelPage() {
             ch.getSwing() == 50
                 ? mainText = F("OFF")
                 : mainText = String(withCvMod ? ch.getSwingWithMod(cv1, cv2) : ch.getSwing()) + F("%");
-            subText = "DOWN BEAT";
+            subText = F("DOWN BEAT");
             swingDivisionMark();
             break;
         case PARAM_CH_EUC_STEPS:
             mainText = String(withCvMod ? ch.getStepsWithMod(cv1, cv2) : ch.getSteps());
-            subText = "EUCLID STEPS";
+            subText = STR_EUC_STEPS;
             break;
         case PARAM_CH_EUC_HITS:
             mainText = String(withCvMod ? ch.getHitsWithMod(cv1, cv2) : ch.getHits());
-            subText = "EUCLID HITS";
+            subText = STR_EUC_HITS;
             break;
         case PARAM_CH_CV1_DEST:
         case PARAM_CH_CV2_DEST: {
@@ -431,10 +449,10 @@ void DisplayChannelPage() {
                     subText = F("SWING");
                     break;
                 case CV_DEST_EUC_STEPS:
-                    subText = F("EUCLID STEPS");
+                    subText = STR_EUC_STEPS;
                     break;
                 case CV_DEST_EUC_HITS:
-                    subText = F("EUCLID HITS");
+                    subText = STR_EUC_HITS;
                     break;
             }
             break;

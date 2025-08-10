@@ -213,31 +213,36 @@ void HandleEncoderPressed() {
     // Check if leaving editing mode should apply a selection.
     if (app.editing_param) {
         if (app.selected_channel == 0) {  // main page
-            // TODO: rewrite as switch
-            if (app.selected_param == PARAM_MAIN_ENCODER_DIR) {
-                app.encoder_reversed = app.selected_sub_param == 1;
-                gravity.encoder.SetReverseDirection(app.encoder_reversed);
-            }
-            if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
-                if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
-                    app.selected_save_slot = app.selected_sub_param;
-                    stateManager.saveData(app);
-                }
-            }
-            if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
-                if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
-                    app.selected_save_slot = app.selected_sub_param;
-                    stateManager.loadData(app, app.selected_save_slot);
-                    InitGravity(app);
-                }
-            }
-            if (app.selected_param == PARAM_MAIN_FACTORY_RESET) {
-                if (app.selected_sub_param == 0) {  // Erase
-                    // Show bootsplash during slow erase operation.
-                    Bootsplash();
-                    stateManager.factoryReset(app);
-                    InitGravity(app);
-                }
+            switch (app.selected_param) {
+                case PARAM_MAIN_ENCODER_DIR:
+                    app.encoder_reversed = app.selected_sub_param == 1;
+                    gravity.encoder.SetReverseDirection(app.encoder_reversed);
+                    break;
+                case PARAM_MAIN_ROTATE_DISP:
+                    app.rotate_display = app.selected_sub_param == 1;
+                    gravity.display.setFlipMode(app.rotate_display ? 1 : 0);
+                    break;
+                case PARAM_MAIN_SAVE_DATA:
+                    if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
+                        app.selected_save_slot = app.selected_sub_param;
+                        stateManager.saveData(app);
+                    }
+                    break;
+                case PARAM_MAIN_LOAD_DATA:
+                    if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
+                        app.selected_save_slot = app.selected_sub_param;
+                        stateManager.loadData(app, app.selected_save_slot);
+                        InitGravity(app);
+                    }
+                    break;
+                case PARAM_MAIN_FACTORY_RESET:
+                    if (app.selected_sub_param == 0) {  // Erase
+                        // Show bootsplash during slow erase operation.
+                        Bootsplash();
+                        stateManager.factoryReset(app);
+                        InitGravity(app);
+                    }
+                    break;
             }
         }
         // Only mark dirty and reset selected_sub_param when leaving editing mode.
@@ -313,6 +318,7 @@ void editMainParameter(int val) {
         }
         // These changes are applied upon encoder button press.
         case PARAM_MAIN_ENCODER_DIR:
+        case PARAM_MAIN_ROTATE_DISP:
             updateSelection(app.selected_sub_param, val, 2);
             break;
         case PARAM_MAIN_SAVE_DATA:
