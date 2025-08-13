@@ -1,6 +1,8 @@
 # Sitka Instruments Gravity Firmware Abstraction
 
-This library helps make writing firmware easier by abstracting away the initialization and peripheral interactions. Now your firmware code can just focus on the logic and behavior of the app, and keep the low level code neatly tucked away in this library.
+This library helps make writing firmware for the [Sitka Instruments Gravity](https://sitkainstruments.com/gravity/) eurorack module easier by abstracting away the initialization and peripheral interactions. Now your firmware code can just focus on the logic and behavior of the app, and keep the low level code neatly tucked away in this library.
+
+The latest releases of all Sitka Instruments Gravity firmware builds can be found on the [Updater](https://sitkainstruments.com/gravity/updater/) page. You can use this page to flash the latest build directly to the Arduino Nano on the back of your module.
 
 ## Installation
 
@@ -17,13 +19,14 @@ Common directory locations:
 * [uClock](https://github.com/midilab/uClock) [MIT] - (Included with this repo) Handle clock tempo, external clock input, and internal clock timer handler.
 * [RotateEncoder](https://github.com/mathertel/RotaryEncoder) [BSD] - Library for reading and interpreting encoder rotation.
 * [U8g2](https://github.com/olikraus/u8g2/) [MIT] - Graphics helper library.
+* [NeoHWSerial](https://github.com/SlashDevin/NeoHWSerial) [GPL] - Hardware serial library with attachInterrupt.
 
 ## Example
 
 Here's a trivial example showing some of the ways to interact with the library. This script rotates the active clock channel according to the set tempo. The encoder can change the temo or rotation direction. The play/pause button will toggle the clock activity on or off. The shift button will freeze the clock from advancing the channel rotation.
 
 ```cpp
-#include "gravity.h"
+#include "libGravity.h"
 
 byte idx = 0;
 bool reversed = false;
@@ -75,11 +78,11 @@ void HandlePlayPressed() {
     }
 }
 
-void HandleRotate(Direction dir, int val) {
+void HandleRotate(int val) {
     if (selected_param == 0) {
         gravity.clock.SetTempo(gravity.clock.Tempo() + val);
     } else if (selected_param == 1) {
-        reversed = (dir == DIRECTION_DECREMENT);
+        reversed = (val < 0);
     }
 }
 
@@ -110,6 +113,14 @@ void UpdateDisplay() {
     gravity.display.display();
 }
 ```
+
+**Builing New Firmware Using libGravity**
+
+When starting a new firmware sketch you can use the [skeleton](examples/skeleton/skeleton.ino) app as a place to start.
+
+**Building New Firmware from scratch**
+
+If you do not want to use the libGravity hardware abstraction library and want to roll your own vanilla firmware, take a look at the [peripherials.h](src/peripherials.h) file for the pinout definitions used by the module.
 
 ### Build for release
 

@@ -1,4 +1,4 @@
-#include "gravity.h"
+#include "libGravity.h"
 
 byte idx = 0;
 bool reversed = false;
@@ -33,28 +33,28 @@ void IntClock(uint32_t tick) {
     if (tick % 12 == 0  && ! freeze) {
         gravity.outputs[idx].Low();
         if (reversed) {
-            idx = (idx == 0) ? OUTPUT_COUNT - 1 : idx - 1;
+            idx = (idx == 0) ? Gravity::OUTPUT_COUNT - 1 : idx - 1;
         } else {
-            idx = (idx + 1) % OUTPUT_COUNT;
+            idx = (idx + 1) % Gravity::OUTPUT_COUNT;
         }
         gravity.outputs[idx].High();
     }
 }
 
 void HandlePlayPressed() {
-    gravity.clock.Pause();
+    gravity.clock.Stop();
     if (gravity.clock.IsPaused()) {
-        for (int i = 0; i < OUTPUT_COUNT; i++) {
+        for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
             gravity.outputs[i].Low();
         }
     }
 }
 
-void HandleRotate(Direction dir, int val) {
+void HandleRotate(int val) {
     if (selected_param == 0) {
         gravity.clock.SetTempo(gravity.clock.Tempo() + val);
     } else if (selected_param == 1) {
-        reversed = (dir == DIRECTION_DECREMENT);
+        reversed = (val < 0);
     }
 }
 
@@ -80,7 +80,7 @@ void UpdateDisplay() {
     gravity.display.print("Direction: ");
     gravity.display.print((reversed) ? "Backward" : "Forward");
 
-    gravity.display.drawChar(0, selected_param * 10, 0x10, 1, 0, 1);
+    gravity.display.drawStr(0, selected_param * 10, "x");
 
     gravity.display.display();
 }

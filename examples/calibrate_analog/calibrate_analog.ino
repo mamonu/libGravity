@@ -17,7 +17,7 @@
  * TODO: Store the calibration value in EEPROM.
  */
 
-#include "gravity.h"
+#include "libGravity.h"
 
 #define TEXT_FONT u8g2_font_profont11_tf
 #define INDICATOR_FONT u8g2_font_open_iconic_arrow_1x_t
@@ -43,7 +43,7 @@ void NextCalibrationPoint() {
     selected_param = (selected_param + 1) % 6;
 }
 
-void CalibrateCV(Direction dir, int val) {
+void CalibrateCV(int val) {
     AnalogInput* cv = (selected_param > 2) ? &gravity.cv2 : &gravity.cv1;
     switch (selected_param % 3) {
         case 0:
