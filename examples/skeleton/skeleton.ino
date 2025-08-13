@@ -2,8 +2,8 @@
  * @file skeleton.ino
  * @author YOUR_NAME (<url>)
  * @brief Skeleton app for Sitka Instruments Gravity.
- * @version v1.0.0 - August 2025
- * @date 2025-08-12
+ * @version vX.Y.Z - MONTH YEAR YOUR_NAME
+ * @date YYYY-MM-DD
  *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  * 
