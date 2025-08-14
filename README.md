@@ -6,7 +6,7 @@ The latest releases of all Sitka Instruments Gravity firmware builds can be foun
 
 ## Project Code Layout
 
-* [`src/`](src/) - **libGravity**: This is the hardware abstraction library used to simplify the creation of new Gravity module firmware by providing common reusable wrappers around the module peripherials like [DigitalOutput](src/digital_output.h#L18) providing methods like [`Update(uint8_t state)`](src/digital_output.h#L45) which allow you to set that output channel voltage high or low, and common module behavior like [Clock](src/clock.h#L30) which provides handlers like [AttachExtHandler](src/clock.h#L69) which takes a callback function to handle external clock tick behavior when receiving clock trigger.
+* [`src/`](src/) - **libGravity**: This is the hardware abstraction library used to simplify the creation of new Gravity module firmware by providing common reusable wrappers around the module peripherials like [DigitalOutput](src/digital_output.h#L18) providing methods like [`Update(uint8_t state)`](src/digital_output.h#L45) which allow you to set that output channel voltage high or low, and common module behavior like [Clock](src/clock.h#L30) which provides handlers like [`AttachExtHandler(callback)`](src/clock.h#L69) which takes a callback function to handle external clock tick behavior when receiving clock trigger.
 
 * [`firmware/Gravity`](firmware/Gravity/) - **Alt Gravity**: This is the implementation of the default 6-channel trigger/gate clock modulation firmware. This is a full rewrite of the original firmware designed to use `libGravity` with a focus on open source friendlines.
 
