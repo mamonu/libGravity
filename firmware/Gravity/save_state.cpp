@@ -224,5 +224,6 @@ void StateManager::_loadMetadata(AppState& app) {
     EEPROM.get(METADATA_START_ADDR, metadata);
     app.selected_save_slot = metadata.selected_save_slot;
     app.encoder_reversed = metadata.encoder_reversed;
+    app.rotate_display = metadata.rotate_display;
     interrupts();
 }
