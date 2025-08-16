@@ -228,7 +228,13 @@ void HandleEncoderPressed() {
                     if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
                         app.selected_save_slot = app.selected_sub_param;
                         stateManager.loadData(app, app.selected_save_slot);
-                        InitGravity(app);
+                        if (gravity.clock.Tempo() != app.tempo) {
+                            gravity.clock.SetTempo(app.tempo);
+                        }
+                        // If clock is active, just load the pattern, do not change other global state.
+                        if (gravity.clock.IsPaused()) {
+                            InitGravity(app);
+                        }
                     }
                     break;
                 case PARAM_MAIN_FACTORY_RESET:

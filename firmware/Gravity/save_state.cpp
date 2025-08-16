@@ -2,7 +2,7 @@
  * @file save_state.cpp
  * @author Adam Wonak (https://github.com/awonak/)
  * @brief Alt firmware version of Gravity by Sitka Instruments.
- * @version 2.0.1
+ * @version 2.0.0
  * @date 2025-07-04
  *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
@@ -55,8 +55,8 @@ bool StateManager::loadData(AppState& app, byte slot_index) {
     // Load the state data from the specified EEPROM slot and update the app state save slot.
     _loadState(app, slot_index);
     app.selected_save_slot = slot_index;
-    // Persist this change in the global metadata.
-    _saveMetadata(app);
+    // Persist this change in the global metadata on next update.
+    _isDirty = true;
 
     return true;
 }

@@ -2,7 +2,7 @@
  * @file save_state.h
  * @author Adam Wonak (https://github.com/awonak/)
  * @brief Alt firmware version of Gravity by Sitka Instruments.
- * @version 2.0.1
+ * @version 2.0.0
  * @date 2025-07-04
  *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
@@ -52,8 +52,8 @@ class StateManager {
 
     // This struct holds the data that identifies the firmware version.
     struct Metadata {
-        char sketch_name[12];
-        char version[5];
+        char sketch_name[16];
+        char version[16];
         // Additional global/hardware settings
         byte selected_save_slot;
         bool encoder_reversed;
