@@ -2,8 +2,8 @@
  * @file digital_output.h
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Class for interacting with trigger / gate outputs.
- * @version 0.1
- * @date 2025-04-17
+ * @version 2.0.0
+ * @date 2025-08-17
  * 
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *

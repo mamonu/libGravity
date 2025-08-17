@@ -2,8 +2,8 @@
  * @file clock.h
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Wrapper Class for clock timing functions.
- * @version 0.1
- * @date 2025-05-04
+ * @version 2.0.0
+ * @date 2025-08-17
  * 
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *

@@ -2,8 +2,8 @@
  * @file peripherials.h
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Arduino pin definitions for the Sitka Instruments Gravity module.
- * @version 0.1
- * @date 2025-04-19
+ * @version 2.0.0
+ * @date 2025-08-17
  * 
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *

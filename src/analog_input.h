@@ -2,8 +2,8 @@
  * @file analog_input.h
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Class for interacting with analog inputs.
- * @version 0.1
- * @date 2025-05-23
+ * @version 2.0.0
+ * @date 2025-08-17
  *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
