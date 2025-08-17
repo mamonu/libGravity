@@ -17,7 +17,7 @@
 
 // Define the constants for the current firmware.
 const char StateManager::SKETCH_NAME[] = "ALT GRAVITY";
-const char StateManager::SEMANTIC_VERSION[] = "2.0.0";  // NOTE: This should match the version in the library.properties file.
+const char StateManager::SEMANTIC_VERSION[] = "2.0.1";  // NOTE: This should match the version in the library.properties file.
 
 // Number of available save slots.
 const byte StateManager::MAX_SAVE_SLOTS = 10;
@@ -33,54 +33,66 @@ const int StateManager::EEPROM_DATA_START_ADDR = sizeof(StateManager::Metadata);
 StateManager::StateManager() : _isDirty(false), _lastChangeTime(0) {}
 
 bool StateManager::initialize(AppState& app) {
+    noInterrupts();
+    bool success = false;
     if (_isDataValid()) {
         // Load global settings.
         _loadMetadata(app);
         // Load app data from the transient slot.
         _loadState(app, TRANSIENT_SLOT);
-        return true;
+        success = true;
     }
     // EEPROM does not contain save data for this firmware & version.
     else {
         // Erase EEPROM and initialize state. Save default pattern to all save slots.
         factoryReset(app);
-        return false;
     }
+    interrupts();
+    return success;
 }
 
 bool StateManager::loadData(AppState& app, byte slot_index) {
     // Check if slot_index is within max range + 1 for transient.
     if (slot_index >= MAX_SAVE_SLOTS + 1) return false;
 
+    noInterrupts();
+
     // Load the state data from the specified EEPROM slot and update the app state save slot.
     _loadState(app, slot_index);
     app.selected_save_slot = slot_index;
-    // Persist this change in the global metadata.
-    _saveMetadata(app);
+    // Persist this change in the global metadata on next update.
+    _isDirty = true;
 
+    interrupts();
     return true;
 }
 
 // Save app state to user specified save slot.
 void StateManager::saveData(const AppState& app) {
+    noInterrupts();
     // Check if slot_index is within max range + 1 for transient.
     if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
     _saveState(app, app.selected_save_slot);
     _saveMetadata(app);
     _isDirty = false;
+    interrupts();
 }
 
 // Save transient state if it has changed and enough time has passed since last save.
 void StateManager::update(const AppState& app) {
     if (_isDirty && (millis() - _lastChangeTime > SAVE_DELAY_MS)) {
+        noInterrupts();
         _saveState(app, TRANSIENT_SLOT);
         _saveMetadata(app);
         _isDirty = false;
+        interrupts();
     }
 }
 
 void StateManager::reset(AppState& app) {
+    noInterrupts();
+
     AppState default_app;
     app.tempo = default_app.tempo;
     app.selected_param = default_app.selected_param;
@@ -98,6 +110,7 @@ void StateManager::reset(AppState& app) {
     _loadMetadata(app);
 
     _isDirty = false;
+    interrupts();
 }
 
 void StateManager::markDirty() {
@@ -134,7 +147,6 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
     // Check if slot_index is within max range + 1 for transient.
     if (app.selected_save_slot >= MAX_SAVE_SLOTS + 1) return;
 
-    noInterrupts();
     static EepromData save_data;
 
     save_data.tempo = app.tempo;
@@ -165,14 +177,12 @@ void StateManager::_saveState(const AppState& app, byte slot_index) {
 
     int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
     EEPROM.put(address, save_data);
-    interrupts();
 }
 
 void StateManager::_loadState(AppState& app, byte slot_index) {
     // Check if slot_index is within max range + 1 for transient.
     if (slot_index >= MAX_SAVE_SLOTS + 1) return;
 
-    noInterrupts();
     static EepromData load_data;
     int address = EEPROM_DATA_START_ADDR + (slot_index * sizeof(EepromData));
     EEPROM.get(address, load_data);
@@ -200,11 +210,9 @@ void StateManager::_loadState(AppState& app, byte slot_index) {
         ch.setCv1Dest(static_cast<CvDestination>(saved_ch_state.cv1_dest));
         ch.setCv2Dest(static_cast<CvDestination>(saved_ch_state.cv2_dest));
     }
-    interrupts();
 }
 
 void StateManager::_saveMetadata(const AppState& app) {
-    noInterrupts();
     Metadata current_meta;
     strcpy(current_meta.sketch_name, SKETCH_NAME);
     strcpy(current_meta.version, SEMANTIC_VERSION);
@@ -215,14 +223,12 @@ void StateManager::_saveMetadata(const AppState& app) {
     current_meta.rotate_display = app.rotate_display;
 
     EEPROM.put(METADATA_START_ADDR, current_meta);
-    interrupts();
 }
 
 void StateManager::_loadMetadata(AppState& app) {
-    noInterrupts();
     Metadata metadata;
     EEPROM.get(METADATA_START_ADDR, metadata);
     app.selected_save_slot = metadata.selected_save_slot;
     app.encoder_reversed = metadata.encoder_reversed;
-    interrupts();
+    app.rotate_display = metadata.rotate_display;
 }

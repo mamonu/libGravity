@@ -2,7 +2,7 @@
  * @file Gravity.ino
  * @author Adam Wonak (https://github.com/awonak/)
  * @brief Alt firmware version of Gravity by Sitka Instruments.
- * @version v2.0.0 - June 2025 awonak - Full rewrite
+ * @version v2.0.1 - June 2025 awonak - Full rewrite
  * @version v1.0 - August 2023 Oleksiy H - Initial release
  * @date 2025-07-04
  *
@@ -227,8 +227,16 @@ void HandleEncoderPressed() {
                 case PARAM_MAIN_LOAD_DATA:
                     if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
                         app.selected_save_slot = app.selected_sub_param;
+                        // Load pattern data into app state.
                         stateManager.loadData(app, app.selected_save_slot);
-                        InitGravity(app);
+                        // Load global performance settings if they have changed.
+                        if (gravity.clock.Tempo() != app.tempo) {
+                            gravity.clock.SetTempo(app.tempo);
+                        }
+                        // Load global settings only clock is not active.
+                        if (gravity.clock.IsPaused()) {
+                            InitGravity(app);
+                        }
                     }
                     break;
                 case PARAM_MAIN_FACTORY_RESET:
