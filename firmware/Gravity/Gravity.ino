@@ -89,6 +89,11 @@ void loop() {
 
     // Check if cv run or reset is active and read cv.
     CheckRunReset(gravity.cv1, gravity.cv2);
+    
+    // Process clock pulses.
+    for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
+        app.channel[i].recalculatePulses();
+    }
 
     // Check for dirty state eligible to be saved.
     stateManager.update(app);
@@ -281,6 +286,7 @@ void HandleRotate(int val) {
 void HandlePressedRotate(int val) {
     updateSelection(app.selected_channel, val, Gravity::OUTPUT_COUNT + 1);
     app.selected_param = 0;
+    app.editing_param = false;
     stateManager.markDirty();
     app.refresh_screen = true;
 }

@@ -77,16 +77,15 @@ class Channel {
         pattern.Init(DEFAULT_PATTERN);
 
         // Calcule the clock mod pulses on init.
-        _recalculatePulses();
+        recalculatePulses();
     }
 
-    bool isCvModActive() const { return cv1_dest != CV_DEST_NONE || cv2_dest != CV_DEST_NONE; }
+    bool inline isCvModActive() const { return cv1_dest != CV_DEST_NONE || cv2_dest != CV_DEST_NONE; }
 
     // Setters (Set the BASE value)
 
     void setClockMod(int index) {
         base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
-        _recalculatePulses();
     }
 
     void setProbability(int prob) {
@@ -95,16 +94,13 @@ class Channel {
 
     void setDutyCycle(int duty) {
         base_duty_cycle = constrain(duty, 1, 99);
-        _recalculatePulses();
     }
 
     void setOffset(int off) {
         base_offset = constrain(off, 0, 99);
-        _recalculatePulses();
     }
     void setSwing(int val) {
         base_swing = constrain(val, 50, 95);
-        _recalculatePulses();
     }
 
     // Euclidean
@@ -117,11 +113,11 @@ class Channel {
 
     void setCv1Dest(CvDestination dest) {
         cv1_dest = dest;
-        _recalculatePulses();
+        recalculatePulses();
     }
     void setCv2Dest(CvDestination dest) {
         cv2_dest = dest;
-        _recalculatePulses();
+        recalculatePulses();
     }
     CvDestination getCv1Dest() const { return cv1_dest; }
     CvDestination getCv2Dest() const { return cv2_dest; }
@@ -194,26 +190,19 @@ class Channel {
             return;
         }
 
-        if (isCvModActive()) _recalculatePulses();
-
-        int cv1 = gravity.cv1.Read();
-        int cv2 = gravity.cv2.Read();
-        int cvmod_clock_mod_index = getClockModIndexWithMod(cv1, cv2);
-        int cvmod_probability = getProbabilityWithMod(cv1, cv2);
-
-        const uint16_t mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
+        int cvmod_probability = getProbabilityWithMod(gravity.cv1.Read(), gravity.cv2.Read());
 
         // Conditionally apply swing on down beats.
         uint16_t swing_pulses = 0;
-        if (_swing_pulse_amount > 0 && (tick / mod_pulses) % 2 == 1) {
-            swing_pulses = _swing_pulse_amount;
+        if (_swing_pulses > 0 && (tick / _mod_pulses) % 2 == 1) {
+            swing_pulses = _swing_pulses;
         }
 
         // Duty cycle high check logic
         const uint32_t current_tick_offset = tick + _offset_pulses + swing_pulses;
         if (!output.On()) {
             // Step check
-            if (current_tick_offset % mod_pulses == 0) {
+            if (current_tick_offset % _mod_pulses == 0) {
                 bool hit = cvmod_probability >= random(0, 100);
                 // Euclidean rhythm hit check
                 switch (pattern.NextStep()) {
@@ -232,8 +221,28 @@ class Channel {
 
         // Duty cycle low check
         const uint32_t duty_cycle_end_tick = tick + _duty_pulses + _offset_pulses + swing_pulses;
-        if (duty_cycle_end_tick % mod_pulses == 0) {
+        if (duty_cycle_end_tick % _mod_pulses == 0) {
             output.Low();
+        }
+    }
+
+    void recalculatePulses() {
+        int cv1 = gravity.cv1.Read();
+        int cv2 = gravity.cv2.Read();
+        int clock_mod_index = getClockModIndexWithMod(cv1, cv2);
+        int duty_cycle = getDutyCycleWithMod(cv1, cv2);
+        int offset = getOffsetWithMod(cv1, cv2);
+        int swing = getSwingWithMod(cv1, cv2);
+        _mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[clock_mod_index]);
+        _duty_pulses = max((long)((_mod_pulses * (100L - duty_cycle)) / 100L), 1L);
+        _offset_pulses = (long)((_mod_pulses * (100L - offset)) / 100L);
+
+        // Calculate the down beat swing amount.
+        if (swing > 50) {
+            int shifted_swing = swing - 50;
+            _swing_pulses = (long)((_mod_pulses * (100L - shifted_swing)) / 100L);
+        } else {
+            _swing_pulses = 0;
         }
     }
 
@@ -242,26 +251,6 @@ class Channel {
         int mod1 = (cv1_dest == dest) ? map(cv1_val, -512, 512, min_range, max_range) : 0;
         int mod2 = (cv2_dest == dest) ? map(cv2_val, -512, 512, min_range, max_range) : 0;
         return mod1 + mod2;
-    }
-
-    void _recalculatePulses() {
-        int cv1 = gravity.cv1.Read();
-        int cv2 = gravity.cv2.Read();
-        int clock_mod_index = getClockModIndexWithMod(cv1, cv2);
-        int duty_cycle = getDutyCycleWithMod(cv1, cv2);
-        int offset = getOffsetWithMod(cv1, cv2);
-        int swing = getSwingWithMod(cv1, cv2);
-        const uint16_t mod_pulses = pgm_read_word_near(&CLOCK_MOD_PULSES[clock_mod_index]);
-        _duty_pulses = max((long)((mod_pulses * (100L - duty_cycle)) / 100L), 1L);
-        _offset_pulses = (long)((mod_pulses * (100L - offset)) / 100L);
-
-        // Calculate the down beat swing amount.
-        if (swing > 50) {
-            int shifted_swing = swing - 50;
-            _swing_pulse_amount = (long)((mod_pulses * (100L - shifted_swing)) / 100L);
-        } else {
-            _swing_pulse_amount = 0;
-        }
     }
 
     // User-settable base values.
@@ -282,9 +271,10 @@ class Channel {
     bool mute;
 
     // Pre-calculated pulse values for ISR performance
+    uint16_t _mod_pulses;
     uint16_t _duty_pulses;
     uint16_t _offset_pulses;
-    uint16_t _swing_pulse_amount;
+    uint16_t _swing_pulses;
 };
 
 #endif  // CHANNEL_H
