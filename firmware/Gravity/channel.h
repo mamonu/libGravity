@@ -86,6 +86,7 @@ class Channel {
 
     void setClockMod(int index) {
         base_clock_mod_index = constrain(index, 0, MOD_CHOICE_SIZE - 1);
+        recalculatePulses();
     }
 
     void setProbability(int prob) {
@@ -94,13 +95,17 @@ class Channel {
 
     void setDutyCycle(int duty) {
         base_duty_cycle = constrain(duty, 1, 99);
+        recalculatePulses();
     }
 
     void setOffset(int off) {
         base_offset = constrain(off, 0, 99);
+        recalculatePulses();
     }
+
     void setSwing(int val) {
         base_swing = constrain(val, 50, 95);
+        recalculatePulses();
     }
 
     // Euclidean
@@ -190,7 +195,10 @@ class Channel {
             return;
         }
 
-        int cvmod_probability = getProbabilityWithMod(gravity.cv1.Read(), gravity.cv2.Read());
+        int cvmod_probability = base_probability;
+        if (cv1_dest == CV_DEST_PROB || cv2_dest == CV_DEST_PROB) {
+            cvmod_probability = getProbabilityWithMod(gravity.cv1.Read(), gravity.cv2.Read());
+        }
 
         // Conditionally apply swing on down beats.
         uint16_t swing_pulses = 0;

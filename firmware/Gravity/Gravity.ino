@@ -92,7 +92,9 @@ void loop() {
     
     // Process clock pulses.
     for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
-        app.channel[i].recalculatePulses();
+        if (app.channel[i].isCvModActive()) {
+            app.channel[i].recalculatePulses();
+        }
     }
 
     // Check for dirty state eligible to be saved.
