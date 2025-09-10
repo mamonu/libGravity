@@ -32,7 +32,13 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #include "uClock.h"
+
+#if defined(ARDUINO_ARCH_AVR)
 #include "platforms/avr.h"
+#endif
+#if defined(ARDUINO_NANO_R4)
+#include "platforms/renesas.h"
+#endif
 
 //
 // Platform specific timer setup/control

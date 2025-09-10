@@ -33,6 +33,7 @@ void Gravity::initInputs() {
     cv1.Init(CV1_PIN);
     cv2.Init(CV2_PIN);
 
+#if defined(ARDUINO_ARCH_AVR)
     // Pin Change Interrupts for Encoder.
     // Thanks to https://dronebotworkshop.com/interrupts/
 
@@ -42,6 +43,14 @@ void Gravity::initInputs() {
     PCMSK2 |= B00010000;
     // Select PCINT11 Bit3 (Pin D17/A3)
     PCMSK1 |= B00001000;
+#endif
+#if defined(ARDUINO_NANO_R4)
+  pinMode(ENCODER_PIN1, INPUT_PULLDOWN);
+  pinMode(ENCODER_PIN2, INPUT_PULLDOWN);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN1), Encoder::isr, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_PIN2), Encoder::isr, CHANGE);
+#endif
+
 }
 
 void Gravity::initOutputs() {
@@ -74,6 +83,7 @@ void Gravity::Process() {
     }
 }
 
+#if defined(ARDUINO_ARCH_AVR)
 // Pin Change Interrupt on Port D (D4).
 ISR(PCINT2_vect) {
     Encoder::isr();
@@ -82,6 +92,8 @@ ISR(PCINT2_vect) {
 ISR(PCINT1_vect) {
     Encoder::isr();
 };
+#endif
+
 
 // Global instance
 Gravity gravity;

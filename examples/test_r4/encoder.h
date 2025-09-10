@@ -49,6 +49,7 @@ class Encoder {
     }
 
     void Process() {
+        encoder_.tick();
         // Get encoder position change amount.
         int encoder_rotated = _rotate_change() != 0;
         bool button_pressed = button_.On();

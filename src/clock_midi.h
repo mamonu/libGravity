@@ -13,11 +13,20 @@
 #define CLOCK_H
 
 
+#include <NeoHWSerial.h>
+
 #include "peripherials.h"
 #include "uClock/uClock.h"
 
+// MIDI clock, start, stop, and continue byte definitions - based on MIDI 1.0 Standards.
+#define MIDI_CLOCK 0xF8
+#define MIDI_START 0xFA
+#define MIDI_STOP 0xFC
+#define MIDI_CONTINUE 0xFB
+
 typedef void (*ExtCallback)(void);
 static ExtCallback extUserCallback = nullptr;
+static void serialEventNoop(uint8_t msg, uint8_t status) {}
 
 class Clock {
    public:
@@ -41,11 +50,19 @@ class Clock {
     };
 
     void Init() {
+        NeoSerial.begin(31250);
+
         // Initialize the clock library
         uClock.init();
         uClock.setClockMode(uClock.INTERNAL_CLOCK);
         uClock.setOutputPPQN(uClock.PPQN_96);
         uClock.setTempo(DEFAULT_TEMPO);
+
+        // MIDI events.
+        uClock.setOnClockStart(sendMIDIStart);
+        uClock.setOnClockStop(sendMIDIStop);
+        uClock.setOnSync24(sendMIDIClock);
+
         uClock.start();
     }
 
@@ -64,6 +81,10 @@ class Clock {
     void SetSource(Source source) {
         bool was_playing = !IsPaused();
         uClock.stop();
+        // If we are changing the source from MIDI, disable the serial interrupt handler.
+        if (source_ == SOURCE_EXTERNAL_MIDI) {
+            NeoSerial.attachInterrupt(serialEventNoop);
+        }
         source_ = source;
         switch (source) {
             case SOURCE_INTERNAL:
@@ -82,6 +103,9 @@ class Clock {
                 uClock.setInputPPQN(uClock.PPQN_1);
                 break;
             case SOURCE_EXTERNAL_MIDI:
+                uClock.setClockMode(uClock.EXTERNAL_CLOCK);
+                uClock.setInputPPQN(uClock.PPQN_24);
+                NeoSerial.attachInterrupt(onSerialEvent);
                 break;
         }
         if (was_playing) {
@@ -137,6 +161,37 @@ class Clock {
    private:
     Source source_ = SOURCE_INTERNAL;
 
+    static void onSerialEvent(uint8_t msg, uint8_t status) {
+        // Note: uClock start and stop will echo to MIDI.
+        switch (msg) {
+            case MIDI_CLOCK:
+                if (extUserCallback) {
+                    extUserCallback();
+                }
+                break;
+            case MIDI_STOP:
+                uClock.stop();
+                sendMIDIStop();
+                break;
+            case MIDI_START:
+            case MIDI_CONTINUE:
+                uClock.start();
+                sendMIDIStart();
+                break;
+        }
+    }
+
+    static void sendMIDIStart() {
+        NeoSerial.write(MIDI_START);
+    }
+
+    static void sendMIDIStop() {
+        NeoSerial.write(MIDI_STOP);
+    }
+
+    static void sendMIDIClock(uint32_t tick) {
+        NeoSerial.write(MIDI_CLOCK);
+    }
 };
 
 #endif

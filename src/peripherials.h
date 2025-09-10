@@ -24,8 +24,8 @@
 
 // Clock and CV Inputs
 #define EXT_PIN 2
-#define CV1_PIN A7
-#define CV2_PIN A6
+#define CV1_PIN 21 // A7
+#define CV2_PIN 20 // A6
 #define PULSE_OUT_PIN 3
 
 // Button pins
