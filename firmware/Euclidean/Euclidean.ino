@@ -244,8 +244,16 @@ void HandleEncoderPressed() {
       if (app.selected_param == PARAM_MAIN_LOAD_DATA) {
         if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
           app.selected_save_slot = app.selected_sub_param;
+          // Load pattern data into app state.
           stateManager.loadData(app, app.selected_save_slot);
-          InitGravity(app);
+          // Load global performance settings if they have changed.
+          if (gravity.clock.Tempo() != app.tempo) {
+            gravity.clock.SetTempo(app.tempo);
+          }
+          // Load global settings only if clock is not active.
+          if (gravity.clock.IsPaused()) {
+            InitGravity(app);
+          }
         }
       }
       if (app.selected_param == PARAM_MAIN_RESET_STATE) {
