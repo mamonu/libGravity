@@ -18,7 +18,7 @@
 // Define the constants for the current firmware.
 const char StateManager::SKETCH_NAME[] = "ALT EUCLIDEAN";
 const char StateManager::SEMANTIC_VERSION[] =
-    "V2.0.0BETA3"; // NOTE: This should match the version in the
+    "V2.0.0BETA4"; // NOTE: This should match the version in the
                    // library.properties file.
 
 // Number of available save slots.
@@ -213,6 +213,7 @@ void StateManager::_saveMetadata(const AppState &app) {
   // Global user settings
   current_meta.selected_save_slot = app.selected_save_slot;
   current_meta.encoder_reversed = app.encoder_reversed;
+  current_meta.rotate_display = app.rotate_display;
 
   EEPROM.put(METADATA_START_ADDR, current_meta);
   interrupts();
@@ -224,5 +225,6 @@ void StateManager::_loadMetadata(AppState &app) {
   EEPROM.get(METADATA_START_ADDR, metadata);
   app.selected_save_slot = metadata.selected_save_slot;
   app.encoder_reversed = metadata.encoder_reversed;
+  app.rotate_display = metadata.rotate_display;
   interrupts();
 }

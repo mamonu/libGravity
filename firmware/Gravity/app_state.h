@@ -31,6 +31,7 @@ struct AppState {
   Clock::Pulse selected_pulse = Clock::PULSE_PPQN_24;
   bool editing_param = false;
   bool encoder_reversed = false;
+  bool rotate_display = false;
   bool refresh_screen = true;
 };
 

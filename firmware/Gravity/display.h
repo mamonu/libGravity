@@ -132,6 +132,7 @@ enum ParamsMainPage : uint8_t {
   PARAM_MAIN_RESET,
   PARAM_MAIN_PULSE,
   PARAM_MAIN_ENCODER_DIR,
+  PARAM_MAIN_ROTATE_DISP,
   PARAM_MAIN_SAVE_DATA,
   PARAM_MAIN_LOAD_DATA,
   PARAM_MAIN_RESET_STATE,
@@ -347,6 +348,10 @@ void DisplayMainPage() {
     mainText = F("DIR");
     subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("REVERSED");
     break;
+  case PARAM_MAIN_ROTATE_DISP:
+    mainText = F("DISP");
+    subText = app.selected_sub_param == 0 ? F("DEFAULT") : F("ROTATED");
+    break;
   case PARAM_MAIN_SAVE_DATA:
   case PARAM_MAIN_LOAD_DATA:
     if (app.selected_sub_param == StateManager::MAX_SAVE_SLOTS) {
@@ -388,9 +393,9 @@ void DisplayMainPage() {
 
   // Draw Main Page menu items
   String menu_items[PARAM_MAIN_LAST] = {
-      F("TEMPO"),     F("SOURCE"),    F("CLK RUN"),
-      F("CLK RESET"), F("PULSE OUT"), F("ENCODER DIR"),
-      F("SAVE"),      F("LOAD"),      F("ERASE")};
+      F("TEMPO"),     F("RUN"),         F("RST"),         F("SOURCE"),
+      F("PULSE OUT"), F("ENCODER DIR"), F("ROTATE DISP"), F("SAVE"),
+      F("LOAD"),      F("RESET"),       F("ERASE")};
   drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 

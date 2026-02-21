@@ -57,6 +57,7 @@ public:
     // Additional global/hardware settings
     byte selected_save_slot;
     bool encoder_reversed;
+    bool rotate_display;
   };
   struct ChannelState {
     byte base_clock_mod_index;

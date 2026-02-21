@@ -231,6 +231,10 @@ void HandleEncoderPressed() {
         app.encoder_reversed = app.selected_sub_param == 1;
         gravity.encoder.SetReverseDirection(app.encoder_reversed);
       }
+      if (app.selected_param == PARAM_MAIN_ROTATE_DISP) {
+        app.rotate_display = app.selected_sub_param == 1;
+        gravity.display.setFlipMode(app.rotate_display ? 1 : 0);
+      }
       if (app.selected_param == PARAM_MAIN_SAVE_DATA) {
         if (app.selected_sub_param < StateManager::MAX_SAVE_SLOTS) {
           app.selected_save_slot = app.selected_sub_param;
@@ -335,6 +339,9 @@ void editMainParameter(int val) {
   case PARAM_MAIN_ENCODER_DIR:
     updateSelection(app.selected_sub_param, val, 2);
     break;
+  case PARAM_MAIN_ROTATE_DISP:
+    updateSelection(app.selected_sub_param, val, 2);
+    break;
   case PARAM_MAIN_SAVE_DATA:
   case PARAM_MAIN_LOAD_DATA:
     updateSelection(app.selected_sub_param, val,
@@ -393,6 +400,7 @@ void InitGravity(AppState &app) {
   gravity.clock.SetTempo(app.tempo);
   gravity.clock.SetSource(app.selected_source);
   gravity.encoder.SetReverseDirection(app.encoder_reversed);
+  gravity.display.setFlipMode(app.rotate_display ? 1 : 0);
 }
 
 void ResetOutputs() {
