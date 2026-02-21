@@ -128,6 +128,8 @@ constexpr uint8_t CHANNEL_BOX_HEIGHT = 14;
 enum ParamsMainPage : uint8_t {
   PARAM_MAIN_TEMPO,
   PARAM_MAIN_SOURCE,
+  PARAM_MAIN_RUN,
+  PARAM_MAIN_RESET,
   PARAM_MAIN_PULSE,
   PARAM_MAIN_ENCODER_DIR,
   PARAM_MAIN_SAVE_DATA,
@@ -296,6 +298,34 @@ void DisplayMainPage() {
       break;
     }
     break;
+  case PARAM_MAIN_RUN:
+    mainText = F("RUN");
+    switch (app.cv_run) {
+    case 0:
+      subText = F("NONE");
+      break;
+    case 1:
+      subText = F("CV 1");
+      break;
+    case 2:
+      subText = F("CV 2");
+      break;
+    }
+    break;
+  case PARAM_MAIN_RESET:
+    mainText = F("RST");
+    switch (app.cv_reset) {
+    case 0:
+      subText = F("NONE");
+      break;
+    case 1:
+      subText = F("CV 1");
+      break;
+    case 2:
+      subText = F("CV 2");
+      break;
+    }
+    break;
   case PARAM_MAIN_PULSE:
     mainText = F("OUT");
     switch (app.selected_pulse) {
@@ -358,8 +388,9 @@ void DisplayMainPage() {
 
   // Draw Main Page menu items
   String menu_items[PARAM_MAIN_LAST] = {
-      F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"),
-      F("SAVE"),  F("LOAD"),   F("RESET"),     F("ERASE")};
+      F("TEMPO"),     F("SOURCE"),    F("CLK RUN"),
+      F("CLK RESET"), F("PULSE OUT"), F("ENCODER DIR"),
+      F("SAVE"),      F("LOAD"),      F("ERASE")};
   drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 

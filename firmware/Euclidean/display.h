@@ -127,6 +127,8 @@ constexpr uint8_t CHANNEL_BOX_HEIGHT = 14;
 // Menu items for editing global parameters.
 enum ParamsMainPage : uint8_t {
   PARAM_MAIN_TEMPO,
+  PARAM_MAIN_RUN,
+  PARAM_MAIN_RESET,
   PARAM_MAIN_SOURCE,
   PARAM_MAIN_PULSE,
   PARAM_MAIN_ENCODER_DIR,
@@ -253,6 +255,34 @@ void DisplayMainPage() {
     }
     subText = F("BPM");
     break;
+  case PARAM_MAIN_RUN:
+    mainText = F("RUN");
+    switch (app.cv_run) {
+    case 0:
+      subText = F("NONE");
+      break;
+    case 1:
+      subText = F("CV1 GATE");
+      break;
+    case 2:
+      subText = F("CV2 GATE");
+      break;
+    }
+    break;
+  case PARAM_MAIN_RESET:
+    mainText = F("RST");
+    switch (app.cv_reset) {
+    case 0:
+      subText = F("NONE");
+      break;
+    case 1:
+      subText = F("CV1 TRIG");
+      break;
+    case 2:
+      subText = F("CV2 TRIG");
+      break;
+    }
+    break;
   case PARAM_MAIN_SOURCE:
     mainText = F("EXT");
     switch (app.selected_source) {
@@ -339,8 +369,9 @@ void DisplayMainPage() {
 
   // Draw Main Page menu items
   String menu_items[PARAM_MAIN_LAST] = {
-      F("TEMPO"), F("SOURCE"), F("PULSE OUT"), F("ENCODER DIR"),
-      F("SAVE"),  F("LOAD"),   F("RESET"),     F("ERASE")};
+      F("TEMPO"),     F("CLK RUN"),     F("CLK RESET"), F("SOURCE"),
+      F("PULSE OUT"), F("ENCODER DIR"), F("SAVE"),      F("LOAD"),
+      F("RESET"),     F("ERASE")};
   drawMenuItems(menu_items, PARAM_MAIN_LAST);
 }
 

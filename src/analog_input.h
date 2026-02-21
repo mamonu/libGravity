@@ -11,78 +11,94 @@
 #ifndef ANALOG_INPUT_H
 #define ANALOG_INPUT_H
 
-const int MAX_INPUT = (1 << 10) - 1;  // Max 10 bit analog read resolution.
+const int MAX_INPUT = (1 << 10) - 1; // Max 10 bit analog read resolution.
 
 // estimated default calibration value
 const int CALIBRATED_LOW = -566;
 const int CALIBRATED_HIGH = 512;
 
 class AnalogInput {
-   public:
-    AnalogInput() {}
-    ~AnalogInput() {}
+public:
+  static const int GATE_THRESHOLD = 0;
 
-    /**
-     * Initializes a analog input object.
-     *
-     * @param pin gpio pin for the analog input.
-     */
-    void Init(uint8_t pin) {
-        pinMode(pin, INPUT);
-        pin_ = pin;
-    }
+  AnalogInput() {}
+  ~AnalogInput() {}
 
-    /**
-     * Read the value of the analog input and set instance state.
-     *
-     */
-    void Process() {
-        old_read_ = read_;
-        int raw = analogRead(pin_);
-        read_ = map(raw, 0, MAX_INPUT, low_, high_);
-        read_ = constrain(read_ - offset_, -512, 512);
-        if (inverted_) read_ = -read_;
-    }
+  /**
+   * Initializes a analog input object.
+   *
+   * @param pin gpio pin for the analog input.
+   */
+  void Init(uint8_t pin) {
+    pinMode(pin, INPUT);
+    pin_ = pin;
+  }
 
-    // Set calibration values.
+  /**
+   * Read the value of the analog input and set instance state.
+   *
+   */
+  void Process() {
+    old_read_ = read_;
+    int raw = analogRead(pin_);
+    read_ = map(raw, 0, MAX_INPUT, low_, high_);
+    read_ = constrain(read_ - offset_, -512, 512);
+    if (inverted_)
+      read_ = -read_;
+  }
 
-    void AdjustCalibrationLow(int amount) { low_ += amount; }
+  // Set calibration values.
 
-    void AdjustCalibrationHigh(int amount) { high_ += amount; }
+  void AdjustCalibrationLow(int amount) { low_ += amount; }
 
-    void SetOffset(float percent) { offset_ = -(percent)*512; }
+  void AdjustCalibrationHigh(int amount) { high_ += amount; }
 
-    void SetAttenuation(float percent) {
-        low_ = abs(percent) * CALIBRATED_LOW;
-        high_ = abs(percent) * CALIBRATED_HIGH;
-        inverted_ = percent < 0;
-    }
+  void SetOffset(float percent) { offset_ = -(percent) * 512; }
 
-    /**
-     * Get the current value of the analog input within a range of +/-512.
-     *
-     * @return read value within a range of +/-512.
-     *
-     */
-    inline int16_t Read() { return read_; }
+  void SetAttenuation(float percent) {
+    low_ = abs(percent) * CALIBRATED_LOW;
+    high_ = abs(percent) * CALIBRATED_HIGH;
+    inverted_ = percent < 0;
+  }
 
-    /**
-     * Return the analog read value as voltage.
-     *
-     * @return A float representing the voltage (-5.0 to +5.0).
-     *
-     */
-    inline float Voltage() { return ((read_ / 512.0) * 5.0); }
+  /**
+   * Get the current value of the analog input within a range of +/-512.
+   *
+   * @return read value within a range of +/-512.
+   *
+   */
+  inline int16_t Read() { return read_; }
 
-   private:
-    uint8_t pin_;
-    int16_t read_;
-    uint16_t old_read_;
-    // calibration values.
-    int offset_ = 0;
-    int low_ = CALIBRATED_LOW;
-    int high_ = CALIBRATED_HIGH;
-    bool inverted_ = false;
+  /**
+   * Return the analog read value as voltage.
+   *
+   * @return A float representing the voltage (-5.0 to +5.0).
+   *
+   */
+  inline float Voltage() { return ((read_ / 512.0) * 5.0); }
+
+  /**
+   * Checks for a rising edge transition across a threshold.
+   *
+   * @param threshold The value that the input must cross.
+   * @return True if the value just crossed the threshold from below, false
+   * otherwise.
+   */
+  inline bool IsRisingEdge(int16_t threshold) const {
+    bool was_high = old_read_ > threshold;
+    bool is_high = read_ > threshold;
+    return is_high && !was_high;
+  }
+
+private:
+  uint8_t pin_;
+  int16_t read_;
+  uint16_t old_read_;
+  // calibration values.
+  int offset_ = 0;
+  int low_ = CALIBRATED_LOW;
+  int high_ = CALIBRATED_HIGH;
+  bool inverted_ = false;
 };
 
 #endif

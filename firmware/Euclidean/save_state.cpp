@@ -18,7 +18,7 @@
 // Define the constants for the current firmware.
 const char StateManager::SKETCH_NAME[] = "ALT EUCLIDEAN";
 const char StateManager::SEMANTIC_VERSION[] =
-    "V2.0.0BETA2"; // NOTE: This should match the version in the
+    "V2.0.0BETA3"; // NOTE: This should match the version in the
                    // library.properties file.
 
 // Number of available save slots.
@@ -94,6 +94,8 @@ void StateManager::reset(AppState &app) {
   app.selected_channel = default_app.selected_channel;
   app.selected_source = default_app.selected_source;
   app.selected_pulse = default_app.selected_pulse;
+  app.cv_run = default_app.cv_run;
+  app.cv_reset = default_app.cv_reset;
 
   for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
     app.channel[i].Init();
@@ -148,6 +150,8 @@ void StateManager::_saveState(const AppState &app, byte slot_index) {
   save_data.selected_channel = app.selected_channel;
   save_data.selected_source = static_cast<byte>(app.selected_source);
   save_data.selected_pulse = static_cast<byte>(app.selected_pulse);
+  save_data.cv_run = app.cv_run;
+  save_data.cv_reset = app.cv_reset;
 
   // TODO: break this out into a separate function. Save State should be
   // broken out into global / per-channel save methods. When saving via
@@ -184,6 +188,8 @@ void StateManager::_loadState(AppState &app, byte slot_index) {
   app.selected_channel = load_data.selected_channel;
   app.selected_source = static_cast<Clock::Source>(load_data.selected_source);
   app.selected_pulse = static_cast<Clock::Pulse>(load_data.selected_pulse);
+  app.cv_run = load_data.cv_run;
+  app.cv_reset = load_data.cv_reset;
 
   for (int i = 0; i < Gravity::OUTPUT_COUNT; i++) {
     auto &ch = app.channel[i];
