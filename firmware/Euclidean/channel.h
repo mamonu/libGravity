@@ -15,14 +15,14 @@
 #include <Arduino.h>
 #include <libGravity.h>
 
+#include "euclidean.h"
+
 // Enums for CV Mod destination
 enum CvDestination : uint8_t {
   CV_DEST_NONE,
   CV_DEST_MOD,
-  CV_DEST_PROB,
-  CV_DEST_DUTY,
-  CV_DEST_OFFSET,
-  CV_DEST_SWING,
+  CV_DEST_EUC_STEPS,
+  CV_DEST_EUC_HITS,
   CV_DEST_LAST,
 };
 
@@ -61,19 +61,15 @@ public:
   void Init() {
     // Reset base values to their defaults
     base_clock_mod_index = DEFAULT_CLOCK_MOD_INDEX;
-    base_probability = 100;
-    base_duty_cycle = 50;
-    base_offset = 0;
-    base_swing = 50;
+    base_euc_steps = 1;
+    base_euc_hits = 1;
 
     cvmod_clock_mod_index = base_clock_mod_index;
-    cvmod_probability = base_probability;
-    cvmod_duty_cycle = base_duty_cycle;
-    cvmod_offset = base_offset;
-    cvmod_swing = base_swing;
 
     cv1_dest = CV_DEST_NONE;
     cv2_dest = CV_DEST_NONE;
+
+    pattern.Init(DEFAULT_PATTERN);
 
     // Calcule the clock mod pulses on init.
     _recalculatePulses();
@@ -89,34 +85,17 @@ public:
     }
   }
 
-  void setProbability(int prob) {
-    base_probability = constrain(prob, 0, 100);
-    if (!isCvModActive()) {
-      cvmod_probability = base_probability;
-      _recalculatePulses();
+  // Euclidean
+  void setSteps(int val) {
+    base_euc_steps = constrain(val, 1, MAX_PATTERN_LEN);
+    if (cv1_dest != CV_DEST_EUC_STEPS && cv2_dest != CV_DEST_EUC_STEPS) {
+      pattern.SetSteps(val);
     }
   }
-
-  void setDutyCycle(int duty) {
-    base_duty_cycle = constrain(duty, 1, 99);
-    if (!isCvModActive()) {
-      cvmod_duty_cycle = base_duty_cycle;
-      _recalculatePulses();
-    }
-  }
-
-  void setOffset(int off) {
-    base_offset = constrain(off, 0, 99);
-    if (!isCvModActive()) {
-      cvmod_offset = base_offset;
-      _recalculatePulses();
-    }
-  }
-  void setSwing(int val) {
-    base_swing = constrain(val, 50, 95);
-    if (!isCvModActive()) {
-      cvmod_swing = base_swing;
-      _recalculatePulses();
+  void setHits(int val) {
+    base_euc_hits = constrain(val, 1, base_euc_steps);
+    if (cv1_dest != CV_DEST_EUC_HITS && cv2_dest != CV_DEST_EUC_HITS) {
+      pattern.SetHits(val);
     }
   }
 
@@ -127,18 +106,6 @@ public:
 
   // Getters (Get the BASE value for editing or cv modded value for display)
 
-  int getProbability(bool withCvMod = false) const {
-    return withCvMod ? cvmod_probability : base_probability;
-  }
-  int getDutyCycle(bool withCvMod = false) const {
-    return withCvMod ? cvmod_duty_cycle : base_duty_cycle;
-  }
-  int getOffset(bool withCvMod = false) const {
-    return withCvMod ? cvmod_offset : base_offset;
-  }
-  int getSwing(bool withCvMod = false) const {
-    return withCvMod ? cvmod_swing : base_swing;
-  }
   int getClockMod(bool withCvMod = false) const {
     return pgm_read_word_near(&CLOCK_MOD[getClockModIndex(withCvMod)]);
   }
@@ -147,6 +114,13 @@ public:
   }
   bool isCvModActive() const {
     return cv1_dest != CV_DEST_NONE || cv2_dest != CV_DEST_NONE;
+  }
+
+  byte getSteps(bool withCvMod = false) const {
+    return withCvMod ? pattern.GetSteps() : base_euc_steps;
+  }
+  byte getHits(bool withCvMod = false) const {
+    return withCvMod ? pattern.GetHits() : base_euc_hits;
   }
 
   void toggleMute() { mute = !mute; }
@@ -168,27 +142,28 @@ public:
     const uint16_t mod_pulses =
         pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
 
-    // Conditionally apply swing on down beats.
-    uint16_t swing_pulses = 0;
-    if (_swing_pulse_amount > 0 && (tick / mod_pulses) % 2 == 1) {
-      swing_pulses = _swing_pulse_amount;
-    }
-
-    // Duty cycle high check logic
-    const uint32_t current_tick_offset = tick + _offset_pulses + swing_pulses;
+    // Euclidian rhythm cycle check
     if (!output.On()) {
       // Step check
-      if (current_tick_offset % mod_pulses == 0) {
-        bool hit = cvmod_probability >= random(0, 100);
+      if (tick % mod_pulses == 0) {
+        bool hit = true;
+        // Euclidean rhythm hit check
+        switch (pattern.NextStep()) {
+        case Pattern::REST:
+          hit = false;
+          break;
+        case Pattern::HIT:
+          hit &= true;
+          break;
+        }
         if (hit) {
           output.High();
         }
       }
     }
 
-    // Duty cycle low check
-    const uint32_t duty_cycle_end_tick =
-        tick + _duty_pulses + _offset_pulses + swing_pulses;
+    // Output low check. Half pulse width.
+    const uint32_t duty_cycle_end_tick = tick + _duty_pulses;
     if (duty_cycle_end_tick % mod_pulses == 0) {
       output.Low();
     }
@@ -212,10 +187,6 @@ public:
     // significant CPU cost, which may have undesirable performance issues.
     if (!isCvModActive()) {
       cvmod_clock_mod_index = base_clock_mod_index;
-      cvmod_probability = base_clock_mod_index;
-      cvmod_duty_cycle = base_clock_mod_index;
-      cvmod_offset = base_clock_mod_index;
-      cvmod_swing = base_clock_mod_index;
       return;
     }
 
@@ -223,17 +194,13 @@ public:
                                  -(MOD_CHOICE_SIZE / 2), MOD_CHOICE_SIZE / 2);
     cvmod_clock_mod_index = constrain(base_clock_mod_index + dest_mod, 0, 100);
 
-    int prob_mod = _calculateMod(CV_DEST_PROB, cv1_val, cv2_val, -50, 50);
-    cvmod_probability = constrain(base_probability + prob_mod, 0, 100);
+    int step_mod =
+        _calculateMod(CV_DEST_EUC_STEPS, cv1_val, cv2_val, 0, MAX_PATTERN_LEN);
+    pattern.SetSteps(base_euc_steps + step_mod);
 
-    int duty_mod = _calculateMod(CV_DEST_DUTY, cv1_val, cv2_val, -50, 50);
-    cvmod_duty_cycle = constrain(base_duty_cycle + duty_mod, 1, 99);
-
-    int offset_mod = _calculateMod(CV_DEST_OFFSET, cv1_val, cv2_val, -50, 50);
-    cvmod_offset = constrain(base_offset + offset_mod, 0, 99);
-
-    int swing_mod = _calculateMod(CV_DEST_SWING, cv1_val, cv2_val, -25, 25);
-    cvmod_swing = constrain(base_swing + swing_mod, 50, 95);
+    int hit_mod = _calculateMod(CV_DEST_EUC_HITS, cv1_val, cv2_val, 0,
+                                pattern.GetSteps());
+    pattern.SetHits(base_euc_hits + hit_mod);
 
     // After all cvmod values are updated, recalculate clock pulse modifiers.
     _recalculatePulses();
@@ -252,45 +219,29 @@ private:
   void _recalculatePulses() {
     const uint16_t mod_pulses =
         pgm_read_word_near(&CLOCK_MOD_PULSES[cvmod_clock_mod_index]);
-    _duty_pulses =
-        max((long)((mod_pulses * (100L - cvmod_duty_cycle)) / 100L), 1L);
-    _offset_pulses = (long)((mod_pulses * (100L - cvmod_offset)) / 100L);
-
-    // Calculate the down beat swing amount.
-    if (cvmod_swing > 50) {
-      int shifted_swing = cvmod_swing - 50;
-      _swing_pulse_amount =
-          (long)((mod_pulses * (100L - shifted_swing)) / 100L);
-    } else {
-      _swing_pulse_amount = 0;
-    }
+    _duty_pulses = max((long)(mod_pulses / 2L), 1L);
   }
 
   // User-settable base values.
   byte base_clock_mod_index;
-  byte base_probability;
-  byte base_duty_cycle;
-  byte base_offset;
-  byte base_swing;
+  byte base_euc_steps;
+  byte base_euc_hits;
 
   // Base value with cv mod applied.
   byte cvmod_clock_mod_index;
-  byte cvmod_probability;
-  byte cvmod_duty_cycle;
-  byte cvmod_offset;
-  byte cvmod_swing;
 
   // CV mod configuration
   CvDestination cv1_dest;
   CvDestination cv2_dest;
+
+  // Euclidean pattern
+  Pattern pattern;
 
   // Mute channel flag
   bool mute;
 
   // Pre-calculated pulse values for ISR performance
   uint16_t _duty_pulses;
-  uint16_t _offset_pulses;
-  uint16_t _swing_pulse_amount;
 };
 
 #endif // CHANNEL_H

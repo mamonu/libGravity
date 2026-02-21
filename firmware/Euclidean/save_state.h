@@ -60,9 +60,8 @@ public:
   };
   struct ChannelState {
     byte base_clock_mod_index;
-    byte base_probability;
-    byte base_duty_cycle;
-    byte base_offset;
+    byte base_euc_steps;
+    byte base_euc_hits;
     byte cv1_dest; // Cast the CvDestination enum as a byte for storage
     byte cv2_dest; // Cast the CvDestination enum as a byte for storage
   };

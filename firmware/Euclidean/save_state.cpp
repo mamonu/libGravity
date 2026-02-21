@@ -16,7 +16,7 @@
 #include "app_state.h"
 
 // Define the constants for the current firmware.
-const char StateManager::SKETCH_NAME[] = "ALT GRAVITY";
+const char StateManager::SKETCH_NAME[] = "ALT EUCLIDEAN";
 const char StateManager::SEMANTIC_VERSION[] =
     "V2.0.0BETA2"; // NOTE: This should match the version in the
                    // library.properties file.
@@ -157,9 +157,8 @@ void StateManager::_saveState(const AppState &app, byte slot_index) {
     const auto &ch = app.channel[i];
     auto &save_ch = save_data.channel_data[i];
     save_ch.base_clock_mod_index = ch.getClockModIndex(false);
-    save_ch.base_probability = ch.getProbability(false);
-    save_ch.base_duty_cycle = ch.getDutyCycle(false);
-    save_ch.base_offset = ch.getOffset(false);
+    save_ch.base_euc_steps = ch.getSteps(false);
+    save_ch.base_euc_hits = ch.getHits(false);
     save_ch.cv1_dest = static_cast<byte>(ch.getCv1Dest());
     save_ch.cv2_dest = static_cast<byte>(ch.getCv2Dest());
   }
@@ -191,9 +190,8 @@ void StateManager::_loadState(AppState &app, byte slot_index) {
     const auto &saved_ch_state = load_data.channel_data[i];
 
     ch.setClockMod(saved_ch_state.base_clock_mod_index);
-    ch.setProbability(saved_ch_state.base_probability);
-    ch.setDutyCycle(saved_ch_state.base_duty_cycle);
-    ch.setOffset(saved_ch_state.base_offset);
+    ch.setSteps(saved_ch_state.base_euc_steps);
+    ch.setHits(saved_ch_state.base_euc_hits);
     ch.setCv1Dest(static_cast<CvDestination>(saved_ch_state.cv1_dest));
     ch.setCv2Dest(static_cast<CvDestination>(saved_ch_state.cv2_dest));
   }
