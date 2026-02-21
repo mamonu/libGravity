@@ -505,8 +505,7 @@ void Bootsplash() {
     gravity.display.setFont(TEXT_FONT);
 
     textWidth = gravity.display.getStrWidth(StateManager::SKETCH_NAME);
-    gravity.display.drawStr(16 + (textWidth / 2), 20,
-                            StateManager::SKETCH_NAME);
+    gravity.display.drawStr(4 + (textWidth / 2), 22, StateManager::SKETCH_NAME);
 
     textWidth = gravity.display.getStrWidth(StateManager::SEMANTIC_VERSION);
     gravity.display.drawStr(16 + (textWidth / 2), 32,
