@@ -2,6 +2,12 @@
 
 This library helps make writing firmware easier by abstracting away the initialization and peripheral interactions. Now your firmware code can just focus on the logic and behavior of the app, and keep the low level code neatly tucked away in this library.
 
+## Quick Start
+
+You can flash the firmware to your module using the [Web Installer](https://awonak.github.io/alt-gravity/). This website also provides demo videos and documentation for each firmware version.
+
+https://awonak.github.io/alt-gravity/
+
 ## Installation
 
 Download or git clone this repository into your Arduino > libraries folder.
