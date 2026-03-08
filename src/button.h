@@ -2,8 +2,8 @@
  * @file button.h
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Wrapper class for interacting with trigger / gate inputs.
- * @version 2.0.0
- * @date 2025-08-17
+ * @version 0.1
+ * @date 2025-04-20
   *
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *

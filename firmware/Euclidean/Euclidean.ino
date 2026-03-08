@@ -369,17 +369,11 @@ void editChannelParameter(int val) {
   case PARAM_CH_MOD:
     ch.setClockMod(ch.getClockModIndex() + val);
     break;
-  case PARAM_CH_PROB:
-    ch.setProbability(ch.getProbability() + val);
+  case PARAM_CH_EUC_STEPS:
+    ch.setSteps(ch.getSteps() + val);
     break;
-  case PARAM_CH_DUTY:
-    ch.setDutyCycle(ch.getDutyCycle() + val);
-    break;
-  case PARAM_CH_OFFSET:
-    ch.setOffset(ch.getOffset() + val);
-    break;
-  case PARAM_CH_SWING:
-    ch.setSwing(ch.getSwing() + val);
+  case PARAM_CH_EUC_HITS:
+    ch.setHits(ch.getHits() + val);
     break;
   case PARAM_CH_CV1_DEST: {
     byte dest = static_cast<int>(ch.getCv1Dest());

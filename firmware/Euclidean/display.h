@@ -127,9 +127,9 @@ constexpr uint8_t CHANNEL_BOX_HEIGHT = 14;
 // Menu items for editing global parameters.
 enum ParamsMainPage : uint8_t {
   PARAM_MAIN_TEMPO,
-  PARAM_MAIN_SOURCE,
   PARAM_MAIN_RUN,
   PARAM_MAIN_RESET,
+  PARAM_MAIN_SOURCE,
   PARAM_MAIN_PULSE,
   PARAM_MAIN_ENCODER_DIR,
   PARAM_MAIN_ROTATE_DISP,
@@ -143,10 +143,8 @@ enum ParamsMainPage : uint8_t {
 // Menu items for editing channel parameters.
 enum ParamsChannelPage : uint8_t {
   PARAM_CH_MOD,
-  PARAM_CH_PROB,
-  PARAM_CH_DUTY,
-  PARAM_CH_OFFSET,
-  PARAM_CH_SWING,
+  PARAM_CH_EUC_STEPS,
+  PARAM_CH_EUC_HITS,
   PARAM_CH_CV1_DEST,
   PARAM_CH_CV2_DEST,
   PARAM_CH_LAST,
@@ -227,23 +225,6 @@ void drawMenuItems(String menu_items[], int menu_size) {
 inline void solidTick() { gravity.display.drawBox(56, 4, 4, 4); }
 inline void hollowTick() { gravity.display.drawBox(56, 4, 4, 4); }
 
-// Display an indicator when swing percentage matches a musical note.
-void swingDivisionMark() {
-  auto &ch = GetSelectedChannel();
-  switch (ch.getSwing()) {
-  case 58: // 1/32nd
-  case 66: // 1/16th
-  case 75: // 1/8th
-    solidTick();
-    break;
-  case 54: // 1/32nd tripplet
-  case 62: // 1/16th tripplet
-  case 71: // 1/8th tripplet
-    hollowTick();
-    break;
-  }
-}
-
 // Human friendly display value for save slot.
 String displaySaveSlot(int slot) {
   if (slot >= 0 && slot < StateManager::MAX_SAVE_SLOTS / 2) {
@@ -275,6 +256,34 @@ void DisplayMainPage() {
     }
     subText = F("BPM");
     break;
+  case PARAM_MAIN_RUN:
+    mainText = F("RUN");
+    switch (app.cv_run) {
+    case 0:
+      subText = F("NONE");
+      break;
+    case 1:
+      subText = F("CV1 GATE");
+      break;
+    case 2:
+      subText = F("CV2 GATE");
+      break;
+    }
+    break;
+  case PARAM_MAIN_RESET:
+    mainText = F("RST");
+    switch (app.cv_reset) {
+    case 0:
+      subText = F("NONE");
+      break;
+    case 1:
+      subText = F("CV1 TRIG");
+      break;
+    case 2:
+      subText = F("CV2 TRIG");
+      break;
+    }
+    break;
   case PARAM_MAIN_SOURCE:
     mainText = F("EXT");
     switch (app.selected_source) {
@@ -296,34 +305,6 @@ void DisplayMainPage() {
       break;
     case Clock::SOURCE_EXTERNAL_MIDI:
       subText = F("MIDI");
-      break;
-    }
-    break;
-  case PARAM_MAIN_RUN:
-    mainText = F("RUN");
-    switch (app.cv_run) {
-    case 0:
-      subText = F("NONE");
-      break;
-    case 1:
-      subText = F("CV 1");
-      break;
-    case 2:
-      subText = F("CV 2");
-      break;
-    }
-    break;
-  case PARAM_MAIN_RESET:
-    mainText = F("RST");
-    switch (app.cv_reset) {
-    case 0:
-      subText = F("NONE");
-      break;
-    case 1:
-      subText = F("CV 1");
-      break;
-    case 2:
-      subText = F("CV 2");
       break;
     }
     break;
@@ -427,23 +408,14 @@ void DisplayChannelPage() {
     }
     break;
   }
-  case PARAM_CH_PROB:
-    mainText = String(ch.getProbability(withCvMod)) + F("%");
-    subText = F("HIT CHANCE");
+
+  case PARAM_CH_EUC_STEPS:
+    mainText = String(ch.getSteps(withCvMod));
+    subText = "EUCLID STEPS";
     break;
-  case PARAM_CH_DUTY:
-    mainText = String(ch.getDutyCycle(withCvMod)) + F("%");
-    subText = F("PULSE WIDTH");
-    break;
-  case PARAM_CH_OFFSET:
-    mainText = String(ch.getOffset(withCvMod)) + F("%");
-    subText = F("SHIFT HIT");
-    break;
-  case PARAM_CH_SWING:
-    ch.getSwing() == 50 ? mainText = F("OFF")
-                        : mainText = String(ch.getSwing(withCvMod)) + F("%");
-    subText = "DOWN BEAT";
-    swingDivisionMark();
+  case PARAM_CH_EUC_HITS:
+    mainText = String(ch.getHits(withCvMod));
+    subText = "EUCLID HITS";
     break;
   case PARAM_CH_CV1_DEST:
   case PARAM_CH_CV2_DEST: {
@@ -456,17 +428,12 @@ void DisplayChannelPage() {
     case CV_DEST_MOD:
       subText = F("CLOCK MOD");
       break;
-    case CV_DEST_PROB:
-      subText = F("PROBABILITY");
+
+    case CV_DEST_EUC_STEPS:
+      subText = F("EUCLID STEPS");
       break;
-    case CV_DEST_DUTY:
-      subText = F("DUTY CYCLE");
-      break;
-    case CV_DEST_OFFSET:
-      subText = F("OFFSET");
-      break;
-    case CV_DEST_SWING:
-      subText = F("SWING");
+    case CV_DEST_EUC_HITS:
+      subText = F("EUCLID HITS");
       break;
     }
     break;
@@ -477,9 +444,9 @@ void DisplayChannelPage() {
   drawCenteredText(subText.c_str(), SUB_TEXT_Y, TEXT_FONT);
 
   // Draw Channel Page menu items
-  String menu_items[PARAM_CH_LAST] = {
-      F("MOD"),   F("PROBABILITY"), F("DUTY"),   F("OFFSET"),
-      F("SWING"), F("CV1 MOD"),     F("CV2 MOD")};
+  String menu_items[PARAM_CH_LAST] = {F("MOD"), F("EUCLID STEPS"),
+                                      F("EUCLID HITS"), F("CV1 MOD"),
+                                      F("CV2 MOD")};
   drawMenuItems(menu_items, PARAM_CH_LAST);
 }
 
@@ -538,8 +505,7 @@ void Bootsplash() {
     gravity.display.setFont(TEXT_FONT);
 
     textWidth = gravity.display.getStrWidth(StateManager::SKETCH_NAME);
-    gravity.display.drawStr(16 + (textWidth / 2), 20,
-                            StateManager::SKETCH_NAME);
+    gravity.display.drawStr(4 + (textWidth / 2), 22, StateManager::SKETCH_NAME);
 
     textWidth = gravity.display.getStrWidth(StateManager::SEMANTIC_VERSION);
     gravity.display.drawStr(16 + (textWidth / 2), 32,

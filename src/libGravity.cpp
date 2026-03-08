@@ -2,8 +2,8 @@
  * @file libGravity.cpp
  * @author Adam Wonak (https://github.com/awonak)
  * @brief Library for building custom scripts for the Sitka Instruments Gravity module.
- * @version 2.0.0
- * @date 2025-08-17
+ * @version 0.1
+ * @date 2025-04-19
  * 
  * @copyright MIT - (c) 2025 - Adam Wonak - adam.wonak@gmail.com
  *
