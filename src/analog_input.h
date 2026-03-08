@@ -42,7 +42,8 @@ public:
     old_read_ = read_;
     int raw = analogRead(pin_);
     read_ = map(raw, 0, MAX_INPUT, low_, high_);
-    read_ = constrain(read_ - offset_, -512, 512);
+    // Cast to long to avoid AVR 16-bit integer overflow prior to constraining
+    read_ = constrain((long)read_ - (long)offset_, -512, 512);
     if (inverted_)
       read_ = -read_;
   }
@@ -53,7 +54,19 @@ public:
 
   void AdjustCalibrationHigh(int amount) { high_ += amount; }
 
+  void SetCalibrationLow(int low) { low_ = low; }
+
+  void SetCalibrationHigh(int high) { high_ = high; }
+
+  int GetCalibrationLow() const { return low_; }
+
+  int GetCalibrationHigh() const { return high_; }
+
   void SetOffset(float percent) { offset_ = -(percent) * 512; }
+
+  void AdjustOffset(int amount) { offset_ += amount; }
+
+  int GetOffset() const { return offset_; }
 
   void SetAttenuation(float percent) {
     low_ = abs(percent) * CALIBRATED_LOW;
