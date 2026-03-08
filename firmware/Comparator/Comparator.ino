@@ -330,10 +330,11 @@ void loop() {
     bool logic_or = gate1 || gate2;
     bool logic_xor = gate1 ^ gate2;
 
-    if (gate1 && !prev_gate1)
-      ff_state = true;
-    if (gate2 && !prev_gate2)
-      ff_state = false;
+    static bool prev_logic_xor = false;
+    if (logic_xor && !prev_logic_xor) {
+      ff_state = !ff_state;
+    }
+    prev_logic_xor = logic_xor;
 
     gravity.outputs[0].Update(gate1 ? HIGH : LOW);
     gravity.outputs[1].Update(gate2 ? HIGH : LOW);
