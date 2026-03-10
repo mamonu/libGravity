@@ -320,11 +320,33 @@ void loop() {
   if (current_mode == MODE_COMPARATOR) {
     int c1_lower = comp1_shift - (comp1_size / 2);
     int c1_upper = comp1_shift + (comp1_size / 2);
-    bool gate1 = (cv1_val >= c1_lower && cv1_val <= c1_upper);
-
+    
     int c2_lower = comp2_shift - (comp2_size / 2);
     int c2_upper = comp2_shift + (comp2_size / 2);
-    bool gate2 = (cv2_val >= c2_lower && cv2_val <= c2_upper);
+
+    const int HYSTERESIS = 4; // Margin to prevent noise bouncing at threshold
+
+    bool gate1 = prev_gate1;
+    if (gate1) {
+      if (cv1_val < c1_lower - HYSTERESIS || cv1_val > c1_upper + HYSTERESIS) {
+        gate1 = false;
+      }
+    } else {
+      if (cv1_val >= c1_lower + HYSTERESIS && cv1_val <= c1_upper - HYSTERESIS) {
+        gate1 = true;
+      }
+    }
+
+    bool gate2 = prev_gate2;
+    if (gate2) {
+      if (cv2_val < c2_lower - HYSTERESIS || cv2_val > c2_upper + HYSTERESIS) {
+        gate2 = false;
+      }
+    } else {
+      if (cv2_val >= c2_lower + HYSTERESIS && cv2_val <= c2_upper - HYSTERESIS) {
+        gate2 = true;
+      }
+    }
 
     bool logic_and = gate1 && gate2;
     bool logic_or = gate1 || gate2;
