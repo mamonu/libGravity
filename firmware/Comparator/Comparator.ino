@@ -36,7 +36,6 @@ int comp1_size = 512; // Range: 0 to 1024
 int comp2_shift = 0;  // Range: -512 to 512
 int comp2_size = 512; // Range: 0 to 1024
 
-// State
 bool prev_gate1 = false;
 bool prev_gate2 = false;
 bool ff_state = false;
@@ -325,7 +324,7 @@ void loop() {
     if (current_mode == MODE_COMPARATOR) {
       current_mode = MODE_CALIBRATION;
       cal_selected_param = 0;
-      
+
       // Turn off all outputs to prevent phantom gates while tuning
       for (int i = 0; i < 6; i++) {
         gravity.outputs[i].Update(LOW);
@@ -344,7 +343,7 @@ void loop() {
   if (current_mode == MODE_COMPARATOR) {
     int c1_lower = comp1_shift - (comp1_size / 2);
     int c1_upper = comp1_shift + (comp1_size / 2);
-    
+
     int c2_lower = comp2_shift - (comp2_size / 2);
     int c2_upper = comp2_shift + (comp2_size / 2);
 
@@ -356,7 +355,8 @@ void loop() {
         gate1 = false;
       }
     } else {
-      if (cv1_val >= c1_lower + HYSTERESIS && cv1_val <= c1_upper - HYSTERESIS) {
+      if (cv1_val >= c1_lower + HYSTERESIS &&
+          cv1_val <= c1_upper - HYSTERESIS) {
         gate1 = true;
       }
     }
@@ -367,7 +367,8 @@ void loop() {
         gate2 = false;
       }
     } else {
-      if (cv2_val >= c2_lower + HYSTERESIS && cv2_val <= c2_upper - HYSTERESIS) {
+      if (cv2_val >= c2_lower + HYSTERESIS &&
+          cv2_val <= c2_upper - HYSTERESIS) {
         gate2 = true;
       }
     }
@@ -399,29 +400,36 @@ void loop() {
   }
 
   if (current_mode == MODE_COMPARATOR) {
-    if (abs(cv1_val - last_cv1_draw) > 12 || abs(cv2_val - last_cv2_draw) > 12) {
+    if (abs(cv1_val - last_cv1_draw) > 12 ||
+        abs(cv2_val - last_cv2_draw) > 12) {
       needs_redraw = true;
     }
   } else if (current_mode == MODE_CALIBRATION) {
     // Need frequent redraws in calibration to see the live target input
-    if (abs(cv1_val - last_cv1_draw) >= 2 || abs(cv2_val - last_cv2_draw) >= 2) {
+    if (abs(cv1_val - last_cv1_draw) >= 2 ||
+        abs(cv2_val - last_cv2_draw) >= 2) {
       needs_redraw = true;
     }
   }
 
-  // Cap framerate so display I2C calls do not block gate loop
-  if (needs_redraw && (millis() - last_redraw >= 30)) {
+  // Unroll the display loop so it doesn't block the logic loop
+  static bool is_drawing = false;
+
+  if (needs_redraw && !is_drawing && (millis() - last_redraw >= 30)) {
     needs_redraw = false;
+    is_drawing = true;
     last_redraw = millis();
     gravity.display.firstPage();
-    do {
-      if (current_mode == MODE_COMPARATOR) {
-        last_cv1_draw = cv1_val;
-        last_cv2_draw = cv2_val;
-        UpdateDisplay(cv1_val, cv2_val);
-      } else {
-        UpdateCalibrationDisplay();
-      }
-    } while (gravity.display.nextPage());
+  }
+
+  if (is_drawing) {
+    if (current_mode == MODE_COMPARATOR) {
+      last_cv1_draw = cv1_val;
+      last_cv2_draw = cv2_val;
+      UpdateDisplay(cv1_val, cv2_val);
+    } else {
+      UpdateCalibrationDisplay();
+    }
+    is_drawing = gravity.display.nextPage();
   }
 }
