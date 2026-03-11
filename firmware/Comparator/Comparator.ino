@@ -36,11 +36,12 @@ int comp1_size = 512; // Range: 0 to 1024
 int comp2_shift = 0;  // Range: -512 to 512
 int comp2_size = 512; // Range: 0 to 1024
 
-// State
 bool prev_gate1 = false;
 bool prev_gate2 = false;
 bool ff_state = false;
 bool needs_redraw = true;
+int last_cv1_draw = -1000;
+int last_cv2_draw = -1000;
 
 unsigned long last_redraw = 0;
 bool prev_both_buttons = false;
@@ -220,18 +221,35 @@ void UpdateCalibrationDisplay() {
   DisplayCalibrationPoint(&gravity.cv2, "CV2: ", 1);
 }
 
-void UpdateDisplay() {
+// UpdateDisplay
+void UpdateDisplay(int cv1_val, int cv2_val) {
   // Comp 1 graphics (Left)
   int c1_h = max((comp1_size * 3) / 64, 1);
   int c1_center = 26 - ((comp1_shift * 3) / 64);
   int c1_y = c1_center - (c1_h / 2);
-  gravity.display.drawBox(20, c1_y, 44, c1_h);
+  gravity.display.drawFrame(20, c1_y, 44, c1_h);
+
+  // CV 1 Indicator (Filled Box, 50% width, from 0V center)
+  int cv1_y = constrain(26 - ((cv1_val * 3) / 64), 2, 50);
+  if (cv1_val >= 0) {
+    gravity.display.drawBox(31, cv1_y, 22, 26 - cv1_y);
+  } else {
+    gravity.display.drawBox(31, 26, 22, cv1_y - 26);
+  }
 
   // Comp 2 graphics (Right)
   int c2_h = max((comp2_size * 3) / 64, 1);
   int c2_center = 26 - ((comp2_shift * 3) / 64);
   int c2_y = c2_center - (c2_h / 2);
-  gravity.display.drawBox(74, c2_y, 44, c2_h);
+  gravity.display.drawFrame(74, c2_y, 44, c2_h);
+
+  // CV 2 Indicator (Filled Box, 50% width, from 0V center)
+  int cv2_y = constrain(26 - ((cv2_val * 3) / 64), 2, 50);
+  if (cv2_val >= 0) {
+    gravity.display.drawBox(85, cv2_y, 22, 26 - cv2_y);
+  } else {
+    gravity.display.drawBox(85, 26, 22, cv2_y - 26);
+  }
 
   // Restore solid drawing for labels
   gravity.display.setDrawColor(1);
@@ -306,6 +324,11 @@ void loop() {
     if (current_mode == MODE_COMPARATOR) {
       current_mode = MODE_CALIBRATION;
       cal_selected_param = 0;
+
+      // Turn off all outputs to prevent phantom gates while tuning
+      for (int i = 0; i < 6; i++) {
+        gravity.outputs[i].Update(LOW);
+      }
     } else {
       SaveCalibration();
       current_mode = MODE_COMPARATOR;
@@ -320,11 +343,35 @@ void loop() {
   if (current_mode == MODE_COMPARATOR) {
     int c1_lower = comp1_shift - (comp1_size / 2);
     int c1_upper = comp1_shift + (comp1_size / 2);
-    bool gate1 = (cv1_val >= c1_lower && cv1_val <= c1_upper);
 
     int c2_lower = comp2_shift - (comp2_size / 2);
     int c2_upper = comp2_shift + (comp2_size / 2);
-    bool gate2 = (cv2_val >= c2_lower && cv2_val <= c2_upper);
+
+    const int HYSTERESIS = 4; // Margin to prevent noise bouncing at threshold
+
+    bool gate1 = prev_gate1;
+    if (gate1) {
+      if (cv1_val < c1_lower - HYSTERESIS || cv1_val > c1_upper + HYSTERESIS) {
+        gate1 = false;
+      }
+    } else {
+      if (cv1_val >= c1_lower + HYSTERESIS &&
+          cv1_val <= c1_upper - HYSTERESIS) {
+        gate1 = true;
+      }
+    }
+
+    bool gate2 = prev_gate2;
+    if (gate2) {
+      if (cv2_val < c2_lower - HYSTERESIS || cv2_val > c2_upper + HYSTERESIS) {
+        gate2 = false;
+      }
+    } else {
+      if (cv2_val >= c2_lower + HYSTERESIS &&
+          cv2_val <= c2_upper - HYSTERESIS) {
+        gate2 = true;
+      }
+    }
 
     bool logic_and = gate1 && gate2;
     bool logic_or = gate1 || gate2;
@@ -352,21 +399,37 @@ void loop() {
     eeprom_needs_save = false;
   }
 
-  // Force frequent redraws in calibration mode for immediate feedback
-  if (current_mode == MODE_CALIBRATION && (millis() - last_redraw >= 30)) {
-    needs_redraw = true;
-    last_redraw = millis();
+  if (current_mode == MODE_COMPARATOR) {
+    if (abs(cv1_val - last_cv1_draw) > 12 ||
+        abs(cv2_val - last_cv2_draw) > 12) {
+      needs_redraw = true;
+    }
+  } else if (current_mode == MODE_CALIBRATION) {
+    // Need frequent redraws in calibration to see the live target input
+    if (abs(cv1_val - last_cv1_draw) >= 2 ||
+        abs(cv2_val - last_cv2_draw) >= 2) {
+      needs_redraw = true;
+    }
   }
 
-  if (needs_redraw) {
+  // Unroll the display loop so it doesn't block the logic loop
+  static bool is_drawing = false;
+
+  if (needs_redraw && !is_drawing && (millis() - last_redraw >= 30)) {
     needs_redraw = false;
+    is_drawing = true;
+    last_redraw = millis();
     gravity.display.firstPage();
-    do {
-      if (current_mode == MODE_COMPARATOR) {
-        UpdateDisplay();
-      } else {
-        UpdateCalibrationDisplay();
-      }
-    } while (gravity.display.nextPage());
+  }
+
+  if (is_drawing) {
+    if (current_mode == MODE_COMPARATOR) {
+      last_cv1_draw = cv1_val;
+      last_cv2_draw = cv2_val;
+      UpdateDisplay(cv1_val, cv2_val);
+    } else {
+      UpdateCalibrationDisplay();
+    }
+    is_drawing = gravity.display.nextPage();
   }
 }
