@@ -18,8 +18,8 @@
 // Define the constants for the current firmware.
 const char StateManager::SKETCH_NAME[] = "ALT EUCLIDEAN";
 const char StateManager::SEMANTIC_VERSION[] =
-    "V2.0.1BETA1"; // NOTE: This should match the version in the
-                   // library.properties file.
+    "V2.0.1"; // NOTE: This should match the version in the
+              // library.properties file.
 
 // Number of available save slots.
 const byte StateManager::MAX_SAVE_SLOTS = 10;
