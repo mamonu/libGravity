@@ -24,8 +24,6 @@
 #define MIDI_STOP 0xFC
 #define MIDI_CONTINUE 0xFB
 
-typedef void (*ExtCallback)(void);
-static ExtCallback extUserCallback = nullptr;
 static void serialEventNoop(uint8_t msg, uint8_t status) {}
 
 class Clock {
@@ -70,8 +68,13 @@ public:
   // Handle external clock tick and call user callback when receiving clock
   // trigger (PPQN_4, PPQN_24, or MIDI).
   void AttachExtHandler(void (*callback)()) {
-    extUserCallback = callback;
-    attachInterrupt(digitalPinToInterrupt(EXT_PIN), callback, RISING);
+    // Configure the EXT input. The original firmware ran on this same hardware
+    // with INPUT_PULLUP + FALLING edge (the input idles HIGH via its input
+    // conditioning and a clock/reset pulse pulls it LOW). Match that here.
+    // (If your build drives EXT high-active with an external pull-down, switch
+    // to INPUT + RISING instead.)
+    pinMode(EXT_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(EXT_PIN), callback, FALLING);
   }
 
   // Internal PPQN96 callback for all clock timer operations.
@@ -157,21 +160,24 @@ private:
   Source source_ = SOURCE_INTERNAL;
 
   static void onSerialEvent(uint8_t msg, uint8_t status) {
-    // Note: uClock start and stop will echo to MIDI.
+    // Note: uClock.start()/stop() already echo MIDI Start/Stop via the clock
+    // start/stop callbacks, so we must NOT send them again here (doing so
+    // double-sends to downstream gear).
     switch (msg) {
     case MIDI_CLOCK:
-      if (extUserCallback) {
-        extUserCallback();
-      }
+      // Advance the external clock on every incoming MIDI clock pulse. The EXT
+      // hardware pin continues to act as reset in MIDI mode (handled by the
+      // firmware's ext clock handler).
+      uClock.clockMe();
       break;
     case MIDI_STOP:
       uClock.stop();
-      sendMIDIStop();
       break;
     case MIDI_START:
     case MIDI_CONTINUE:
+      // uClock has no separate "continue"; both start the clock (and echo a
+      // MIDI Start downstream via the onClockStart callback).
       uClock.start();
-      sendMIDIStart();
       break;
     }
   }
