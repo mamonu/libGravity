@@ -12,8 +12,6 @@
 #ifndef EUCLIDEAN_H
 #define EUCLIDEAN_H
 
-#include <util/atomic.h>
-
 #define MAX_PATTERN_LEN 32
 
 struct PatternState {

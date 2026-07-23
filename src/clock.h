@@ -126,8 +126,7 @@ public:
     }
   }
 
-  // Return true if the current selected source is externl (PPQN_4, PPQN_24, or
-  // MIDI).
+  // Return true if the current selected source is externl (PPQN_4, PPQN_24, or MIDI).
   bool ExternalSource() {
     return uClock.getClockMode() == uClock.EXTERNAL_CLOCK;
   }
@@ -143,8 +142,7 @@ public:
   // Set the clock tempo to a int between 1 and 400.
   void SetTempo(int tempo) { return uClock.setTempo(tempo); }
 
-  // Record an external clock tick received to process external/internal
-  // syncronization.
+  // Record an external clock tick received to process external/internal syncronization.
   void Tick() { uClock.clockMe(); }
 
   // Start the internal clock.
@@ -163,14 +161,11 @@ private:
   Source source_ = SOURCE_INTERNAL;
 
   static void onSerialEvent(uint8_t msg, uint8_t status) {
-    // Note: uClock.start()/stop() already echo MIDI Start/Stop via the clock
-    // start/stop callbacks, so we must NOT send them again here (doing so
-    // double-sends to downstream gear).
+    // Note: uClock.start()/stop() already echo MIDI Start/Stop via the clock start/stop callbacks,
     switch (msg) {
     case MIDI_CLOCK:
-      // Advance the external clock on every incoming MIDI clock pulse. The EXT
-      // hardware pin continues to act as reset in MIDI mode (handled by the
-      // firmware's ext clock handler).
+      // Advance the external clock on every incoming MIDI clock pulse.
+      // The EXT hardware pin continues to act as reset in MIDI mode 
       uClock.clockMe();
       break;
     case MIDI_STOP:
@@ -178,8 +173,7 @@ private:
       break;
     case MIDI_START:
     case MIDI_CONTINUE:
-      // uClock has no separate "continue"; both start the clock (and echo a
-      // MIDI Start downstream via the onClockStart callback).
+      // uClock has no separate "continue"; both start the clock
       uClock.start();
       break;
     }

@@ -13,7 +13,6 @@
 #define CHANNEL_H
 
 #include <Arduino.h>
-
 #include "digital_output.h"
 
 // Enums for CV Mod destination
