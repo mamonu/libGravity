@@ -117,6 +117,9 @@ public:
       uClock.setInputPPQN(uClock.PPQN_24);
       NeoSerial.attachInterrupt(onSerialEvent);
       break;
+    case SOURCE_LAST:
+    default:
+      break;
     }
     if (was_playing) {
       uClock.start();
